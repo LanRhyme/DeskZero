@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState('general')
+  const { settings, saveSettings } = useSettingsStore()
 
   return (
     <div className="w-screen h-screen flex flex-col bg-gray-50 dark:bg-zinc-900 text-gray-900 dark:text-gray-100 select-none overflow-hidden">
@@ -63,6 +65,35 @@ export function SettingsPage() {
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
               <h2 className="text-xl font-bold mb-6">外观</h2>
               <div className="space-y-6">
+                {/* 主题切换 */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">主题</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">选择应用的主题外观</div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => saveSettings({ theme: 'light' })}
+                      className={`px-3 py-1 rounded-md text-sm ${settings.theme === 'light' ? 'bg-blue-500 text-white' : 'bg-black/10 dark:bg-white/10'}`}
+                    >
+                      浅色
+                    </button>
+                    <button 
+                      onClick={() => saveSettings({ theme: 'dark' })}
+                      className={`px-3 py-1 rounded-md text-sm ${settings.theme === 'dark' ? 'bg-blue-500 text-white' : 'bg-black/10 dark:bg-white/10'}`}
+                    >
+                      深色
+                    </button>
+                    <button 
+                      onClick={() => saveSettings({ theme: 'system' })}
+                      className={`px-3 py-1 rounded-md text-sm ${settings.theme === 'system' ? 'bg-blue-500 text-white' : 'bg-black/10 dark:bg-white/10'}`}
+                    >
+                      跟随系统
+                    </button>
+                  </div>
+                </div>
+
+                {/* 主题色 */}
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium">主题色</div>
@@ -73,6 +104,56 @@ export function SettingsPage() {
                     <div className="w-6 h-6 rounded-full bg-purple-500 cursor-pointer"></div>
                     <div className="w-6 h-6 rounded-full bg-emerald-500 cursor-pointer"></div>
                     <div className="w-6 h-6 rounded-full bg-rose-500 cursor-pointer"></div>
+                  </div>
+                </div>
+
+                {/* 选中图标背景色 */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">选中图标背景色</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">设置选中图标时的背景颜色</div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => saveSettings({ selectedItemBackground: 'white' })}
+                      className={`px-3 py-1 rounded-md text-sm ${settings.selectedItemBackground === 'white' ? 'bg-blue-500 text-white' : 'bg-black/10 dark:bg-white/10'}`}
+                    >
+                      白色半透明
+                    </button>
+                    <button 
+                      onClick={() => saveSettings({ selectedItemBackground: 'black' })}
+                      className={`px-3 py-1 rounded-md text-sm ${settings.selectedItemBackground === 'black' ? 'bg-blue-500 text-white' : 'bg-black/10 dark:bg-white/10'}`}
+                    >
+                      黑色半透明
+                    </button>
+                  </div>
+                </div>
+
+                {/* 选中图标毛玻璃效果 */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">选中图标毛玻璃效果</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">为选中的图标背景添加毛玻璃效果</div>
+                  </div>
+                  <div 
+                    onClick={() => saveSettings({ selectedItemBlur: !settings.selectedItemBlur })}
+                    className={`w-10 h-5 rounded-full relative cursor-pointer ${settings.selectedItemBlur ? 'bg-blue-500' : 'bg-black/20 dark:bg-white/20'}`}
+                  >
+                    <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 shadow-sm ${settings.selectedItemBlur ? 'right-0.5' : 'left-0.5'}`}></div>
+                  </div>
+                </div>
+
+                {/* 全局毛玻璃效果 */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">全局毛玻璃效果</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">为容器和界面元素添加毛玻璃效果</div>
+                  </div>
+                  <div 
+                    onClick={() => saveSettings({ globalBlur: !settings.globalBlur })}
+                    className={`w-10 h-5 rounded-full relative cursor-pointer ${settings.globalBlur ? 'bg-blue-500' : 'bg-black/20 dark:bg-white/20'}`}
+                  >
+                    <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 shadow-sm ${settings.globalBlur ? 'right-0.5' : 'left-0.5'}`}></div>
                   </div>
                 </div>
               </div>

@@ -1,4 +1,1 @@
-error: failed to parse manifest at `D:\AndroidStudioProjects\DeskZero\src-tauri\Cargo.toml`
-
-Caused by:
-  can't find library `deskzero_lib`, rename file to `src/lib.rs` or specify lib.path
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.98s

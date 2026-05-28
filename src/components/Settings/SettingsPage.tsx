@@ -3,10 +3,30 @@ import { useSettingsStore } from '@/stores/settingsStore'
 
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState('general')
-  const { settings, saveSettings } = useSettingsStore()
+  const { settings, saveSettings, loading, error } = useSettingsStore()
+
+  const handleToggle = (key: string) => {
+    console.log(`Toggle ${key}`)
+  }
+
+  const handleAccentColor = (color: string) => {
+    console.log(`Set accent color: ${color}`)
+  }
 
   return (
     <div className="w-screen h-screen flex flex-col bg-gray-50 dark:bg-zinc-900 text-gray-900 dark:text-gray-100 select-none overflow-hidden">
+
+      {loading && (
+        <div className="fixed top-0 left-0 right-0 bg-blue-500 text-white text-center py-2 z-50">
+          加载中...
+        </div>
+      )}
+
+      {error && (
+        <div className="fixed top-0 left-0 right-0 bg-red-500 text-white text-center py-2 z-50">
+          {error}
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
@@ -43,7 +63,13 @@ export function SettingsPage() {
                     <div className="font-medium">开机启动</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">登录 Windows 时自动运行 DeskZero</div>
                   </div>
-                  <div className="w-10 h-5 bg-black/20 dark:bg-white/20 rounded-full relative cursor-pointer">
+                  <div 
+                    onClick={() => handleToggle('startup')}
+                    role="switch"
+                    aria-checked={false}
+                    onKeyDown={(e) => e.key === ' ' && handleToggle('startup')}
+                    className="w-10 h-5 bg-black/20 dark:bg-white/20 rounded-full relative cursor-pointer"
+                  >
                     <div className="w-4 h-4 bg-white rounded-full absolute left-0.5 top-0.5 shadow-sm"></div>
                   </div>
                 </div>
@@ -53,7 +79,13 @@ export function SettingsPage() {
                     <div className="font-medium">双击隐藏桌面图标</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">在桌面空白处双击可快速隐藏或显示所有图标</div>
                   </div>
-                  <div className="w-10 h-5 bg-blue-500 rounded-full relative cursor-pointer">
+                  <div 
+                    onClick={() => handleToggle('doubleClickHide')}
+                    role="switch"
+                    aria-checked={true}
+                    onKeyDown={(e) => e.key === ' ' && handleToggle('doubleClickHide')}
+                    className="w-10 h-5 bg-blue-500 rounded-full relative cursor-pointer"
+                  >
                     <div className="w-4 h-4 bg-white rounded-full absolute right-0.5 top-0.5 shadow-sm"></div>
                   </div>
                 </div>
@@ -100,10 +132,22 @@ export function SettingsPage() {
                     <div className="text-sm text-gray-500 dark:text-gray-400">设置高亮和焦点控件的颜色</div>
                   </div>
                   <div className="flex gap-2">
-                    <div className="w-6 h-6 rounded-full bg-blue-500 ring-2 ring-offset-1 ring-blue-500 dark:ring-offset-black cursor-pointer"></div>
-                    <div className="w-6 h-6 rounded-full bg-purple-500 cursor-pointer"></div>
-                    <div className="w-6 h-6 rounded-full bg-emerald-500 cursor-pointer"></div>
-                    <div className="w-6 h-6 rounded-full bg-rose-500 cursor-pointer"></div>
+                    <div 
+                      onClick={() => handleAccentColor('#0078d4')}
+                      className="w-6 h-6 rounded-full bg-blue-500 ring-2 ring-offset-1 ring-blue-500 dark:ring-offset-black cursor-pointer"
+                    ></div>
+                    <div 
+                      onClick={() => handleAccentColor('#8b5cf6')}
+                      className="w-6 h-6 rounded-full bg-purple-500 cursor-pointer"
+                    ></div>
+                    <div 
+                      onClick={() => handleAccentColor('#10b981')}
+                      className="w-6 h-6 rounded-full bg-emerald-500 cursor-pointer"
+                    ></div>
+                    <div 
+                      onClick={() => handleAccentColor('#f43f5e')}
+                      className="w-6 h-6 rounded-full bg-rose-500 cursor-pointer"
+                    ></div>
                   </div>
                 </div>
 
@@ -137,6 +181,9 @@ export function SettingsPage() {
                   </div>
                   <div 
                     onClick={() => saveSettings({ selectedItemBlur: !settings.selectedItemBlur })}
+                    role="switch"
+                    aria-checked={settings.selectedItemBlur}
+                    onKeyDown={(e) => e.key === ' ' && saveSettings({ selectedItemBlur: !settings.selectedItemBlur })}
                     className={`w-10 h-5 rounded-full relative cursor-pointer ${settings.selectedItemBlur ? 'bg-blue-500' : 'bg-black/20 dark:bg-white/20'}`}
                   >
                     <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 shadow-sm ${settings.selectedItemBlur ? 'right-0.5' : 'left-0.5'}`}></div>
@@ -151,6 +198,9 @@ export function SettingsPage() {
                   </div>
                   <div 
                     onClick={() => saveSettings({ globalBlur: !settings.globalBlur })}
+                    role="switch"
+                    aria-checked={settings.globalBlur}
+                    onKeyDown={(e) => e.key === ' ' && saveSettings({ globalBlur: !settings.globalBlur })}
                     className={`w-10 h-5 rounded-full relative cursor-pointer ${settings.globalBlur ? 'bg-blue-500' : 'bg-black/20 dark:bg-white/20'}`}
                   >
                     <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 shadow-sm ${settings.globalBlur ? 'right-0.5' : 'left-0.5'}`}></div>

@@ -40,12 +40,12 @@ export function Container({ container }: ContainerProps) {
         zIndex: isDragging ? 40 : 10,
       }}
       initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
+      animate={{ opacity: isDragging ? 0.9 : 1, scale: 1 }}
       className={cn(
         "flex flex-col overflow-hidden transition-colors border shadow-xl select-none",
         "bg-[var(--color-bg)] border-[var(--color-border)]",
         settings.globalBlur ? "backdrop-blur-2xl" : "backdrop-blur-none",
-        isDragging && "shadow-2xl opacity-90 ring-1 ring-black/10 dark:ring-white/10"
+        isDragging && "shadow-2xl ring-1 ring-black/10 dark:ring-white/10"
       )}
     >
       {/* Header (Draggable Area) */}

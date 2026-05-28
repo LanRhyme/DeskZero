@@ -5,6 +5,7 @@ import { invoke } from '@tauri-apps/api/core'
 interface SettingsState {
   settings: Settings
   loading: boolean
+  error: string | null
   loadSettings: () => Promise<void>
   saveSettings: (settings: Partial<Settings>) => Promise<void>
   applyTheme: (theme: Theme) => void
@@ -47,23 +48,26 @@ const applyGlobalBlur = (enabled: boolean) => {
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: defaultSettings,
   loading: false,
+  error: null,
 
   loadSettings: async () => {
-    set({ loading: true })
+    set({ loading: true, error: null })
     try {
       const settings = await invoke<Settings>('get_settings')
       set({ settings, loading: false })
       applyTheme(settings.theme)
       applySelectedBackground(settings.selectedItemBackground)
       applyGlobalBlur(settings.globalBlur)
-    } catch {
-      set({ loading: false })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '加载设置失败'
+      set({ loading: false, error: message })
+      console.error('加载设置失败:', err)
     }
   },
 
   saveSettings: async (changes) => {
     const newSettings = { ...get().settings, ...changes }
-    set({ settings: newSettings })
+    set({ settings: newSettings, error: null })
     try {
       await invoke('save_settings', { settings: newSettings })
       
@@ -77,6 +81,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         applyGlobalBlur(newSettings.globalBlur)
       }
     } catch (err) {
+      const message = err instanceof Error ? err.message : '保存设置失败'
+      set({ error: message })
       console.error('保存设置失败:', err)
     }
   },

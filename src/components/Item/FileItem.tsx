@@ -3,6 +3,7 @@ import { cn } from '@/utils/cn'
 import type { Item } from '@/types/item'
 import { File, Folder, Link } from 'lucide-react'
 import { useDesktopStore } from '@/stores/desktopStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { invoke } from '@tauri-apps/api/core'
 import { useDrag } from '@/hooks/useDrag'
 
@@ -16,6 +17,7 @@ interface FileItemProps {
 
 export function FileItem({ item, className, onClick, onDoubleClick, onContextMenu }: FileItemProps) {
   const { selectedIds, toggleSelection, setSelection, moveSelectedItems } = useDesktopStore()
+  const { settings } = useSettingsStore()
   const isSelected = selectedIds.has(item.id)
   
   const initialPos = item.position || { x: 0, y: 0 }
@@ -126,7 +128,8 @@ export function FileItem({ item, className, onClick, onDoubleClick, onContextMen
       className={cn(
         "flex flex-col items-center justify-start p-2 rounded-md w-20 h-24 select-none touch-none",
         isDragging ? "opacity-50 cursor-grabbing" : "cursor-default hover:bg-white/10",
-        isSelected && "bg-white/20 ring-1 ring-white/40",
+        isSelected && "bg-[var(--item-selected-bg)] ring-1 ring-[var(--item-selected-ring)]",
+        isSelected && settings.selectedItemBlur && "selected-blur",
         className
       )}
     >

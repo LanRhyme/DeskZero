@@ -27,6 +27,7 @@ body {
   /* 选中图标背景色 */
   --item-selected-bg: rgba(255, 255, 255, 0.2);
   --item-selected-ring: rgba(255, 255, 255, 0.4);
+  --item-hover-bg: rgba(255, 255, 255, 0.1);
 
   /* 毛玻璃效果 */
   --backdrop-blur: blur(30px);
@@ -44,17 +45,20 @@ body {
   /* 深色主题下的选中图标背景色 */
   --item-selected-bg: rgba(0, 0, 0, 0.3);
   --item-selected-ring: rgba(0, 0, 0, 0.5);
+  --item-hover-bg: rgba(255, 255, 255, 0.06);
 }
 
 /* 用户自定义选中背景色 */
 [data-selected-bg="white"] {
   --item-selected-bg: rgba(255, 255, 255, 0.2);
   --item-selected-ring: rgba(255, 255, 255, 0.4);
+  --item-hover-bg: rgba(255, 255, 255, 0.1);
 }
 
 [data-selected-bg="black"] {
   --item-selected-bg: rgba(0, 0, 0, 0.3);
   --item-selected-ring: rgba(0, 0, 0, 0.5);
+  --item-hover-bg: rgba(0, 0, 0, 0.1);
 }
 
 /* 选中图标毛玻璃效果 */

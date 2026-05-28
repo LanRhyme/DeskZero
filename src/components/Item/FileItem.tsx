@@ -127,7 +127,7 @@ export function FileItem({ item, className, onClick, onDoubleClick, onContextMen
       onContextMenu={handleContextMenu}
       className={cn(
         "flex flex-col items-center justify-start p-2 rounded-md w-20 h-24 select-none touch-none",
-        isDragging ? "opacity-50 cursor-grabbing" : "cursor-default hover:bg-white/10",
+        isDragging ? "opacity-50 cursor-grabbing" : "cursor-default hover:bg-[var(--item-hover-bg)]",
         isSelected && "bg-[var(--item-selected-bg)] ring-1 ring-[var(--item-selected-ring)]",
         isSelected && settings.selectedItemBlur && "selected-blur",
         className

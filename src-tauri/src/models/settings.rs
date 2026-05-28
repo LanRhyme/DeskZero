@@ -25,6 +25,13 @@ pub enum ItemBackground {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SelectedItemBackground {
+    White,
+    Black,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
     pub theme: Theme,
     pub accent_color: String,
@@ -35,6 +42,9 @@ pub struct Settings {
     pub background_blur: bool,
     pub wallpaper_compatible: bool,
     pub item_background: ItemBackground,
+    pub selected_item_background: SelectedItemBackground,
+    pub selected_item_blur: bool,
+    pub global_blur: bool,
 }
 
 impl Default for Settings {
@@ -49,6 +59,9 @@ impl Default for Settings {
             background_blur: true,
             wallpaper_compatible: true,
             item_background: ItemBackground::Transparent,
+            selected_item_background: SelectedItemBackground::White,
+            selected_item_blur: false,
+            global_blur: true,
         }
     }
 }

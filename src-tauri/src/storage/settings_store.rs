@@ -19,7 +19,23 @@ pub fn load_settings() -> Result<Settings, String> {
         return Ok(Settings::default());
     }
     let data = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    serde_json::from_str(&data).map_err(|e| e.to_string())
+    // 使用serde_json::Value来处理缺少的字段
+    let mut value: serde_json::Value = serde_json::from_str(&data).map_err(|e| e.to_string())?;
+    
+    // 确保所有必需的字段都存在
+    if let Some(obj) = value.as_object_mut() {
+        if !obj.contains_key("selected_item_background") {
+            obj.insert("selected_item_background".to_string(), serde_json::Value::String("white".to_string()));
+        }
+        if !obj.contains_key("selected_item_blur") {
+            obj.insert("selected_item_blur".to_string(), serde_json::Value::Bool(false));
+        }
+        if !obj.contains_key("global_blur") {
+            obj.insert("global_blur".to_string(), serde_json::Value::Bool(true));
+        }
+    }
+    
+    serde_json::from_value(value).map_err(|e| e.to_string())
 }
 
 pub fn save_settings(settings: &Settings) -> Result<(), String> {

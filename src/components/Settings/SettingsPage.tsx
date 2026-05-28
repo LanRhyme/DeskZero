@@ -1,40 +1,10 @@
 import { useState } from 'react'
-import { getCurrentWindow } from '@tauri-apps/api/window'
 
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState('general')
 
-  // Close window helper
-  const handleClose = async () => {
-    try {
-      await getCurrentWindow().close()
-    } catch (e) {
-      window.close()
-    }
-  }
-
   return (
-    <div className="w-screen h-screen flex flex-col bg-white/90 dark:bg-black/80 backdrop-blur-3xl text-gray-900 dark:text-gray-100 select-none overflow-hidden">
-      {/* Custom Titlebar for Settings */}
-      <div 
-        onPointerDown={(e) => {
-          if (e.button === 0) {
-            getCurrentWindow().startDragging()
-          }
-        }}
-        className="h-10 flex items-center justify-between px-4 border-b border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 cursor-move"
-      >
-        <div className="font-semibold text-sm pointer-events-none">DeskZero 设置</div>
-        <button 
-          onClick={handleClose}
-          className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-500 hover:text-white transition-colors"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
+    <div className="w-screen h-screen flex flex-col bg-gray-50 dark:bg-zinc-900 text-gray-900 dark:text-gray-100 select-none overflow-hidden">
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}

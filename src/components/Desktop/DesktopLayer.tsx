@@ -32,12 +32,10 @@ export default function DesktopLayer() {
         // Open Settings Window
         new WebviewWindow('settings', {
           url: '/settings',
-          title: 'DeskZero Settings',
+          title: 'DeskZero 设置',
           width: 800,
           height: 600,
-          resizable: true,
-          decorations: false,
-          transparent: true
+          resizable: true
         })
       } 
     },

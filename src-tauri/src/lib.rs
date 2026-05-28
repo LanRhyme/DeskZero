@@ -159,7 +159,7 @@ mod win_layer {
             SetWindowPos(
                 hwnd as HWND,
                 HWND_TOP as HWND,
-                0, 0, screen_width, screen_height + 1,
+                0, 0, screen_width, screen_height - 1,
                 SWP_SHOWWINDOW,
             );
             
@@ -243,6 +243,8 @@ pub fn run() {
             commands::file::move_file,
             commands::system::get_settings,
             commands::system::save_settings,
+            commands::system::close_settings_window,
+            commands::system::drag_settings_window,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

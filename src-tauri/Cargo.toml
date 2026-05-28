@@ -20,6 +20,12 @@ lnk = "0.6"
 opener = "0.7"
 win-icon-extractor = "0.2.0"
 base64 = "0.22.1"
+notify = "6"
+tauri-plugin-drag = "2.1.1"
+win-context-menu = "0.1.4"
+clipboard-win = "5.4.1"
+tokio = { version = "1.52.3", features = ["rt-multi-thread"] }
+rayon = "1.12.0"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

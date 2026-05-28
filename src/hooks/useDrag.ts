@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, RefObject } from 'react'
+import { startDrag } from '@crabnebula/tauri-plugin-drag'
 
 interface Position {
   x: number
@@ -10,6 +11,8 @@ interface DragOptions {
   onDragStart?: () => void
   disabled?: boolean
   dragHandleRef?: RefObject<HTMLElement | null>
+  nativeDragItemPaths?: string[]
+  nativeDragIconPath?: string
 }
 
 export function useDrag(initialPos: Position, options?: DragOptions) {
@@ -76,12 +79,46 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
     }
 
     if (dragInfo.current.hasMoved) {
+      let nextX = dragInfo.current.elemStartX + dx;
+      let nextY = dragInfo.current.elemStartY + dy;
+      
+      // Constrain to screen bounds (assuming 80x96 approximate icon size)
+      nextX = Math.max(0, Math.min(nextX, window.innerWidth - 80));
+      nextY = Math.max(0, Math.min(nextY, window.innerHeight - 96));
+
       const newPos = {
-        x: dragInfo.current.elemStartX + dx,
-        y: dragInfo.current.elemStartY + dy,
+        x: nextX,
+        y: nextY,
       }
       setPos(newPos)
       currentPos.current = newPos
+      
+      if (options?.nativeDragItemPaths && options.nativeDragItemPaths.length > 0) {
+        const threshold = 10;
+        if (e.clientX < threshold || e.clientY < threshold || 
+            e.clientX > window.innerWidth - threshold || e.clientY > window.innerHeight - threshold) {
+          
+          dragInfo.current.dragging = false
+          setIsDragging(false)
+          
+          const target = e.currentTarget as HTMLElement
+          try {
+            if (target.hasPointerCapture(e.pointerId)) {
+              target.releasePointerCapture(e.pointerId)
+            }
+          } catch (e) {
+            console.warn(e)
+          }
+
+          const iconPath = options.nativeDragIconPath || ''
+          startDrag({ item: options.nativeDragItemPaths!, icon: iconPath, mode: 'copy' })
+            .catch(err => {
+               alert("Drag error: " + err)
+            })
+
+          return
+        }
+      }
     }
   }
 

@@ -1,0 +1,74 @@
+use clipboard_win::Clipboard;
+use clipboard_win::formats::FileList;
+
+#[tauri::command]
+pub fn copy_files_to_clipboard(paths: Vec<String>) -> Result<(), String> {
+    let _clipboard = Clipboard::new_attempts(10).map_err(|e| e.to_string())?;
+    
+    // Set file list to clipboard. FileList Setter expects &[T] where T: AsRef<str>
+    clipboard_win::Setter::write_clipboard(&FileList, &paths).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_files_from_clipboard() -> Result<Vec<String>, String> {
+    // get_clipboard opens the clipboard, reads the format, and closes it.
+    let result: Result<Vec<String>, _> = clipboard_win::get_clipboard(clipboard_win::formats::FileList);
+    
+    match result {
+        Ok(paths) => Ok(paths),
+        Err(_) => Ok(vec![])
+    }
+}
+
+#[tauri::command]
+pub async fn paste_files_to_desktop(paths: Vec<String>, target_dir: String) -> Result<Vec<String>, String> {
+    if paths.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let desktop_dir = std::path::PathBuf::from(target_dir);
+    let mut created_names = Vec::new();
+
+    // Spawn blocking to avoid blocking the async runtime
+    let result = tokio::task::spawn_blocking(move || -> Result<Vec<String>, String> {
+        for path_str in paths {
+            let src = std::path::Path::new(&path_str);
+            if !src.exists() {
+                continue;
+            }
+
+            if let Some(file_name) = src.file_name() {
+                let mut dest = desktop_dir.join(file_name);
+                
+                // Handle name collision
+                let mut counter = 1;
+                let stem = src.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+                let ext = src.extension().and_then(|s| s.to_str()).map(|s| format!(".{}", s)).unwrap_or("".to_string());
+                
+                while dest.exists() {
+                    dest = desktop_dir.join(format!("{} ({}){}", stem, counter, ext));
+                    counter += 1;
+                }
+
+                let final_path = dest.to_string_lossy().to_string();
+                use base64::{Engine as _, engine::general_purpose::STANDARD};
+                let id = STANDARD.encode(final_path.as_bytes());
+
+                if src.is_dir() {
+                    if std::fs::create_dir_all(&dest).is_ok() {
+                        created_names.push(id);
+                    }
+                } else {
+                    if std::fs::copy(src, dest).is_ok() {
+                        created_names.push(id);
+                    }
+                }
+            }
+        }
+        Ok(created_names)
+    }).await.map_err(|e| e.to_string())??;
+    
+    Ok(result)
+}

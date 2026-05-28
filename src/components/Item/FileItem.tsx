@@ -2,41 +2,69 @@ import { motion } from 'framer-motion'
 import { cn } from '@/utils/cn'
 import type { Item } from '@/types/item'
 import { File, Folder, Link } from 'lucide-react'
-import { useDrag } from '@/hooks/useDrag'
 import { useDesktopStore } from '@/stores/desktopStore'
+import { invoke } from '@tauri-apps/api/core'
+import { useDrag } from '@/hooks/useDrag'
 
 interface FileItemProps {
   item: Item & { position?: { x: number, y: number } }
   className?: string
-  onClick?: () => void
-  onDoubleClick?: () => void
+  onClick?: (e: React.MouseEvent) => void
+  onDoubleClick?: (e: React.MouseEvent) => void
+  onContextMenu?: (e: React.MouseEvent) => void
 }
 
-export function FileItem({ item, className, onClick, onDoubleClick }: FileItemProps) {
-  const { updateItemPosition } = useDesktopStore()
+export function FileItem({ item, className, onClick, onDoubleClick, onContextMenu }: FileItemProps) {
+  const { selectedIds, toggleSelection, setSelection, moveSelectedItems } = useDesktopStore()
+  const isSelected = selectedIds.has(item.id)
   
-  // If item is not in container, it has a position, otherwise default to 0,0 for flow layout inside container
   const initialPos = item.position || { x: 0, y: 0 }
+
+  let iconPath = item.iconPath || ''
+  if (iconPath.startsWith('http')) {
+    iconPath = ''
+  }
+  if (!iconPath) {
+    const fallback = useDesktopStore.getState().items.find(i => i.iconPath && !i.iconPath.startsWith('http') && i.iconPath.endsWith('.png'))
+    iconPath = fallback?.iconPath || ''
+  }
+  iconPath = iconPath.replace(/^file:\/\/\//, '')
   
+  let currentSelectedIds = selectedIds
+  if (!isSelected) {
+    currentSelectedIds = new Set([item.id])
+  }
+  
+  const paths = Array.from(currentSelectedIds)
+    .map(id => useDesktopStore.getState().items.find(i => i.id === id)?.path)
+    .filter(Boolean) as string[]
+    
+  if (paths.length === 0) paths.push(item.path)
+
+  const normalizedPaths = paths.map(p => p.replace(/\//g, '\\'))
+  const normalizedIcon = iconPath.replace(/\//g, '\\')
+
   const { ref, pos, isDragging, listeners } = useDrag(initialPos, {
     disabled: item.isInContainer,
+    nativeDragItemPaths: normalizedPaths,
+    nativeDragIconPath: normalizedIcon,
+    onDragStart: () => {
+      if (!isSelected) {
+        setSelection([item.id])
+      }
+    },
     onDragEnd: (newPos) => {
       if (!item.isInContainer) {
-        // Let store handle strict grid snapping and collision
-        updateItemPosition(item.id, newPos.x, newPos.y)
+        moveSelectedItems(item.id, newPos.x, newPos.y)
       }
     }
   })
 
-  // Provide a fallback icon if iconPath is empty
   const renderIcon = () => {
-    // If backend provides a base64 or custom protocol path
     if (item.iconPath) {
       return <img src={item.iconPath} alt={item.name} className="w-10 h-10 object-contain pointer-events-none drop-shadow-md" />
     }
-
     const iconProps = { className: "w-10 h-10 text-white/80 pointer-events-none drop-shadow-md" }
-    
     switch (item.type) {
       case 'folder': return <Folder {...iconProps} fill="currentColor" className="w-10 h-10 text-yellow-400 pointer-events-none drop-shadow-md" />
       case 'shortcut': return <Link {...iconProps} />
@@ -45,11 +73,46 @@ export function FileItem({ item, className, onClick, onDoubleClick }: FileItemPr
     }
   }
 
-  // If inside container, position is relative flow (CSS layout)
-  // If on desktop, position is absolute
   const layoutStyle = item.isInContainer ? {} : {
     position: 'absolute' as const,
-    zIndex: isDragging ? 50 : 'auto',
+    zIndex: isDragging ? 50 : (isSelected ? 20 : 'auto'),
+  }
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onClick) {
+      onClick(e)
+    } else {
+      toggleSelection(item.id, e.ctrlKey || e.metaKey)
+    }
+  }
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onDoubleClick) {
+      onDoubleClick(e)
+    } else {
+      invoke('open_file', { path: item.path })
+    }
+  }
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    
+    // Select the item if it's not already selected
+    if (!isSelected) {
+      setSelection([item.id])
+    }
+    
+    if (onContextMenu) {
+      onContextMenu(e)
+    } else {
+      // Get all selected item paths
+      const currentPaths = isSelected ? paths : [item.path]
+      const currentNormalized = currentPaths.map(p => p.replace(/\//g, '\\'))
+      invoke('show_context_menu', { paths: currentNormalized, x: e.screenX, y: e.screenY })
+    }
   }
 
   return (
@@ -59,13 +122,15 @@ export function FileItem({ item, className, onClick, onDoubleClick }: FileItemPr
       animate={item.isInContainer ? {} : { left: pos.x, top: pos.y }}
       transition={isDragging ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 30 }}
       {...listeners}
-      whileHover={{ scale: 1.05, backgroundColor: 'var(--item-bg-hover)' }}
+      whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      onClick={onClick}
-      onDoubleClick={onDoubleClick}
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
+      onContextMenu={handleContextMenu}
       className={cn(
         "flex flex-col items-center justify-start p-2 rounded-md w-20 h-24 select-none touch-none",
-        isDragging ? "opacity-50 cursor-grabbing" : "cursor-default",
+        isDragging ? "opacity-50 cursor-grabbing" : "cursor-default hover:bg-white/10",
+        isSelected && "bg-white/20 ring-1 ring-white/40",
         className
       )}
     >
@@ -81,7 +146,10 @@ export function FileItem({ item, className, onClick, onDoubleClick }: FileItemPr
         )}
       </div>
       <span 
-        className="text-xs text-white text-center break-words w-full line-clamp-2 drop-shadow-md pointer-events-none"
+        className={cn(
+          "text-xs text-center break-words w-full line-clamp-2 drop-shadow-md pointer-events-none text-white",
+          isSelected && ""
+        )}
         style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
       >
         {item.name}

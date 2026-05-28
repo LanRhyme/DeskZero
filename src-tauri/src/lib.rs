@@ -2,6 +2,8 @@ mod commands;
 mod desktop;
 mod models;
 mod storage;
+mod clipboard;
+mod context_menu;
 
 use tauri::Manager;
 
@@ -179,7 +181,11 @@ mod win_layer {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_drag::init())
         .setup(|app| {
+            let app_handle = app.handle().clone();
+            crate::desktop::watcher::start_desktop_watcher(app_handle);
+
             let window = app.get_webview_window("main").unwrap();
 
             #[cfg(target_os = "windows")]
@@ -245,6 +251,10 @@ pub fn run() {
             commands::system::save_settings,
             commands::system::close_settings_window,
             commands::system::drag_settings_window,
+            clipboard::copy_files_to_clipboard,
+            clipboard::get_files_from_clipboard,
+            clipboard::paste_files_to_desktop,
+            context_menu::show_context_menu,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

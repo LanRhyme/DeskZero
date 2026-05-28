@@ -6,6 +6,7 @@ import { FileItem } from '../Item/FileItem'
 import { Settings } from 'lucide-react'
 import { useDrag } from '@/hooks/useDrag'
 import { useContainerStore } from '@/stores/containerStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 interface ContainerProps {
   container: ContainerType
@@ -13,6 +14,7 @@ interface ContainerProps {
 
 export function Container({ container }: ContainerProps) {
   const { updateContainerPosition } = useContainerStore()
+  const { settings } = useSettingsStore()
   const dragHandleRef = useRef<HTMLDivElement>(null)
 
   const { ref, pos, isDragging, listeners } = useDrag(container.position, {
@@ -41,7 +43,8 @@ export function Container({ container }: ContainerProps) {
       animate={{ opacity: 1, scale: 1 }}
       className={cn(
         "flex flex-col overflow-hidden transition-colors border shadow-xl select-none",
-        "bg-[var(--color-bg)] backdrop-blur-2xl border-[var(--color-border)]",
+        "bg-[var(--color-bg)] border-[var(--color-border)]",
+        settings.globalBlur ? "backdrop-blur-2xl" : "backdrop-blur-none",
         isDragging && "shadow-2xl opacity-90 ring-1 ring-black/10 dark:ring-white/10"
       )}
     >

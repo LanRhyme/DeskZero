@@ -1,7 +1,21 @@
 import type { Item } from '@/types/item'
+import FileItem from '@/components/Item/FileItem'
+import FolderItem from '@/components/Item/FolderItem'
+import ShortcutItem from '@/components/Item/ShortcutItem'
 
 interface Props {
   items: Item[]
+}
+
+function renderItem(item: Item) {
+  switch (item.type) {
+    case 'folder':
+      return <FolderItem key={item.id} item={item} />
+    case 'shortcut':
+      return <ShortcutItem key={item.id} item={item} />
+    default:
+      return <FileItem key={item.id} item={item} />
+  }
 }
 
 export default function ContainerBody({ items }: Props) {
@@ -13,26 +27,7 @@ export default function ContainerBody({ items }: Props) {
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-2">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="flex flex-col items-center p-2 rounded-md cursor-pointer"
-              style={{ background: 'var(--item-bg)' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--item-bg-hover)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'var(--item-bg)'
-              }}
-            >
-              <div className="w-10 h-10 flex items-center justify-center text-2xl">
-                {item.type === 'folder' ? '📁' : item.type === 'shortcut' ? '🔗' : '📄'}
-              </div>
-              <span className="text-xs mt-1 text-center truncate w-full" style={{ color: 'var(--color-text)' }}>
-                {item.name}
-              </span>
-            </div>
-          ))}
+          {items.map(renderItem)}
         </div>
       )}
     </div>

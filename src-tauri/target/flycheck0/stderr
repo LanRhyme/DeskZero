@@ -1,1 +1,116 @@
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.04s
+   2.317780300s  INFO prepare_target{force=false package_id=deskzero v0.1.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint: fingerprint error for deskzero v0.1.0 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: false }/TargetInner { ..: lib_target("deskzero_lib", ["staticlib", "cdylib", "rlib"], "D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\lib.rs", Edition2021) }
+   2.317856000s  INFO prepare_target{force=false package_id=deskzero v0.1.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\AndroidStudioProjects\DeskZero\src-tauri\target\debug\.fingerprint\deskzero-6638bfaeb3fb0f33\lib-deskzero_lib`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+   2.861324400s  INFO prepare_target{force=false package_id=deskzero v0.1.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint: fingerprint error for deskzero v0.1.0 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: true }/TargetInner { ..: lib_target("deskzero_lib", ["staticlib", "cdylib", "rlib"], "D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\lib.rs", Edition2021) }
+   2.861415500s  INFO prepare_target{force=false package_id=deskzero v0.1.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\AndroidStudioProjects\DeskZero\src-tauri\target\debug\.fingerprint\deskzero-0031823e4b08dc47\test-lib-deskzero_lib`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+   2.867021500s  INFO prepare_target{force=false package_id=deskzero v0.1.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero"}: cargo::core::compiler::fingerprint: fingerprint error for deskzero v0.1.0 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: false }/TargetInner { name: "deskzero", doc: true, ..: with_path("D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\main.rs", Edition2021) }
+   2.867089700s  INFO prepare_target{force=false package_id=deskzero v0.1.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\AndroidStudioProjects\DeskZero\src-tauri\target\debug\.fingerprint\deskzero-965b8befcf0ae1d2\bin-deskzero`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+   2.901712700s  INFO prepare_target{force=false package_id=deskzero v0.1.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero"}: cargo::core::compiler::fingerprint: fingerprint error for deskzero v0.1.0 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: true }/TargetInner { name: "deskzero", doc: true, ..: with_path("D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\main.rs", Edition2021) }
+   2.901766200s  INFO prepare_target{force=false package_id=deskzero v0.1.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\AndroidStudioProjects\DeskZero\src-tauri\target\debug\.fingerprint\deskzero-a229b812e51a91be\test-bin-deskzero`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+    Checking deskzero v0.1.0 (D:\AndroidStudioProjects\DeskZero\src-tauri)
+error: could not compile `deskzero` (lib test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deskzero` (lib) due to 1 previous error

@@ -25,6 +25,13 @@ pub fn delete_file(path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub async fn trash_file(path: String) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || {
+        trash::delete(&path).map_err(|e| format!("Failed to move to trash: {}", e))
+    }).await.map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
 pub fn move_file(from: String, to: String) -> Result<(), String> {
     std::fs::rename(&from, &to).map_err(|e| e.to_string())
 }

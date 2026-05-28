@@ -251,6 +251,7 @@ pub fn run() {
             commands::system::save_settings,
             commands::system::close_settings_window,
             commands::system::drag_settings_window,
+            commands::file::trash_file,
             clipboard::copy_files_to_clipboard,
             clipboard::get_files_from_clipboard,
             clipboard::paste_files_to_desktop,

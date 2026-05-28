@@ -64,6 +64,7 @@ export default function DesktopLayer() {
 
     const handleKeyDown = async (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === 'c') {
+        e.preventDefault()
         const selectedIds = useDesktopStore.getState().selectedIds;
         if (selectedIds.size > 0) {
           const paths = Array.from(selectedIds)
@@ -77,10 +78,30 @@ export default function DesktopLayer() {
           }
         }
       } else if (e.ctrlKey && e.key === 'v') {
-        // Just call handlePaste directly, but we might not have mouse coords, so place sequentially by not passing x/y.
-        // Wait, handlePaste relies on menuState which is not right for Keyboard paste.
-        // We'll pass undefined so it uses fallback x=20, y=20
+        e.preventDefault()
         handlePaste();
+      } else if (e.key === 'Delete') {
+        e.preventDefault()
+        const selectedIds = useDesktopStore.getState().selectedIds;
+        if (selectedIds.size > 0) {
+          const paths = Array.from(selectedIds)
+            .map(id => useDesktopStore.getState().items.find(i => i.id === id)?.path)
+            .filter(Boolean) as string[];
+          
+          if (paths.length > 0) {
+            const { invoke } = await import('@tauri-apps/api/core');
+            try {
+              if (e.shiftKey) {
+                await Promise.all(paths.map(p => invoke('delete_file', { path: p })));
+              } else {
+                await Promise.all(paths.map(p => invoke('trash_file', { path: p })));
+              }
+              await useDesktopStore.getState().fetchDesktopItems();
+            } catch (err) {
+              console.error("Delete failed:", err);
+            }
+          }
+        }
       }
     }
 

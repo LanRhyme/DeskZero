@@ -16,6 +16,8 @@ uuid = { version = "1", features = ["v4"] }
 chrono = "0.4"
 dirs = "5"
 thiserror = "2"
+lnk = "0.6"
+opener = "0.7"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

@@ -1,3 +1,4 @@
+mod desktop;
 mod models;
 mod storage;
 

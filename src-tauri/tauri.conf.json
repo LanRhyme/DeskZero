@@ -9,16 +9,14 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "DeskZero",
-        "fullscreen": false,
+        "fullscreen": true,
         "transparent": true,
         "decorations": false,
         "alwaysOnTop": false,
         "skipTaskbar": true,
-        "width": 1920,
-        "height": 1080,
-        "x": 0,
-        "y": 0
+        "visible": false
       }
     ],
     "security": {

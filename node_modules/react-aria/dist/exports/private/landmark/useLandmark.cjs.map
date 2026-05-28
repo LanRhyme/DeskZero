@@ -1,0 +1,1 @@
+{"mappings":"","sources":["packages/react-aria/exports/private/landmark/useLandmark.ts"],"sourcesContent":["export {UNSTABLE_createLandmarkController, type LandmarkControllerOptions} from '../../../src/landmark/useLandmark';\n"],"names":[],"version":3,"file":"useLandmark.cjs.map"}

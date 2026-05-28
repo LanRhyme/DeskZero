@@ -1,0 +1,1 @@
+{"mappings":"","sources":["packages/react-aria/exports/useOverlayPosition.ts"],"sourcesContent":["export {type PlacementAxis, type PositionProps, type AriaPositionProps, type Placement, useOverlayPosition, type PositionAria, type Axis, type SizeAxis} from '../src/overlays/useOverlayPosition';\n"],"names":[],"version":3,"file":"useOverlayPosition.mjs.map"}

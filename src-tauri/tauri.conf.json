@@ -1,0 +1,22 @@
+{
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "DeskZero",
+        "fullscreen": true,
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  }
+}

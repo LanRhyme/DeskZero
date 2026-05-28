@@ -1,0 +1,1 @@
+{"mappings":"","sources":["packages/react-aria/exports/useAutocomplete.ts"],"sourcesContent":["export {useAutocomplete} from '../src/autocomplete/useAutocomplete';\nexport type {AriaAutocompleteProps, AriaAutocompleteOptions, AutocompleteAria, CollectionOptions, InputProps} from '../src/autocomplete/useAutocomplete';\n"],"names":[],"version":3,"file":"useAutocomplete.cjs.map"}

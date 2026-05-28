@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { Settings, Theme } from '@/types/settings'
 import { invoke } from '@tauri-apps/api/core'
+import { emit, listen } from '@tauri-apps/api/event'
 
 interface SettingsState {
   settings: Settings
@@ -80,6 +81,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       if (changes.globalBlur !== undefined) {
         applyGlobalBlur(newSettings.globalBlur)
       }
+      
+      // 发送设置更新事件，通知其他窗口
+      await emit('settings-updated', newSettings)
     } catch (err) {
       const message = err instanceof Error ? err.message : '保存设置失败'
       set({ error: message })
@@ -102,6 +106,19 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
     
     mediaQuery.addEventListener('change', handleChange)
-    return () => mediaQuery.removeEventListener('change', handleChange)
+    
+    // 监听设置更新事件
+    const unlisten = listen<Settings>('settings-updated', (event) => {
+      const newSettings = event.payload
+      set({ settings: newSettings })
+      applyTheme(newSettings.theme)
+      applySelectedBackground(newSettings.selectedItemBackground)
+      applyGlobalBlur(newSettings.globalBlur)
+    })
+    
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange)
+      unlisten.then(fn => fn())
+    }
   }
 }))

@@ -12,36 +12,67 @@ mod win_layer {
     type HWND = *mut c_void;
     type BOOL = i32;
     type UINT = u32;
+    type LPCSTR = *const i8;
 
     extern "system" {
-        pub fn SetWindowPos(
-            hWnd: HWND,
-            hWndInsertAfter: HWND,
-            X: i32,
-            Y: i32,
-            cx: i32,
-            cy: i32,
-            uFlags: UINT,
-        ) -> BOOL;
+        pub fn FindWindowA(lpClassName: LPCSTR, lpWindowName: LPCSTR) -> HWND;
+        pub fn FindWindowExA(hWndParent: HWND, hWndChildAfter: HWND, lpszClass: LPCSTR, lpszWindow: LPCSTR) -> HWND;
+        pub fn SetParent(hWndChild: HWND, hWndNewParent: HWND) -> HWND;
+        pub fn SetWindowPos(hWnd: HWND, hWndInsertAfter: HWND, X: i32, Y: i32, cx: i32, cy: i32, uFlags: UINT) -> BOOL;
+        pub fn GetParent(hWnd: HWND) -> HWND;
+        pub fn SendMessageA(hWnd: HWND, Msg: UINT, wParam: usize, lParam: isize) -> isize;
     }
 
-    const HWND_BOTTOM: isize = 1;
+    const HWND_TOP: isize = 0;
     const SWP_NOMOVE: UINT = 0x0002;
     const SWP_NOSIZE: UINT = 0x0001;
     const SWP_NOACTIVATE: UINT = 0x0010;
     const SWP_SHOWWINDOW: UINT = 0x0040;
 
-    pub fn set_window_bottom(hwnd: isize) {
+    /// 将窗口嵌入到桌面图标层（WorkerW）
+    /// 参考 Sapphire 的 inplace() 实现
+    pub fn embed_into_desktop_layer(hwnd: isize) {
         unsafe {
-            SetWindowPos(
-                hwnd as HWND,
-                HWND_BOTTOM as HWND,
-                0,
-                0,
-                0,
-                0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW,
-            );
+            let progman = FindWindowA(b"Progman\0".as_ptr() as *const i8, std::ptr::null());
+
+            // 发送消息让 Progman 创建 WorkerW 子窗口
+            // 0x052C = 0x052C (WM_SPAWN_WORKERW)
+            SendMessageA(progman, 0x052C, 0, 0);
+
+            // 遍历所有 WorkerW 窗口，找到包含 SHELLDLL_DefView 的那个
+            let mut worker: HWND = std::ptr::null_mut();
+            loop {
+                worker = FindWindowExA(
+                    std::ptr::null_mut(),
+                    worker,
+                    b"WorkerW\0".as_ptr() as *const i8,
+                    std::ptr::null(),
+                );
+
+                if worker.is_null() {
+                    break;
+                }
+
+                let shelldlldefview = FindWindowExA(
+                    worker,
+                    std::ptr::null_mut(),
+                    b"SHELLDLL_DefView\0".as_ptr() as *const i8,
+                    std::ptr::null(),
+                );
+
+                if !shelldlldefview.is_null() {
+                    // 找到了包含 SHELLDLL_DefView 的 WorkerW
+                    // 将我们的窗口设置为其子窗口
+                    SetParent(hwnd as HWND, worker);
+                    SetWindowPos(
+                        hwnd as HWND,
+                        HWND_TOP as HWND,
+                        0, 0, 0, 0,
+                        SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW,
+                    );
+                    return;
+                }
+            }
         }
     }
 }
@@ -56,7 +87,7 @@ pub fn run() {
             #[cfg(target_os = "windows")]
             {
                 let hwnd = window.hwnd().unwrap();
-                win_layer::set_window_bottom(hwnd.0 as isize);
+                win_layer::embed_into_desktop_layer(hwnd.0 as isize);
             }
 
             Ok(())

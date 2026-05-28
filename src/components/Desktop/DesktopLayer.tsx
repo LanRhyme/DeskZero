@@ -5,6 +5,11 @@ import { useTheme } from '@/hooks/useTheme'
 import Container from '@/components/Container/Container'
 import ContextMenu from '@/components/ContextMenu/ContextMenu'
 import SettingsPanel from '@/components/Settings/SettingsPanel'
+import { scanDesktopIcons } from '@/services/desktopService'
+import type { Item } from '@/types/item'
+import FileItem from '@/components/Item/FileItem'
+import FolderItem from '@/components/Item/FolderItem'
+import ShortcutItem from '@/components/Item/ShortcutItem'
 
 interface MenuState {
   visible: boolean
@@ -12,18 +17,40 @@ interface MenuState {
   y: number
 }
 
+function renderDesktopItem(item: Item) {
+  switch (item.type) {
+    case 'folder':
+      return <FolderItem key={item.id} item={item} />
+    case 'shortcut':
+      return <ShortcutItem key={item.id} item={item} />
+    default:
+      return <FileItem key={item.id} item={item} />
+  }
+}
+
 export default function DesktopLayer() {
   const { containers, loadContainers, moveContainer, createContainer } = useContainerStore()
   const { loadSettings } = useSettingsStore()
   const [menu, setMenu] = useState<MenuState>({ visible: false, x: 0, y: 0 })
   const [showSettings, setShowSettings] = useState(false)
+  const [desktopIcons, setDesktopIcons] = useState<Item[]>([])
 
   useTheme()
 
   useEffect(() => {
     loadContainers()
     loadSettings()
+    loadDesktopIcons()
   }, [])
+
+  const loadDesktopIcons = async () => {
+    try {
+      const icons = await scanDesktopIcons()
+      setDesktopIcons(icons)
+    } catch (err) {
+      console.error('扫描桌面图标失败:', err)
+    }
+  }
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -48,6 +75,10 @@ export default function DesktopLayer() {
       onClick: () => createContainer('文件夹容器', 'folder', { x: menu.x, y: menu.y }),
     },
     {
+      label: '刷新桌面图标',
+      onClick: loadDesktopIcons,
+    },
+    {
       label: '设置',
       onClick: () => setShowSettings(true),
     },
@@ -60,6 +91,12 @@ export default function DesktopLayer() {
       onContextMenu={handleContextMenu}
       onClick={closeMenu}
     >
+      {/* 桌面图标层 - 散布在桌面上 */}
+      <div className="flex flex-wrap gap-4 p-6">
+        {desktopIcons.map(renderDesktopItem)}
+      </div>
+
+      {/* 容器层 */}
       {containers.map((container) => (
         <Container
           key={container.id}

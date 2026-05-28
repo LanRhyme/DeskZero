@@ -9,6 +9,7 @@ body {
 }
 
 :root {
+  /* 浅色主题（默认） */
   --color-bg: rgba(243, 243, 243, 0.88);
   --color-bg-hover: rgba(249, 249, 249, 0.92);
   --color-text: #1a1a1a;
@@ -22,6 +23,14 @@ body {
   --item-bg-hover: rgba(0, 0, 0, 0.04);
   --item-radius: 6px;
   --icon-size: 48px;
+
+  /* 选中图标背景色 */
+  --item-selected-bg: rgba(255, 255, 255, 0.2);
+  --item-selected-ring: rgba(255, 255, 255, 0.4);
+
+  /* 毛玻璃效果 */
+  --backdrop-blur: blur(30px);
+  --backdrop-blur-light: blur(10px);
 }
 
 [data-theme="dark"] {
@@ -31,4 +40,36 @@ body {
   --color-text-secondary: #999;
   --color-border: rgba(255, 255, 255, 0.06);
   --item-bg-hover: rgba(255, 255, 255, 0.06);
+
+  /* 深色主题下的选中图标背景色 */
+  --item-selected-bg: rgba(0, 0, 0, 0.3);
+  --item-selected-ring: rgba(0, 0, 0, 0.5);
+}
+
+/* 用户自定义选中背景色 */
+[data-selected-bg="white"] {
+  --item-selected-bg: rgba(255, 255, 255, 0.2);
+  --item-selected-ring: rgba(255, 255, 255, 0.4);
+}
+
+[data-selected-bg="black"] {
+  --item-selected-bg: rgba(0, 0, 0, 0.3);
+  --item-selected-ring: rgba(0, 0, 0, 0.5);
+}
+
+/* 选中图标毛玻璃效果 */
+.selected-blur {
+  backdrop-filter: var(--backdrop-blur-light);
+  -webkit-backdrop-filter: var(--backdrop-blur-light);
+}
+
+/* 全局毛玻璃效果控制 */
+[data-global-blur="true"] {
+  --backdrop-blur: blur(30px);
+  --backdrop-blur-light: blur(10px);
+}
+
+[data-global-blur="false"] {
+  --backdrop-blur: blur(0px);
+  --backdrop-blur-light: blur(0px);
 }

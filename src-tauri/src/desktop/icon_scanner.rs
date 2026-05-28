@@ -111,7 +111,10 @@ pub fn scan_desktop_icons() -> Result<Vec<Item>, String> {
         };
 
         let target_path = if item_type == ItemType::Shortcut {
-            crate::desktop::shortcut::resolve_shortcut(&path).ok()
+            crate::desktop::shortcut::resolve_shortcut_icon(&path)
+                .or_else(|| crate::desktop::shortcut::resolve_shortcut(&path).ok())
+        } else if item_type == ItemType::Url {
+            crate::desktop::shortcut::resolve_url_icon(&path)
         } else {
             None
         };
@@ -120,7 +123,7 @@ pub fn scan_desktop_icons() -> Result<Vec<Item>, String> {
         let cache_key = path.to_string_lossy().to_string();
 
         let cached_icon = cache.get(&cache_key).and_then(|entry| {
-            if entry.mtime == mtime {
+            if entry.mtime == mtime && !entry.icon_data.is_empty() {
                 Some(entry.icon_data.clone())
             } else {
                 None
@@ -207,9 +210,75 @@ fn extract_icon_for_path(
         .cloned()
         .unwrap_or_else(|| path.to_string_lossy().to_string());
 
-    if let Ok(base64_img) = win_icon_extractor::extract_icon_webp_base64(&extract_path) {
-        format!("data:image/webp;base64,{}", base64_img)
+    // Try extracting icon from the target path (only if it exists)
+    let target_exists = std::path::Path::new(&extract_path).exists();
+    if target_exists {
+        match win_icon_extractor::extract_icon_webp_base64(&extract_path) {
+            Ok(base64_img) => {
+                return format!("data:image/webp;base64,{}", base64_img);
+            }
+            Err(e) => {
+                eprintln!("[DeskZero] extract_icon_webp_base64 failed for {}: {:?}", extract_path, e);
+            }
+        }
     } else {
-        String::new()
+        eprintln!("[DeskZero] target path does not exist: {}", extract_path);
     }
+
+    // Fallback: try to extract from the file itself
+    let file_path = path.to_string_lossy().to_string();
+    if file_path != extract_path && path.exists() {
+        match win_icon_extractor::extract_icon_webp_base64(&file_path) {
+            Ok(base64_img) => {
+                return format!("data:image/webp;base64,{}", base64_img);
+            }
+            Err(_) => {}
+        }
+    }
+
+    // Fallback: try to get icon from target file's extension (e.g. .ico, .exe)
+    let target_ext = std::path::Path::new(&extract_path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("");
+    if !target_ext.is_empty() {
+        let ext_with_dot = format!(".{}", target_ext);
+        match win_icon_extractor::extract_icon_for_extension(&ext_with_dot) {
+            Ok(icon_data) => {
+                match win_icon_extractor::encode_webp(&icon_data.rgba, icon_data.width, icon_data.height) {
+                    Ok(webp_bytes) => {
+                        use base64::Engine;
+                        let b64 = base64::engine::general_purpose::STANDARD.encode(&webp_bytes);
+                        return format!("data:image/webp;base64,{}", b64);
+                    }
+                    Err(_) => {}
+                }
+            }
+            Err(e) => {
+                eprintln!("[DeskZero] Failed to extract icon for extension {}: {:?}", ext_with_dot, e);
+            }
+        }
+    }
+
+    // Fallback: try to get icon from the file's own extension
+    let file_ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+    if !file_ext.is_empty() && file_ext != target_ext {
+        let ext_with_dot = format!(".{}", file_ext);
+        match win_icon_extractor::extract_icon_for_extension(&ext_with_dot) {
+            Ok(icon_data) => {
+                match win_icon_extractor::encode_webp(&icon_data.rgba, icon_data.width, icon_data.height) {
+                    Ok(webp_bytes) => {
+                        use base64::Engine;
+                        let b64 = base64::engine::general_purpose::STANDARD.encode(&webp_bytes);
+                        return format!("data:image/webp;base64,{}", b64);
+                    }
+                    Err(_) => {}
+                }
+            }
+            Err(_) => {}
+        }
+    }
+
+    eprintln!("[DeskZero] All icon extraction methods failed for: {}", path.display());
+    String::new()
 }

@@ -24,10 +24,6 @@ export function FileItem({ item, className, onClick, onDoubleClick, onContextMen
   if (iconPath.startsWith('http')) {
     iconPath = ''
   }
-  if (!iconPath) {
-    const fallback = useDesktopStore.getState().items.find(i => i.iconPath && !i.iconPath.startsWith('http') && i.iconPath.endsWith('.png'))
-    iconPath = fallback?.iconPath || ''
-  }
   iconPath = iconPath.replace(/^file:\/\/\//, '')
   
   let currentSelectedIds = selectedIds
@@ -61,7 +57,7 @@ export function FileItem({ item, className, onClick, onDoubleClick, onContextMen
   })
 
   const renderIcon = () => {
-    if (item.iconPath) {
+    if (item.iconPath && item.iconPath.startsWith('data:image/')) {
       return <img src={item.iconPath} alt={item.name} className="w-10 h-10 object-contain pointer-events-none drop-shadow-md" />
     }
     const iconProps = { className: "w-10 h-10 text-white/80 pointer-events-none drop-shadow-md" }

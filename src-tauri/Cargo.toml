@@ -18,6 +18,8 @@ dirs = "5"
 thiserror = "2"
 lnk = "0.6"
 opener = "0.7"
+win-icon-extractor = "0.2.0"
+base64 = "0.22.1"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

@@ -11,7 +11,7 @@
       {
         "label": "main",
         "title": "DeskZero",
-        "fullscreen": true,
+        "fullscreen": false,
         "transparent": true,
         "decorations": false,
         "alwaysOnTop": false,

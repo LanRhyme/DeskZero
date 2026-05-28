@@ -49,11 +49,19 @@ pub fn scan_desktop_icons() -> Result<Vec<Item>, String> {
                 None
             };
 
+            let mut icon_path = String::new();
+            
+            // Try to extract icon based on target path or file path
+            let extract_path = target_path.as_ref().map(|s| s.clone()).unwrap_or_else(|| path.to_string_lossy().to_string());
+            if let Ok(base64_img) = win_icon_extractor::extract_icon_webp_base64(&extract_path) {
+                icon_path = format!("data:image/webp;base64,{}", base64_img);
+            }
+
             items.push(Item {
                 id: uuid::Uuid::new_v4().to_string(),
                 name,
                 path: path.to_string_lossy().to_string(),
-                icon_path: String::new(),
+                icon_path,
                 item_type,
                 target_path,
                 is_in_container: false,

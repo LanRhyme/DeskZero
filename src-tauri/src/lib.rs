@@ -155,11 +155,11 @@ mod win_layer {
             let screen_height = GetSystemMetrics(SM_CYSCREEN);
             eprintln!("[DeskZero] Screen size: {}x{}", screen_width, screen_height);
             
-            // 4c: 设置窗口位置和大小（覆盖整个屏幕）
+            // 4c: 设置窗口位置和大小（覆盖整个屏幕，高度加1以避免Wallpaper Engine识别为全屏导致暂停）
             SetWindowPos(
                 hwnd as HWND,
                 HWND_TOP as HWND,
-                0, 0, screen_width, screen_height,
+                0, 0, screen_width, screen_height + 1,
                 SWP_SHOWWINDOW,
             );
             

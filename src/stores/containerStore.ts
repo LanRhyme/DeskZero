@@ -1,75 +1,95 @@
 import { create } from 'zustand'
+import { invoke } from '@tauri-apps/api/core'
 import type { Container, Position, Size } from '@/types/container'
-import * as containerService from '@/services/containerService'
+import type { Item } from '@/types/item'
 
 interface ContainerState {
   containers: Container[]
-  loading: boolean
+  isLoading: boolean
   error: string | null
-  loadContainers: () => Promise<void>
+
+  // Actions
+  fetchContainers: () => Promise<void>
   createContainer: (name: string, type: Container['type'], position: Position) => Promise<void>
-  updateContainer: (id: string, changes: { name?: string; position?: Position; size?: Size }) => Promise<void>
+  updateContainerPosition: (id: string, position: Position) => void
+  updateContainerSize: (id: string, size: Size) => void
   deleteContainer: (id: string) => Promise<void>
-  moveContainer: (id: string, position: Position) => Promise<void>
+  addItemToContainer: (containerId: string, item: Item) => void
+  removeItemFromContainer: (containerId: string, itemId: string) => void
 }
 
-export const useContainerStore = create<ContainerState>((set, get) => ({
+export const useContainerStore = create<ContainerState>((set) => ({
   containers: [],
-  loading: false,
+  isLoading: false,
   error: null,
 
-  loadContainers: async () => {
-    set({ loading: true, error: null })
+  fetchContainers: async () => {
+    set({ isLoading: true, error: null })
     try {
-      const containers = await containerService.getAllContainers()
-      set({ containers, loading: false })
-    } catch (err) {
-      set({ error: String(err), loading: false })
+      const containers = await invoke<Container[]>('get_all_containers')
+      set({ containers, isLoading: false })
+    } catch (err: any) {
+      set({ error: err.toString(), isLoading: false })
     }
   },
 
   createContainer: async (name, type, position) => {
     try {
-      const container = await containerService.createContainer(name, type, position)
-      set((state) => ({ containers: [...state.containers, container] }))
-    } catch (err) {
-      set({ error: String(err) })
+      const newContainer = await invoke<Container>('create_container', { name, type, position })
+      set((state) => ({ containers: [...state.containers, newContainer] }))
+    } catch (err: any) {
+      console.error(err)
     }
   },
 
-  updateContainer: async (id, changes) => {
-    try {
-      const updated = await containerService.updateContainer(id, changes)
-      set((state) => ({
-        containers: state.containers.map((c) => (c.id === id ? updated : c)),
-      }))
-    } catch (err) {
-      set({ error: String(err) })
-    }
+  updateContainerPosition: (id, position) => {
+    set((state) => ({
+      containers: state.containers.map(c => 
+        c.id === id ? { ...c, position } : c
+      )
+    }))
+    // Optional: invoke('update_container', ...)
+  },
+
+  updateContainerSize: (id, size) => {
+    set((state) => ({
+      containers: state.containers.map(c => 
+        c.id === id ? { ...c, size } : c
+      )
+    }))
   },
 
   deleteContainer: async (id) => {
     try {
-      await containerService.deleteContainer(id)
+      await invoke('delete_container', { id })
       set((state) => ({
-        containers: state.containers.filter((c) => c.id !== id),
+        containers: state.containers.filter(c => c.id !== id)
       }))
-    } catch (err) {
-      set({ error: String(err) })
+    } catch (err: any) {
+      console.error(err)
     }
   },
 
-  moveContainer: async (id, position) => {
+  addItemToContainer: (containerId, item) => {
     set((state) => ({
-      containers: state.containers.map((c) =>
-        c.id === id ? { ...c, position } : c
-      ),
+      containers: state.containers.map(c => {
+        if (c.id === containerId) {
+          const newItem = { ...item, isInContainer: true, containerId }
+          return { ...c, items: [...c.items, newItem] }
+        }
+        return c
+      })
     }))
-    try {
-      await containerService.updateContainer(id, { position })
-    } catch (err) {
-      set({ error: String(err) })
-      get().loadContainers()
-    }
   },
+
+  removeItemFromContainer: (containerId, itemId) => {
+    set((state) => ({
+      containers: state.containers.map(c => {
+        if (c.id === containerId) {
+          return { ...c, items: c.items.filter(i => i.id !== itemId) }
+        }
+        return c
+      })
+    }))
+  }
 }))

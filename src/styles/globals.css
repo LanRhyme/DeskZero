@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  user-select: none;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
 :root {
   --color-bg: rgba(243, 243, 243, 0.88);
   --color-bg-hover: rgba(249, 249, 249, 0.92);

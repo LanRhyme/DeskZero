@@ -37,10 +37,18 @@ export function GameContainer({ container }: GameContainerProps) {
 
   const { ref, pos, isDragging, listeners } = useDrag(container.position, {
     onDragEnd: (newPos) => {
-      // Free drag, no grid snapping for game containers
-      const safeX = Math.max(0, newPos.x)
-      const safeY = Math.max(0, newPos.y)
-      updateContainerPosition(container.id, { x: safeX, y: safeY })
+      // Snap to grid for GameContainer
+      const gw = settings.gridWidth || 80
+      const gh = settings.gridHeight || 104
+      const gx = settings.gridGapX ?? 20
+      const gy = settings.gridGapY ?? 20
+      const stepX = gw + gx
+      const stepY = gh + gy
+
+      const snapX = Math.round(Math.max(0, newPos.x - 20) / stepX) * stepX + 20
+      const snapY = Math.round(Math.max(0, newPos.y - 20) / stepY) * stepY + 20
+      
+      updateContainerPosition(container.id, { x: snapX, y: snapY })
     }
   })
 

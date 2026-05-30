@@ -135,7 +135,7 @@ export function Container({ container }: ContainerProps) {
         const gw = settings.gridWidth || 80
         const gx = settings.gridGapX ?? 20
         const stepX = gw + gx
-        const snapX = Math.round(Math.max(0, (pos.x + finalOffsetX) - 20) / stepX) * stepX + 20
+        const snapX = Math.round(Math.max(0, (pos.x + finalOffsetX) - 10) / stepX) * stepX + 10
         updateContainerPosition(container.id, { x: snapX, y: pos.y })
       }
 

@@ -69,9 +69,9 @@ function findEmptySlot(x: number, y: number, items: DesktopItem[]): { x: number,
   const screenW = window?.screen?.width ?? window?.innerWidth ?? 1920
   const screenH = window?.screen?.height ?? window?.innerHeight ?? 1080
   
-  // Snap to grid first (with 20px padding from top/left)
-  let targetX = Math.round(Math.max(0, x - 20) / stepX) * stepX + 20
-  let targetY = Math.round(Math.max(0, y - 20) / stepY) * stepY + 20
+  // Snap to grid first (with 10px padding from top/left)
+  let targetX = Math.round(Math.max(0, x - 10) / stepX) * stepX + 10
+  let targetY = Math.round(Math.max(0, y - 10) / stepY) * stepY + 10
 
   // Constrain target to screen (ensure at least grid.w/h is visible)
   targetX = Math.min(targetX, screenW - grid.w)
@@ -149,8 +149,8 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
       const fetchPromise = async () => {
         const items = await invoke<any[]>('scan_desktop_icons')
         
-        let currentX = 20
-        let currentY = 20
+        let currentX = 10
+        let currentY = 10
         const screenH = window?.screen?.height ?? window?.innerHeight ?? 1080
         const grid = getGridSize()
 
@@ -213,10 +213,10 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
             slot = savedLayout[item.name]
           } else {
             slot = findEmptySlot(currentX, currentY, normalizedItems)
-            currentY += grid.h
+            currentY += stepY
             if (currentY + grid.h > screenH) {
-              currentY = 20
-              currentX += grid.w
+              currentY = 10
+              currentX += stepX
             }
           }
           
@@ -447,8 +447,8 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
       const stepX = grid.w + grid.gapX
       const stepY = grid.h + grid.gapY
       
-      let currentX = 20
-      let currentY = 20
+      let currentX = 10
+      let currentY = 10
       const newLayout: Record<string, {x: number, y: number}> = {}
       const placedItems: DesktopItem[] = []
       
@@ -460,7 +460,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
         
         currentY = slot.y + stepY
         if (currentY + grid.h > screenH) {
-          currentY = 20
+          currentY = 10
           currentX = slot.x + stepX
         }
       })

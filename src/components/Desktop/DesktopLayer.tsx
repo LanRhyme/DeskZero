@@ -122,7 +122,7 @@ export default function DesktopLayer() {
         }
       } else if (e.ctrlKey && e.key === 'v') {
         e.preventDefault()
-        handlePaste(20, 20);
+        handlePaste();
       } else if (e.key === 'Delete') {
         e.preventDefault()
         const selectedIds = useDesktopStore.getState().selectedIds;
@@ -210,7 +210,7 @@ export default function DesktopLayer() {
     setMenuState({ visible: true, x: e.clientX, y: e.clientY })
   }, [])
 
-  const handlePaste = async (x: number, y: number) => {
+  const handlePaste = async (x?: number, y?: number) => {
     try {
       const { invoke } = await import('@tauri-apps/api/core')
       const targetDir = await invoke<string>('get_desktop_dir')

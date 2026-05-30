@@ -45,8 +45,8 @@ export function GameContainer({ container }: GameContainerProps) {
       const stepX = gw + gx
       const stepY = gh + gy
 
-      const snapX = Math.round(Math.max(0, newPos.x - 20) / stepX) * stepX + 20
-      const snapY = Math.round(Math.max(0, newPos.y - 20) / stepY) * stepY + 20
+      const snapX = Math.round(Math.max(0, newPos.x - 10) / stepX) * stepX + 10
+      const snapY = Math.round(Math.max(0, newPos.y - 10) / stepY) * stepY + 10
       
       updateContainerPosition(container.id, { x: snapX, y: snapY })
     }
@@ -126,7 +126,7 @@ export function GameContainer({ container }: GameContainerProps) {
         const gw = settings.gridWidth || 80
         const gx = settings.gridGapX ?? 20
         const stepX = gw + gx
-        const snapX = Math.round(Math.max(0, (pos.x + finalOffsetX) - 20) / stepX) * stepX + 20
+        const snapX = Math.round(Math.max(0, (pos.x + finalOffsetX) - 10) / stepX) * stepX + 10
         updateContainerPosition(container.id, { x: snapX, y: pos.y })
       }
 

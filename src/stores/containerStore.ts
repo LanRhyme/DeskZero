@@ -38,10 +38,17 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
   fetchContainers: async () => {
     set({ isLoading: true, error: null })
     try {
-      const containers = await invoke<Container[]>('get_all_containers')
-      set({ containers, isLoading: false })
+      const fetchPromise = invoke<Container[]>('get_all_containers')
+      const timeoutPromise = new Promise<Container[]>((_, reject) => 
+        setTimeout(() => reject(new Error("Timeout loading containers")), 5000)
+      )
+      const containers = await Promise.race([fetchPromise, timeoutPromise])
+      set({ containers })
     } catch (err: any) {
-      set({ error: err.toString(), isLoading: false })
+      console.error("fetchContainers error:", err)
+      set({ error: err.toString() })
+    } finally {
+      set({ isLoading: false })
     }
   },
 

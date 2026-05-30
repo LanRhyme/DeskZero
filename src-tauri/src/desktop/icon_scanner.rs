@@ -14,6 +14,8 @@ static ICON_CACHE: Lazy<Mutex<HashMap<String, CacheEntry>>> = Lazy::new(|| {
 struct CacheEntry {
     icon_data: String,
     mtime: u64,
+    #[serde(default)]
+    target_path: Option<String>,
 }
 
 fn get_cache_path() -> PathBuf {
@@ -115,26 +117,42 @@ pub fn scan_desktop_icons() -> Result<Vec<Item>, String> {
             ItemType::File
         };
 
-        let target_path = if item_type == ItemType::Shortcut {
-            crate::desktop::shortcut::resolve_shortcut_icon(&path)
-                .or_else(|| crate::desktop::shortcut::resolve_shortcut(&path).ok())
-        } else if item_type == ItemType::Url {
-            crate::desktop::shortcut::resolve_url_icon(&path)
-        } else {
-            None
-        };
-
         let mtime = get_file_mtime(&path);
         let size = get_file_size(&path);
         let cache_key = path.to_string_lossy().to_string();
 
-        let cached_icon = cache.get(&cache_key).and_then(|entry| {
+        let mut target_path = None;
+        let mut cached_icon = None;
+        let mut has_cached_target = false;
+
+        if let Some(entry) = cache.get(&cache_key) {
             if entry.mtime == mtime && !entry.icon_data.is_empty() {
-                Some(entry.icon_data.clone())
+                cached_icon = Some(entry.icon_data.clone());
+                target_path = entry.target_path.clone();
+                has_cached_target = true;
+            }
+        }
+
+        let needs_target = (item_type == ItemType::Shortcut || item_type == ItemType::Url) && (!has_cached_target || target_path.is_none());
+
+        if needs_target {
+            target_path = if item_type == ItemType::Shortcut {
+                crate::desktop::shortcut::resolve_shortcut_icon(&path)
+                    .or_else(|| crate::desktop::shortcut::resolve_shortcut(&path).ok())
+            } else if item_type == ItemType::Url {
+                crate::desktop::shortcut::resolve_url_icon(&path)
             } else {
                 None
+            };
+            
+            // Update cache entry if we just resolved an old cache's target path
+            if cached_icon.is_some() {
+                if let Some(entry) = cache.get_mut(&cache_key) {
+                    entry.target_path = target_path.clone();
+                }
+                cache_dirty = true;
             }
-        });
+        }
 
         prepared.push(PreparedEntry {
             path,
@@ -170,6 +188,7 @@ pub fn scan_desktop_icons() -> Result<Vec<Item>, String> {
             CacheEntry {
                 icon_data: icon.clone(),
                 mtime: prepared[idx].mtime,
+                target_path: prepared[idx].target_path.clone(),
             },
         );
         prepared[idx].cached_icon = Some(icon);

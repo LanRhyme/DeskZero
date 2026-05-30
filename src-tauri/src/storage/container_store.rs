@@ -22,8 +22,16 @@ pub fn load_containers() -> Result<Vec<Container>, String> {
     if !path.exists() {
         return Ok(Vec::new());
     }
+    
     let data = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    serde_json::from_str(&data).map_err(|e| e.to_string())
+    match serde_json::from_str(&data) {
+        Ok(containers) => Ok(containers),
+        Err(e) => {
+            eprintln!("[DeskZero] Failed to parse containers.json: {}", e);
+            // Fallback to backup if main file is corrupted
+            restore_from_backup().or_else(|_| Ok(Vec::new()))
+        }
+    }
 }
 
 pub fn save_containers(containers: &[Container]) -> Result<(), String> {

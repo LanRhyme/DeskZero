@@ -33,6 +33,7 @@ pub enum SelectedItemBackground {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[serde(default)]
 pub struct Settings {
     pub theme: Theme,
     pub accent_color: String,

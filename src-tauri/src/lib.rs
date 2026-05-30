@@ -263,6 +263,8 @@ pub fn run() {
             commands::container::delete_container,
             commands::desktop::scan_desktop_icons,
             commands::desktop::get_desktop_dir,
+            commands::desktop::get_desktop_layout,
+            commands::desktop::save_desktop_layout,
             commands::file::open_file,
             commands::file::rename_file,
             commands::file::delete_file,

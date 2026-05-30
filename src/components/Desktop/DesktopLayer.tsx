@@ -14,7 +14,7 @@ export default function DesktopLayer() {
   const containers = useContainerStore(state => state.containers)
   const fetchContainers = useContainerStore(state => state.fetchContainers)
   const createContainer = useContainerStore(state => state.createContainer)
-  const { items, fetchDesktopItems, clearSelection, setSelection, realignToGrid, sortDesktopItems, setWallpaper } = useDesktopStore()
+  const { items, isLoading, fetchDesktopItems, clearSelection, setSelection, realignToGrid, sortDesktopItems, setWallpaper } = useDesktopStore()
   const { settings } = useSettingsStore()
   const [menuState, setMenuState] = useState<{visible: boolean, x: number, y: number}>({ visible: false, x: 0, y: 0 })
   const [itemMenuState, setItemMenuState] = useState<{visible: boolean, x: number, y: number, paths: string[]}>({ visible: false, x: 0, y: 0, paths: [] })
@@ -41,9 +41,9 @@ export default function DesktopLayer() {
       prevGridHeight.current = settings.gridHeight
       prevGridGapX.current = settings.gridGapX
       prevGridGapY.current = settings.gridGapY
-      realignToGrid()
+      if (!isLoading) realignToGrid()
     }
-  }, [settings.gridWidth, settings.gridHeight, settings.gridGapX, settings.gridGapY, realignToGrid])
+  }, [settings.gridWidth, settings.gridHeight, settings.gridGapX, settings.gridGapY, realignToGrid, isLoading])
 
   useEffect(() => {
     const initData = async () => {
@@ -163,18 +163,32 @@ export default function DesktopLayer() {
     }
   }, [settings.wallpaperCompatible])
 
-  const placeNewFiles = (newFileNames: string[], x?: number, y?: number) => {
+  const placeNewFiles = async (newFileNames: string[], x?: number, y?: number) => {
     if (newFileNames.length === 0) return;
     if (x === undefined || y === undefined) return; // Fallback to sequential empty slot
     try {
-      const savedLayoutStr = localStorage.getItem('deskzero_layout')
-      const savedLayout: Record<string, {x: number, y: number}> = savedLayoutStr ? JSON.parse(savedLayoutStr) : {}
+      const { invoke } = await import('@tauri-apps/api/core')
+      let savedLayout: Record<string, {x: number, y: number}> = {}
+      try {
+        const result = await invoke('get_desktop_layout')
+        if (result && typeof result === 'object') savedLayout = result as any
+      } catch (e) {
+        const savedLayoutStr = localStorage.getItem('deskzero_layout')
+        if (savedLayoutStr) {
+          try {
+            const parsed = JSON.parse(savedLayoutStr)
+            if (parsed && typeof parsed === 'object') savedLayout = parsed
+          } catch(err) {}
+        }
+      }
+      savedLayout = savedLayout || {}
       
       for (const name of newFileNames) {
         savedLayout[name] = { x, y };
         x += 20;
         y += 20;
       }
+      await invoke('save_desktop_layout', { layout: savedLayout })
       localStorage.setItem('deskzero_layout', JSON.stringify(savedLayout))
     } catch (e) {
       console.warn("Failed to place new files", e)
@@ -400,6 +414,16 @@ export default function DesktopLayer() {
           />
         )}
 
+        {/* Loading Overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/40 backdrop-blur-md transition-opacity duration-300 pointer-events-none">
+            <div className="flex flex-col items-center gap-4 bg-white/90 dark:bg-[#1a1a1a]/90 px-8 py-6 rounded-2xl shadow-2xl border border-white/20 pointer-events-auto">
+              <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="text-[var(--color-text)] font-medium tracking-widest text-sm">正在加载桌面 / LOADING...</div>
+            </div>
+          </div>
+        )}
+
         {/* Create Prompt Popup */}
         {createPrompt && createPrompt.visible && (
           <div 
@@ -466,14 +490,27 @@ export default function DesktopLayer() {
                     // Migrate layout position
                     const oldItem = items.find(i => i.path === renamePrompt.targetPath);
                     if (oldItem && oldItem.position) {
-                      const savedLayoutStr = localStorage.getItem('deskzero_layout');
-                      const savedLayout = savedLayoutStr ? JSON.parse(savedLayoutStr) : {};
+                      let savedLayout: Record<string, {x: number, y: number}> = {}
+                      try {
+                        const result = await invoke('get_desktop_layout')
+                        if (result && typeof result === 'object') savedLayout = result as any
+                      } catch (e) {
+                        const savedLayoutStr = localStorage.getItem('deskzero_layout');
+                        if (savedLayoutStr) {
+                          try {
+                            const parsed = JSON.parse(savedLayoutStr)
+                            if (parsed && typeof parsed === 'object') savedLayout = parsed
+                          } catch(err) {}
+                        }
+                      }
+                      savedLayout = savedLayout || {}
                       
                       const utf8Bytes = new TextEncoder().encode(newPath);
                       const binaryStr = Array.from(utf8Bytes).map(b => String.fromCharCode(b)).join('');
                       const base64Id = btoa(binaryStr);
                       
                       savedLayout[base64Id] = savedLayout[oldItem.id] || oldItem.position;
+                      await invoke('save_desktop_layout', { layout: savedLayout })
                       localStorage.setItem('deskzero_layout', JSON.stringify(savedLayout));
                     }
 

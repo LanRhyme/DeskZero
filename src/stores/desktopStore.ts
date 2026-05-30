@@ -32,6 +32,15 @@ interface DesktopState {
 
 import { useSettingsStore } from './settingsStore'
 
+async function saveLayout(layout: Record<string, {x: number, y: number}>) {
+  try {
+    await invoke('save_desktop_layout', { layout })
+  } catch (e) {
+    console.error('Failed to save layout', e)
+  }
+  localStorage.setItem('deskzero_layout', JSON.stringify(layout))
+}
+
 function getGridSize() {
   const settings = useSettingsStore.getState().settings
   return { 
@@ -53,8 +62,8 @@ function findEmptySlot(x: number, y: number, items: DesktopItem[]): { x: number,
   const grid = getGridSize()
   const stepX = grid.w + grid.gapX
   const stepY = grid.h + grid.gapY
-  const screenW = typeof window !== 'undefined' ? window.innerWidth : 1920
-  const screenH = typeof window !== 'undefined' ? window.innerHeight : 1080
+  const screenW = window?.screen?.width ?? window?.innerWidth ?? 1920
+  const screenH = window?.screen?.height ?? window?.innerHeight ?? 1080
   
   // Snap to grid first (with 20px padding from top/left)
   let targetX = Math.round(Math.max(0, x - 20) / stepX) * stepX + 20
@@ -99,7 +108,7 @@ function findEmptySlot(x: number, y: number, items: DesktopItem[]): { x: number,
 
 export const useDesktopStore = create<DesktopState>((set, get) => ({
   items: [],
-  isLoading: false,
+  isLoading: true,
   error: null,
   selectedIds: new Set(),
   wallpaper: null,
@@ -109,26 +118,81 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
   fetchDesktopItems: async () => {
     set({ isLoading: true, error: null })
     try {
-      const items = await invoke<any[]>('scan_desktop_icons')
-      
-      let currentX = 20
-      let currentY = 20
-      const screenH = window.innerHeight
-      const grid = getGridSize()
+      const fetchPromise = async () => {
+        const items = await invoke<any[]>('scan_desktop_icons')
+        
+        let currentX = 20
+        let currentY = 20
+        const screenH = window?.screen?.height ?? window?.innerHeight ?? 1080
+        const grid = getGridSize()
 
-      const normalizedItems: DesktopItem[] = []
-      
-      const savedLayoutStr = localStorage.getItem('deskzero_layout')
-      const savedLayout: Record<string, {x: number, y: number}> = savedLayoutStr ? JSON.parse(savedLayoutStr) : {}
-      
-      const { useContainerStore } = await import('./containerStore')
-      const containers = useContainerStore.getState().containers
-      const containerItemIds = new Set<string>()
-      containers.forEach(c => c.items.forEach(i => containerItemIds.add(i.id)))
-      
-      for (const item of items) {
-        if (containerItemIds.has(item.id)) {
-          // Skip calculating layout for items in container, they won't be rendered here anyway
+        const normalizedItems: DesktopItem[] = []
+        
+        let savedLayout: Record<string, {x: number, y: number}> = {}
+        try {
+          const result = await invoke('get_desktop_layout')
+          if (result && typeof result === 'object') savedLayout = result as any
+        } catch (e) {
+          console.warn('Failed to get layout from backend, fallback to local', e)
+          const savedLayoutStr = localStorage.getItem('deskzero_layout')
+          if (savedLayoutStr) {
+            try {
+              const parsed = JSON.parse(savedLayoutStr)
+              if (parsed && typeof parsed === 'object') savedLayout = parsed
+            } catch(err) {}
+          }
+        }
+        savedLayout = savedLayout || {}
+        
+        const { useContainerStore } = await import('./containerStore')
+        const containers = useContainerStore.getState().containers
+        const containerItemIds = new Set<string>()
+        containers.forEach(c => c.items.forEach(i => containerItemIds.add(i.id)))
+        
+        // Sort items alphabetically (A-Z) for consistent initial layout
+        items.sort((a, b) => {
+          const nameA = (a.name || '').toLowerCase()
+          const nameB = (b.name || '').toLowerCase()
+          // Put System items (like This PC / Recycle Bin) first
+          const isSystemA = a.type === 'system' || a.item_type === 'System'
+          const isSystemB = b.type === 'system' || b.item_type === 'System'
+          if (isSystemA && !isSystemB) return -1
+          if (!isSystemA && isSystemB) return 1
+          return nameA.localeCompare(nameB)
+        })
+        
+        for (const item of items) {
+          if (containerItemIds.has(item.id)) {
+            // Skip calculating layout for items in container, they won't be rendered here anyway
+            normalizedItems.push({
+              id: item.id,
+              name: item.name,
+              path: item.path,
+              iconPath: item.iconPath || item.icon_path || '',
+              type: (item.type || item.item_type)?.toLowerCase() || 'file',
+              targetPath: item.targetPath || item.target_path,
+              isInContainer: true,
+              position: undefined,
+              size: item.size,
+              modifiedAt: item.modifiedAt || item.modified_at
+            })
+            continue
+          }
+
+          let slot: {x: number, y: number}
+          if (savedLayout[item.id]) {
+            slot = savedLayout[item.id]
+          } else if (savedLayout[item.name]) {
+            slot = savedLayout[item.name]
+          } else {
+            slot = findEmptySlot(currentX, currentY, normalizedItems)
+            currentY += grid.h
+            if (currentY + grid.h > screenH) {
+              currentY = 20
+              currentX += grid.w
+            }
+          }
+          
           normalizedItems.push({
             id: item.id,
             name: item.name,
@@ -136,57 +200,40 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
             iconPath: item.iconPath || item.icon_path || '',
             type: (item.type || item.item_type)?.toLowerCase() || 'file',
             targetPath: item.targetPath || item.target_path,
-            isInContainer: true,
-            position: undefined,
+            isInContainer: false,
+            position: slot,
             size: item.size,
             modifiedAt: item.modifiedAt || item.modified_at
           })
-          continue
         }
 
-        let slot: {x: number, y: number}
-        if (savedLayout[item.id]) {
-          slot = savedLayout[item.id]
-        } else if (savedLayout[item.name]) {
-          slot = savedLayout[item.name]
-        } else {
-          slot = findEmptySlot(currentX, currentY, normalizedItems)
-          currentY += grid.h
-          if (currentY + grid.h > screenH) {
-            currentY = 20
-            currentX += grid.w
+        // Save the updated layout to persist newly added items
+        const newLayout = normalizedItems.reduce((acc, i) => {
+          if (!i.isInContainer && i.position) {
+            acc[i.id] = i.position
           }
-        }
+          return acc
+        }, {} as Record<string, {x: number, y: number}>)
+        saveLayout(newLayout)
+
+        // Clean up selectedIds to remove deleted items
+        const newSelectedIds = new Set(Array.from(get().selectedIds).filter(id => normalizedItems.some(i => i.id === id)))
         
-        normalizedItems.push({
-          id: item.id,
-          name: item.name,
-          path: item.path,
-          iconPath: item.iconPath || item.icon_path || '',
-          type: (item.type || item.item_type)?.toLowerCase() || 'file',
-          targetPath: item.targetPath || item.target_path,
-          isInContainer: false,
-          position: slot,
-          size: item.size,
-          modifiedAt: item.modifiedAt || item.modified_at
-        })
+        return { normalizedItems, newSelectedIds }
       }
 
-      // Save the updated layout to persist newly added items
-      const newLayout = normalizedItems.reduce((acc, i) => {
-        if (!i.isInContainer && i.position) {
-          acc[i.id] = i.position
-        }
-        return acc
-      }, {} as Record<string, {x: number, y: number}>)
-      localStorage.setItem('deskzero_layout', JSON.stringify(newLayout))
+      const timeoutPromise = new Promise<{normalizedItems: DesktopItem[], newSelectedIds: Set<string>}>((_, reject) => 
+        setTimeout(() => reject(new Error("Timeout scanning desktop icons")), 10000)
+      )
 
-      // Clean up selectedIds to remove deleted items
-      const newSelectedIds = new Set(Array.from(get().selectedIds).filter(id => normalizedItems.some(i => i.id === id)))
+      const { normalizedItems, newSelectedIds } = await Promise.race([fetchPromise(), timeoutPromise])
 
-      set({ items: normalizedItems, selectedIds: newSelectedIds, isLoading: false })
+      set({ items: normalizedItems, selectedIds: newSelectedIds })
     } catch (err: any) {
-      set({ error: err.toString(), isLoading: false })
+      console.error("fetchDesktopItems error:", err)
+      set({ error: err.toString() })
+    } finally {
+      set({ isLoading: false })
     }
   },
 
@@ -199,7 +246,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
         if (!i.isInContainer && i.position) acc[i.id] = i.position;
         return acc;
       }, {} as Record<string, {x: number, y: number}>)
-      localStorage.setItem('deskzero_layout', JSON.stringify(newLayout))
+      saveLayout(newLayout)
       
       return { items: newItems }
     })
@@ -228,7 +275,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
         if (!i.isInContainer && i.position) acc[i.id] = i.position;
         return acc;
       }, {} as Record<string, {x: number, y: number}>)
-      localStorage.setItem('deskzero_layout', JSON.stringify(newLayout))
+      saveLayout(newLayout)
 
       return { items: newItems }
     })
@@ -277,7 +324,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
         if (!i.isInContainer && i.position) acc[i.id] = i.position;
         return acc;
       }, {} as Record<string, {x: number, y: number}>)
-      localStorage.setItem('deskzero_layout', JSON.stringify(newLayout))
+      saveLayout(newLayout)
 
       return { items: newItems, selectedIds: selection }
     })
@@ -297,7 +344,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
           if (!i.isInContainer && i.position) acc[i.id] = i.position;
           return acc;
         }, {} as Record<string, {x: number, y: number}>)
-        localStorage.setItem('deskzero_layout', JSON.stringify(newLayout))
+        saveLayout(newLayout)
         
         return { items: newItems }
       }
@@ -342,7 +389,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
         if (!i.isInContainer && i.position) acc[i.id] = i.position;
         return acc;
       }, {} as Record<string, {x: number, y: number}>);
-      localStorage.setItem('deskzero_layout', JSON.stringify(newLayout));
+      saveLayout(newLayout);
       
       return { items: newItems };
     })
@@ -369,7 +416,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
       })
       
       const grid = getGridSize()
-      const screenH = window.innerHeight
+      const screenH = window?.screen?.height ?? window?.innerHeight ?? 1080
       const stepX = grid.w + grid.gapX
       const stepY = grid.h + grid.gapY
       
@@ -388,7 +435,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
         }
       })
       
-      localStorage.setItem('deskzero_layout', JSON.stringify(newLayout))
+      saveLayout(newLayout)
       
       return { items: [...inContainerItems, ...itemsToMap] }
     })

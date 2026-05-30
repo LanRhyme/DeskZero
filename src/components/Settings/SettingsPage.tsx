@@ -336,6 +336,65 @@ export function SettingsPage() {
                   </div>
                 </div>
 
+                {/* 图标发光效果 */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">图标发光效果</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">为桌面图标添加柔和的发光效果（匹配图标颜色）</div>
+                  </div>
+                  <div 
+                    onClick={() => saveSettings({ iconGlow: !settings.iconGlow })}
+                    role="switch"
+                    aria-checked={!!settings.iconGlow}
+                    onKeyDown={(e) => e.key === ' ' && saveSettings({ iconGlow: !settings.iconGlow })}
+                    className={`w-10 h-5 rounded-full relative cursor-pointer ${settings.iconGlow ? 'bg-blue-500' : 'bg-black/20 dark:bg-white/20'}`}
+                  >
+                    <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 shadow-sm ${settings.iconGlow ? 'right-0.5' : 'left-0.5'}`}></div>
+                  </div>
+                </div>
+
+                {settings.iconGlow && (
+                  <>
+                    <div className="flex items-center justify-between pl-4">
+                      <div>
+                        <div className="font-medium text-sm">发光范围</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">调整发光效果的扩散程度</div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input 
+                          type="range" 
+                          min="2" 
+                          max="30" 
+                          step="1"
+                          value={settings.iconGlowRadius ?? 12} 
+                          onChange={(e) => saveSettings({ iconGlowRadius: parseInt(e.target.value) })}
+                          className="w-32"
+                        />
+                        <span className="w-12 text-right text-sm">{settings.iconGlowRadius ?? 12}px</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pl-4">
+                      <div>
+                        <div className="font-medium text-sm">发光强度</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">调整发光效果的透明度</div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input 
+                          type="range" 
+                          min="0.1" 
+                          max="1.0" 
+                          step="0.05"
+                          value={settings.iconGlowIntensity ?? 0.6} 
+                          onChange={(e) => saveSettings({ iconGlowIntensity: parseFloat(e.target.value) })}
+                          className="w-32"
+                        />
+                        <span className="w-12 text-right text-sm">{Math.round((settings.iconGlowIntensity ?? 0.6) * 100)}%</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 {/* 图标不透明度 */}
                 <div className="flex items-center justify-between">
                   <div>

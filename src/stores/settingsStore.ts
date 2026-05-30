@@ -30,6 +30,9 @@ const defaultSettings: Settings = {
   selectedItemBlur: false,
   globalBlur: true,
   fontSize: 12,
+  iconGlow: false,
+  iconGlowRadius: 12,
+  iconGlowIntensity: 0.6,
 }
 
 const applyTheme = (theme: Theme) => {

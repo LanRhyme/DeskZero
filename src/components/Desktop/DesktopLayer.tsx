@@ -43,8 +43,11 @@ export default function DesktopLayer() {
   }, [settings.gridWidth, settings.gridHeight, settings.gridGapX, settings.gridGapY, realignToGrid])
 
   useEffect(() => {
-    fetchContainers()
-    fetchDesktopItems()
+    const initData = async () => {
+      await fetchContainers()
+      await fetchDesktopItems()
+    }
+    initData()
     
     if (settings.wallpaperCompatible) {
       import('@tauri-apps/api/core').then(({ invoke }) => {

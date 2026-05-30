@@ -279,10 +279,28 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
         />
       )}
       <div 
-        style={{ width: currentIconSize + 8, height: currentIconSize + 8, opacity: settings.iconOpacity ?? 1.0 }}
+        style={{ 
+          width: currentIconSize + 8, 
+          height: currentIconSize + 8, 
+          opacity: settings.iconOpacity ?? 1.0,
+        }}
         className="flex items-center justify-center relative pointer-events-none shrink-0"
       >
-        {renderIcon()}
+        {settings.iconGlow && (
+          <div 
+            className="absolute inset-0 flex items-center justify-center"
+            style={{ 
+              filter: `blur(${settings.iconGlowRadius ?? 12}px)`,
+              opacity: settings.iconGlowIntensity ?? 0.6,
+              transform: 'scale(1.05)'
+            }}
+          >
+            {renderIcon()}
+          </div>
+        )}
+        <div className="relative z-10 flex items-center justify-center w-full h-full">
+          {renderIcon()}
+        </div>
         {item.type === 'shortcut' && !settings.hideShortcutBadge && (
           <div className="absolute -bottom-1 -left-1 bg-white rounded-sm p-0.5 shadow-sm">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-black">

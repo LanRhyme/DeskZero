@@ -44,6 +44,11 @@ function getGridSize() {
 
 // Find nearest empty slot using a spiral search
 function findEmptySlot(x: number, y: number, items: DesktopItem[]): { x: number, y: number } {
+  const settings = useSettingsStore.getState().settings
+  if (!settings.gridEnabled) {
+    return { x, y }
+  }
+
   const maxLoops = 50
   const grid = getGridSize()
   const stepX = grid.w + grid.gapX

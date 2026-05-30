@@ -57,6 +57,9 @@ pub struct Settings {
     pub hide_shortcut_badge: bool,
     pub icon_opacity: f64,
     pub text_opacity: f64,
+    pub icon_glow: bool,
+    pub icon_glow_radius: f64,
+    pub icon_glow_intensity: f64,
 }
 
 impl Default for Settings {
@@ -81,6 +84,9 @@ impl Default for Settings {
             hide_shortcut_badge: false,
             icon_opacity: 1.0,
             text_opacity: 1.0,
+            icon_glow: false,
+            icon_glow_radius: 12.0,
+            icon_glow_intensity: 0.6,
         }
     }
 }

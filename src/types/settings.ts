@@ -23,4 +23,7 @@ export interface Settings {
   hideShortcutBadge?: boolean
   iconOpacity?: number
   textOpacity?: number
+  iconGlow?: boolean
+  iconGlowRadius?: number
+  iconGlowIntensity?: number
 }

@@ -201,6 +201,10 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_drag::init())
         .setup(|app| {
+            if let Err(e) = crate::storage::init() {
+                eprintln!("[DeskZero] Storage initialization failed: {}", e);
+            }
+
             let app_handle = app.handle().clone();
             crate::desktop::watcher::start_desktop_watcher(app_handle);
 

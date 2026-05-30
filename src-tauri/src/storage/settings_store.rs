@@ -1,26 +1,20 @@
 use crate::models::Settings;
-use std::fs;
-use std::path::PathBuf;
-
-fn get_data_dir() -> PathBuf {
-    let mut path = dirs::data_dir().unwrap_or_else(|| PathBuf::from("."));
-    path.push("DeskZero");
-    fs::create_dir_all(&path).ok();
-    path
-}
-
-fn get_settings_path() -> PathBuf {
-    get_data_dir().join("settings.json")
-}
+use super::db::get_connection;
 
 pub fn load_settings() -> Result<Settings, String> {
-    let path = get_settings_path();
-    if !path.exists() {
+    let conn = get_connection().map_err(|e| e.to_string())?;
+    
+    let mut stmt = conn.prepare("SELECT value FROM settings WHERE key = ?1").map_err(|e| e.to_string())?;
+    let mut rows = stmt.query(["global"]).map_err(|e| e.to_string())?;
+    
+    let data = if let Some(row) = rows.next().map_err(|e| e.to_string())? {
+        row.get::<_, String>(0).unwrap_or_else(|_| "{}".to_string())
+    } else {
         return Ok(Settings::default());
-    }
-    let data = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    };
+
     // 使用serde_json::Value来处理缺少的字段
-    let mut value: serde_json::Value = serde_json::from_str(&data).map_err(|e| e.to_string())?;
+    let mut value: serde_json::Value = serde_json::from_str(&data).unwrap_or_else(|_| serde_json::json!({}));
 
     // 确保所有必需的字段都存在
     if let Some(obj) = value.as_object_mut() {
@@ -81,7 +75,13 @@ pub fn load_settings() -> Result<Settings, String> {
 }
 
 pub fn save_settings(settings: &Settings) -> Result<(), String> {
-    let path = get_settings_path();
-    let data = serde_json::to_string_pretty(settings).map_err(|e| e.to_string())?;
-    fs::write(&path, data).map_err(|e| e.to_string())
+    let conn = get_connection().map_err(|e| e.to_string())?;
+    let data = serde_json::to_string(settings).map_err(|e| e.to_string())?;
+    
+    conn.execute(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)",
+        ("global", &data),
+    ).map_err(|e| e.to_string())?;
+    
+    Ok(())
 }

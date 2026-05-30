@@ -26,4 +26,5 @@ export interface Settings {
   iconGlow?: boolean
   iconGlowRadius?: number
   iconGlowIntensity?: number
+  doubleClickHide?: boolean
 }

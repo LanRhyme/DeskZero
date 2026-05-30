@@ -61,6 +61,7 @@ pub struct Settings {
     pub icon_glow: bool,
     pub icon_glow_radius: f64,
     pub icon_glow_intensity: f64,
+    pub double_click_hide: bool,
 }
 
 impl Default for Settings {
@@ -88,6 +89,7 @@ impl Default for Settings {
             icon_glow: false,
             icon_glow_radius: 12.0,
             icon_glow_intensity: 0.6,
+            double_click_hide: true,
         }
     }
 }

@@ -33,6 +33,7 @@ const defaultSettings: Settings = {
   iconGlow: false,
   iconGlowRadius: 12,
   iconGlowIntensity: 0.6,
+  doubleClickHide: true,
 }
 
 const applyTheme = (theme: Theme) => {

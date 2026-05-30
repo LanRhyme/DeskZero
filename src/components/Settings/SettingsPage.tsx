@@ -80,13 +80,13 @@ export function SettingsPage() {
                     <div className="text-sm text-gray-500 dark:text-gray-400">在桌面空白处双击可快速隐藏或显示所有图标</div>
                   </div>
                   <div 
-                    onClick={() => handleToggle('doubleClickHide')}
+                    onClick={() => saveSettings({ doubleClickHide: !settings.doubleClickHide })}
                     role="switch"
-                    aria-checked={true}
-                    onKeyDown={(e) => e.key === ' ' && handleToggle('doubleClickHide')}
-                    className="w-10 h-5 bg-blue-500 rounded-full relative cursor-pointer"
+                    aria-checked={settings.doubleClickHide ?? true}
+                    onKeyDown={(e) => e.key === ' ' && saveSettings({ doubleClickHide: !settings.doubleClickHide })}
+                    className={`w-10 h-5 rounded-full relative cursor-pointer ${settings.doubleClickHide !== false ? 'bg-blue-500' : 'bg-black/20 dark:bg-white/20'}`}
                   >
-                    <div className="w-4 h-4 bg-white rounded-full absolute right-0.5 top-0.5 shadow-sm"></div>
+                    <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 shadow-sm ${settings.doubleClickHide !== false ? 'right-0.5' : 'left-0.5'}`}></div>
                   </div>
                 </div>
 

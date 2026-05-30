@@ -46,6 +46,9 @@ mod tests {
             target_path: None,
             is_in_container: true,
             container_id: Some("test-id".to_string()),
+            modified_at: None,
+            position: None,
+            size: None,
         };
 
         let container = Container {

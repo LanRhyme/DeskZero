@@ -14,7 +14,7 @@ export default function DesktopLayer() {
   const containers = useContainerStore(state => state.containers)
   const fetchContainers = useContainerStore(state => state.fetchContainers)
   const createContainer = useContainerStore(state => state.createContainer)
-  const { items, isLoading, fetchDesktopItems, clearSelection, setSelection, realignToGrid, sortDesktopItems, setWallpaper } = useDesktopStore()
+  const { items, isLoading, fetchDesktopItems, clearSelection, setSelection, realignToGrid, sortDesktopItems, setWallpaper, isIconsHidden, setIsIconsHidden } = useDesktopStore()
   const { settings } = useSettingsStore()
   const [menuState, setMenuState] = useState<{visible: boolean, x: number, y: number}>({ visible: false, x: 0, y: 0 })
   const [itemMenuState, setItemMenuState] = useState<{visible: boolean, x: number, y: number, paths: string[]}>({ visible: false, x: 0, y: 0, paths: [] })
@@ -350,6 +350,15 @@ export default function DesktopLayer() {
     setMarquee({ startX: e.clientX, startY: e.clientY, endX: e.clientX, endY: e.clientY })
   }
   
+  const onDoubleClick = (e: React.MouseEvent) => {
+    if (settings.doubleClickHide !== false) {
+      if ((e.target as HTMLElement).closest('.touch-none') || (e.target as HTMLElement).closest('.cursor-move')) {
+        return
+      }
+      setIsIconsHidden(!isIconsHidden)
+    }
+  }
+  
   const onPointerMove = (e: React.PointerEvent) => {
     if (!marquee) return
     setMarquee(prev => prev ? { ...prev, endX: e.clientX, endY: e.clientY } : null)
@@ -401,6 +410,7 @@ export default function DesktopLayer() {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onDoubleClick={onDoubleClick}
       >
         {marqueeRect && marqueeRect.width > 0 && marqueeRect.height > 0 && (
           <div 
@@ -536,17 +546,19 @@ export default function DesktopLayer() {
           </div>
         )}
         
-        <DesktopGrid>
-          {/* Render Desktop Items */}
-          {items.filter(i => !i.isInContainer).map(item => (
-            <FileItem key={item.id} item={item} />
-          ))}
-          
-          {/* Render Containers */}
-          {containers.map(container => (
-            <Container key={container.id} container={container} />
-          ))}
-        </DesktopGrid>
+        <div className={`w-full h-full transition-opacity duration-300 ${isIconsHidden && settings.doubleClickHide !== false ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          <DesktopGrid>
+            {/* Render Desktop Items */}
+            {items.filter(i => !i.isInContainer).map(item => (
+              <FileItem key={item.id} item={item} />
+            ))}
+            
+            {/* Render Containers */}
+            {containers.map(container => (
+              <Container key={container.id} container={container} />
+            ))}
+          </DesktopGrid>
+        </div>
 
         {menuState.visible && (
           <ContextMenu 

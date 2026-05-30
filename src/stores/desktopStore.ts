@@ -28,6 +28,9 @@ interface DesktopState {
   setSelection: (ids: string[]) => void
   wallpaper: string | null
   setWallpaper: (wallpaper: string | null) => void
+  
+  isIconsHidden: boolean
+  setIsIconsHidden: (hidden: boolean) => void
 }
 
 import { useSettingsStore } from './settingsStore'
@@ -112,8 +115,13 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
   error: null,
   selectedIds: new Set(),
   wallpaper: null,
+  isIconsHidden: localStorage.getItem('deskzero_icons_hidden') === 'true',
   
   setWallpaper: (wallpaper) => set({ wallpaper }),
+  setIsIconsHidden: (hidden) => {
+    localStorage.setItem('deskzero_icons_hidden', hidden ? 'true' : 'false')
+    set({ isIconsHidden: hidden })
+  },
 
   fetchDesktopItems: async () => {
     set({ isLoading: true, error: null })

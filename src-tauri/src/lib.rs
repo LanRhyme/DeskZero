@@ -49,6 +49,37 @@ mod win_layer {
         fn GetClassNameA(hWnd: HWND, lpClassName: *mut i8, nMaxCount: i32) -> i32;
         fn ShowWindow(hWnd: HWND, nCmdShow: i32) -> BOOL;
         fn GetClientRect(hWnd: HWND, lpRect: *mut RECT) -> BOOL;
+        fn GetParent(hWnd: HWND) -> HWND;
+    }
+
+    #[cfg(target_pointer_width = "64")]
+    extern "system" {
+        fn GetWindowLongPtrA(hWnd: HWND, nIndex: i32) -> isize;
+        fn SetWindowLongPtrA(hWnd: HWND, nIndex: i32, dwNewLong: isize) -> isize;
+    }
+
+    #[cfg(target_pointer_width = "32")]
+    extern "system" {
+        fn GetWindowLongA(hWnd: HWND, nIndex: i32) -> i32;
+        fn SetWindowLongA(hWnd: HWND, nIndex: i32, dwNewLong: i32) -> i32;
+    }
+
+    #[cfg(target_pointer_width = "64")]
+    fn get_window_long(hwnd: HWND, index: i32) -> isize {
+        unsafe { GetWindowLongPtrA(hwnd, index) }
+    }
+    #[cfg(target_pointer_width = "64")]
+    fn set_window_long(hwnd: HWND, index: i32, new_long: isize) -> isize {
+        unsafe { SetWindowLongPtrA(hwnd, index, new_long) }
+    }
+
+    #[cfg(target_pointer_width = "32")]
+    fn get_window_long(hwnd: HWND, index: i32) -> isize {
+        unsafe { GetWindowLongA(hwnd, index) as isize }
+    }
+    #[cfg(target_pointer_width = "32")]
+    fn set_window_long(hwnd: HWND, index: i32, new_long: isize) -> isize {
+        unsafe { SetWindowLongA(hwnd, index, new_long as i32) as isize }
     }
 
     const SWP_SHOWWINDOW: UINT = 0x0040;
@@ -159,37 +190,52 @@ mod win_layer {
                 eprintln!("[DeskZero] SetParent done, old parent: {:?}", old_parent);
             }
 
-            // 4b: 获取父窗口的物理尺寸以避免 DPI 缩放和多显示器坐标问题
-            let mut rect = RECT {
-                left: 0,
-                top: 0,
-                right: 0,
-                bottom: 0,
-            };
-            GetClientRect(target_parent, &mut rect);
-            let width = rect.right - rect.left;
-            let height = rect.bottom - rect.top;
-            eprintln!("[DeskZero] Parent client rect: {}x{}", width, height);
-
-            // 4c: 设置窗口位置和大小为相对父窗口 (0, 0)，高度加1以避免Wallpaper Engine识别为全屏导致暂停
-            SetWindowPos(
-                hwnd as HWND,
-                HWND_TOP as HWND,
-                0,
-                0,
-                width,
-                height - 1,
-                SWP_SHOWWINDOW,
-            );
-
-            // 4d: 显示窗口
-            ShowWindow(hwnd as HWND, SW_SHOW);
-
             // 4e: 设置焦点
             SetFocus(hwnd as HWND);
 
             eprintln!("[DeskZero] Successfully embedded into desktop layer!");
             true
+        }
+    }
+
+    /// 强制修复窗口样式和尺寸，需要在 Tauri window.show() 后调用
+    pub fn fix_window_styles(hwnd: isize) {
+        unsafe {
+            let sm_cxvirtualscreen = 78;
+            let sm_cyvirtualscreen = 79;
+            let sm_xvirtualscreen = 76;
+            let sm_yvirtualscreen = 77;
+            extern "system" { fn GetSystemMetrics(nIndex: i32) -> i32; }
+            let v_x = GetSystemMetrics(sm_xvirtualscreen);
+            let v_y = GetSystemMetrics(sm_yvirtualscreen);
+            let v_width = GetSystemMetrics(sm_cxvirtualscreen);
+            let v_height = GetSystemMetrics(sm_cyvirtualscreen);
+
+            let gwl_style = -16;
+            let ws_popup: isize = 0x80000000_u32 as isize;
+            let ws_child: isize = 0x40000000;
+            let ws_caption: isize = 0x00C00000;
+            let ws_thickframe: isize = 0x00040000;
+            let ws_sysmenu: isize = 0x00080000;
+            
+            let mut style = get_window_long(hwnd as HWND, gwl_style);
+            style &= !ws_popup;
+            style &= !ws_caption;
+            style &= !ws_thickframe;
+            style &= !ws_sysmenu;
+            style |= ws_child;
+            set_window_long(hwnd as HWND, gwl_style, style);
+
+            let swp_framechanged: UINT = 0x0020;
+            SetWindowPos(
+                hwnd as HWND,
+                HWND_TOP as HWND,
+                0, 
+                0,
+                v_width,
+                v_height - 1, // 关键：利用 Tauri 的全屏模式消除 8px 边框，但手动削减 1 像素以绕过壁纸引擎检测
+                SWP_SHOWWINDOW | swp_framechanged,
+            );
         }
     }
 }
@@ -223,6 +269,11 @@ pub fn run() {
 
                 // 在新线程中执行嵌入操作
                 std::thread::spawn(move || {
+                    // 开启 Tauri 全屏以彻底消除 Windows 隐形边框和拖拽栏
+                    let _ = window_clone.set_fullscreen(true);
+                    let _ = window_clone.set_decorations(false);
+                    let _ = window_clone.set_resizable(false);
+                    
                     // 等待窗口完全初始化
                     std::thread::sleep(std::time::Duration::from_millis(500));
                     
@@ -249,6 +300,12 @@ pub fn run() {
                         std::thread::sleep(std::time::Duration::from_millis(100));
                         let _ = window_clone.show();
                         eprintln!("[DeskZero] Window shown after successful embedding");
+                        
+                        // Tauri 的 show() 可能会覆盖我们在 embed 时设置的样式，
+                        // 导致重新出现 Windows 11 隐形边框。这里强制再次抹除边框并适应尺寸。
+                        std::thread::sleep(std::time::Duration::from_millis(100));
+                        win_layer::fix_window_styles(hwnd);
+                        eprintln!("[DeskZero] Window styles forcibly fixed after show()");
                     } else {
                         // 嵌入失败，仍然显示窗口（作为普通窗口）
                         eprintln!("[DeskZero] WARNING: Failed to embed after {} attempts, showing as normal window", max_retries);

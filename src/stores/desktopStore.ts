@@ -34,6 +34,7 @@ interface DesktopState {
 }
 
 import { useSettingsStore } from './settingsStore'
+import { useContainerStore } from './containerStore'
 
 async function saveLayout(layout: Record<string, {x: number, y: number}>) {
   try {
@@ -76,13 +77,32 @@ function findEmptySlot(x: number, y: number, items: DesktopItem[]): { x: number,
   targetX = Math.min(targetX, screenW - grid.w)
   targetY = Math.min(targetY, screenH - grid.h)
 
+  const containers = useContainerStore.getState().containers
+
+  const isOccupied = (checkX: number, checkY: number) => {
+    // Check intersection with other items (bounding box overlap)
+    const hitItem = items.some(i => {
+      if (i.isInContainer || !i.position) return false
+      return checkX < i.position.x + grid.w && checkX + grid.w > i.position.x &&
+             checkY < i.position.y + grid.h && checkY + grid.h > i.position.y
+    })
+    if (hitItem) return true
+
+    // Check intersection with containers
+    const hitContainer = containers.some(c => {
+      return checkX < c.position.x + c.size.width && checkX + grid.w > c.position.x &&
+             checkY < c.position.y + c.size.height && checkY + grid.h > c.position.y
+    })
+    return hitContainer
+  }
+
   let layer = 0
   let currentX = targetX
   let currentY = targetY
 
   while (layer < maxLoops) {
     if (layer === 0) {
-      if (!items.some(i => !i.isInContainer && i.position?.x === currentX && i.position?.y === currentY)) {
+      if (!isOccupied(currentX, currentY)) {
         return { x: currentX, y: currentY }
       }
       layer++
@@ -96,7 +116,7 @@ function findEmptySlot(x: number, y: number, items: DesktopItem[]): { x: number,
           const checkX = targetX + dx * stepX
           const checkY = targetY + dy * stepY
           if (checkX >= 0 && checkY >= 0 && checkX <= screenW - grid.w && checkY <= screenH - grid.h) {
-            if (!items.some(i => !i.isInContainer && i.position?.x === checkX && i.position?.y === checkY)) {
+            if (!isOccupied(checkX, checkY)) {
               return { x: checkX, y: checkY }
             }
           }
@@ -152,7 +172,6 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
         }
         savedLayout = savedLayout || {}
         
-        const { useContainerStore } = await import('./containerStore')
         const containers = useContainerStore.getState().containers
         const containerItemIds = new Set<string>()
         containers.forEach(c => c.items.forEach(i => containerItemIds.add(i.id)))
@@ -431,15 +450,18 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
       let currentX = 20
       let currentY = 20
       const newLayout: Record<string, {x: number, y: number}> = {}
+      const placedItems: DesktopItem[] = []
       
       itemsToMap.forEach(item => {
-        item.position = { x: currentX, y: currentY }
-        newLayout[item.id] = { x: currentX, y: currentY }
+        const slot = findEmptySlot(currentX, currentY, placedItems)
+        item.position = slot
+        newLayout[item.id] = slot
+        placedItems.push(item)
         
-        currentY += stepY
+        currentY = slot.y + stepY
         if (currentY + grid.h > screenH) {
           currentY = 20
-          currentX += stepX
+          currentX = slot.x + stepX
         }
       })
       

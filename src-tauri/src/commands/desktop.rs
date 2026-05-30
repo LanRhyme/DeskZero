@@ -7,3 +7,10 @@ pub async fn scan_desktop_icons() -> Result<Vec<Item>, String> {
         .await
         .map_err(|e| e.to_string())?
 }
+
+#[tauri::command]
+pub fn get_desktop_dir() -> Result<String, String> {
+    dirs::desktop_dir()
+        .map(|p| p.to_string_lossy().into_owned())
+        .ok_or_else(|| "找不到桌面目录".to_string())
+}

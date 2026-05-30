@@ -17,15 +17,19 @@ const defaultSettings: Settings = {
   theme: 'system',
   accentColor: '#0078d4',
   gridEnabled: true,
-  gridSize: 80,
+  gridWidth: 80,
+  gridHeight: 104,
+  gridGapX: 20,
+  gridGapY: 20,
   iconSize: 'medium',
   cornerRadius: 10,
   backgroundBlur: true,
-  wallpaperCompatible: true,
+  wallpaperCompatible: false,
   itemBackground: 'transparent',
   selectedItemBackground: 'white',
   selectedItemBlur: false,
   globalBlur: true,
+  fontSize: 12,
 }
 
 const applyTheme = (theme: Theme) => {

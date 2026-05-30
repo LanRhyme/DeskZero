@@ -9,4 +9,7 @@ export interface Item {
   targetPath?: string
   isInContainer: boolean
   containerId?: string
+  position?: { x: number; y: number }
+  size?: number
+  modifiedAt?: number
 }

@@ -18,23 +18,46 @@ interface DesktopState {
   moveItemToDesktop: (item: Item, x: number, y: number) => void
   removeItem: (id: string) => void
   updateItemPosition: (id: string, x: number, y: number) => void
-  moveSelectedItems: (draggedId: string, newX: number, newY: number) => void
+  moveSelectedItems: (draggedItemId: string, targetX: number, targetY: number) => void
+  swapItemsPosition: (id1: string, id2: string) => void
+  realignToGrid: () => void
+  sortDesktopItems: (by: 'name' | 'type' | 'date' | 'size') => void
   
   toggleSelection: (id: string, ctrlKey: boolean) => void
   clearSelection: () => void
   setSelection: (ids: string[]) => void
+  wallpaper: string | null
+  setWallpaper: (wallpaper: string | null) => void
 }
 
-const GRID_W = 85
-const GRID_H = 110
+import { useSettingsStore } from './settingsStore'
+
+function getGridSize() {
+  const settings = useSettingsStore.getState().settings
+  return { 
+    w: settings.gridWidth || 80, 
+    h: settings.gridHeight || 104,
+    gapX: settings.gridGapX ?? 20,
+    gapY: settings.gridGapY ?? 20
+  }
+}
 
 // Find nearest empty slot using a spiral search
 function findEmptySlot(x: number, y: number, items: DesktopItem[]): { x: number, y: number } {
   const maxLoops = 50
+  const grid = getGridSize()
+  const stepX = grid.w + grid.gapX
+  const stepY = grid.h + grid.gapY
+  const screenW = typeof window !== 'undefined' ? window.innerWidth : 1920
+  const screenH = typeof window !== 'undefined' ? window.innerHeight : 1080
   
   // Snap to grid first (with 20px padding from top/left)
-  let targetX = Math.round(Math.max(0, x - 20) / GRID_W) * GRID_W + 20
-  let targetY = Math.round(Math.max(0, y - 20) / GRID_H) * GRID_H + 20
+  let targetX = Math.round(Math.max(0, x - 20) / stepX) * stepX + 20
+  let targetY = Math.round(Math.max(0, y - 20) / stepY) * stepY + 20
+
+  // Constrain target to screen (ensure at least grid.w/h is visible)
+  targetX = Math.min(targetX, screenW - grid.w)
+  targetY = Math.min(targetY, screenH - grid.h)
 
   let layer = 0
   let currentX = targetX
@@ -53,9 +76,9 @@ function findEmptySlot(x: number, y: number, items: DesktopItem[]): { x: number,
     for (let dx = -layer; dx <= layer; dx++) {
       for (let dy = -layer; dy <= layer; dy++) {
         if (Math.abs(dx) === layer || Math.abs(dy) === layer) {
-          const checkX = targetX + dx * GRID_W
-          const checkY = targetY + dy * GRID_H
-          if (checkX >= 0 && checkY >= 0) {
+          const checkX = targetX + dx * stepX
+          const checkY = targetY + dy * stepY
+          if (checkX >= 0 && checkY >= 0 && checkX <= screenW - grid.w && checkY <= screenH - grid.h) {
             if (!items.some(i => !i.isInContainer && i.position?.x === checkX && i.position?.y === checkY)) {
               return { x: checkX, y: checkY }
             }
@@ -74,6 +97,9 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
   isLoading: false,
   error: null,
   selectedIds: new Set(),
+  wallpaper: null,
+  
+  setWallpaper: (wallpaper) => set({ wallpaper }),
 
   fetchDesktopItems: async () => {
     set({ isLoading: true, error: null })
@@ -83,22 +109,47 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
       let currentX = 20
       let currentY = 20
       const screenH = window.innerHeight
+      const grid = getGridSize()
 
       const normalizedItems: DesktopItem[] = []
       
       const savedLayoutStr = localStorage.getItem('deskzero_layout')
       const savedLayout: Record<string, {x: number, y: number}> = savedLayoutStr ? JSON.parse(savedLayoutStr) : {}
       
+      const { useContainerStore } = await import('./containerStore')
+      const containers = useContainerStore.getState().containers
+      const containerItemIds = new Set<string>()
+      containers.forEach(c => c.items.forEach(i => containerItemIds.add(i.id)))
+      
       for (const item of items) {
+        if (containerItemIds.has(item.id)) {
+          // Skip calculating layout for items in container, they won't be rendered here anyway
+          normalizedItems.push({
+            id: item.id,
+            name: item.name,
+            path: item.path,
+            iconPath: item.icon_path || '',
+            type: item.item_type?.toLowerCase() || 'file',
+            targetPath: item.target_path,
+            isInContainer: true,
+            position: undefined,
+            size: item.size,
+            modifiedAt: item.modified_at
+          })
+          continue
+        }
+
         let slot: {x: number, y: number}
         if (savedLayout[item.id]) {
           slot = savedLayout[item.id]
+        } else if (savedLayout[item.name]) {
+          slot = savedLayout[item.name]
         } else {
           slot = findEmptySlot(currentX, currentY, normalizedItems)
-          currentY += GRID_H
-          if (currentY + GRID_H > screenH) {
+          currentY += grid.h
+          if (currentY + grid.h > screenH) {
             currentY = 20
-            currentX += GRID_W
+            currentX += grid.w
           }
         }
         
@@ -110,7 +161,9 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
           type: item.item_type?.toLowerCase() || 'file',
           targetPath: item.target_path,
           isInContainer: false,
-          position: slot
+          position: slot,
+          size: item.size,
+          modifiedAt: item.modified_at
         })
       }
 
@@ -225,6 +278,28 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
     })
   },
   
+  swapItemsPosition: (id1: string, id2: string) => {
+    set((state) => {
+      const idx1 = state.items.findIndex(i => i.id === id1)
+      const idx2 = state.items.findIndex(i => i.id === id2)
+      if (idx1 !== -1 && idx2 !== -1) {
+        const newItems = [...state.items]
+        const tempPos = newItems[idx1].position
+        newItems[idx1].position = newItems[idx2].position
+        newItems[idx2].position = tempPos
+        
+        const newLayout = newItems.reduce((acc, i) => {
+          if (!i.isInContainer && i.position) acc[i.id] = i.position;
+          return acc;
+        }, {} as Record<string, {x: number, y: number}>)
+        localStorage.setItem('deskzero_layout', JSON.stringify(newLayout))
+        
+        return { items: newItems }
+      }
+      return state
+    })
+  },
+  
   toggleSelection: (id, ctrlKey) => {
     set((state) => {
       const newSet = new Set(ctrlKey ? state.selectedIds : [])
@@ -243,5 +318,74 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
   
   setSelection: (ids) => {
     set({ selectedIds: new Set(ids) })
+  },
+  
+  realignToGrid: () => {
+    set((state) => {
+      const newItems = state.items.map(item => ({ ...item }));
+      const placedItems: DesktopItem[] = [];
+      
+      for (const item of newItems) {
+        if (!item.isInContainer && item.position) {
+          const slot = findEmptySlot(item.position.x, item.position.y, placedItems);
+          item.position = slot;
+          placedItems.push({ ...item });
+        }
+      }
+      
+      const newLayout = newItems.reduce((acc, i) => {
+        if (!i.isInContainer && i.position) acc[i.id] = i.position;
+        return acc;
+      }, {} as Record<string, {x: number, y: number}>);
+      localStorage.setItem('deskzero_layout', JSON.stringify(newLayout));
+      
+      return { items: newItems };
+    })
+  },
+  
+  sortDesktopItems: (by) => {
+    set((state) => {
+      const itemsToMap = state.items.filter(i => !i.isInContainer)
+      const inContainerItems = state.items.filter(i => i.isInContainer)
+      
+      itemsToMap.sort((a, b) => {
+        switch (by) {
+          case 'name':
+            return a.name.localeCompare(b.name, 'zh-CN')
+          case 'type':
+            return a.type.localeCompare(b.type) || a.name.localeCompare(b.name, 'zh-CN')
+          case 'date':
+            return (b.modifiedAt || 0) - (a.modifiedAt || 0)
+          case 'size':
+            return (b.size || 0) - (a.size || 0)
+          default:
+            return 0
+        }
+      })
+      
+      const grid = getGridSize()
+      const screenH = window.innerHeight
+      const stepX = grid.w + grid.gapX
+      const stepY = grid.h + grid.gapY
+      
+      let currentX = 20
+      let currentY = 20
+      const newLayout: Record<string, {x: number, y: number}> = {}
+      
+      itemsToMap.forEach(item => {
+        item.position = { x: currentX, y: currentY }
+        newLayout[item.id] = { x: currentX, y: currentY }
+        
+        currentY += stepY
+        if (currentY + grid.h > screenH) {
+          currentY = 20
+          currentX += stepX
+        }
+      })
+      
+      localStorage.setItem('deskzero_layout', JSON.stringify(newLayout))
+      
+      return { items: [...inContainerItems, ...itemsToMap] }
+    })
   }
 }))

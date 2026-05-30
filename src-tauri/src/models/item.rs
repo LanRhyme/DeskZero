@@ -20,4 +20,7 @@ pub struct Item {
     pub target_path: Option<String>,
     pub is_in_container: bool,
     pub container_id: Option<String>,
+    pub position: Option<super::container::Position>,
+    pub size: Option<u64>,
+    pub modified_at: Option<u64>,
 }

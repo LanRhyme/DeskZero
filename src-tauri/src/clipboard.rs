@@ -23,6 +23,15 @@ pub fn get_files_from_clipboard() -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+pub fn check_clipboard_has_files() -> Result<bool, String> {
+    let result: Result<Vec<String>, _> = clipboard_win::get_clipboard(clipboard_win::formats::FileList);
+    match result {
+        Ok(paths) => Ok(!paths.is_empty()),
+        Err(_) => Ok(false)
+    }
+}
+
+#[tauri::command]
 pub async fn paste_files_to_desktop(paths: Vec<String>, target_dir: String) -> Result<Vec<String>, String> {
     if paths.is_empty() {
         return Ok(vec![]);

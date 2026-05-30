@@ -7,7 +7,10 @@ export interface Settings {
   theme: Theme
   accentColor: string
   gridEnabled: boolean
-  gridSize: number
+  gridWidth: number
+  gridHeight: number
+  gridGapX: number
+  gridGapY: number
   iconSize: IconSize
   cornerRadius: number
   backgroundBlur: boolean
@@ -16,4 +19,5 @@ export interface Settings {
   selectedItemBackground: SelectedItemBackground
   selectedItemBlur: boolean
   globalBlur: boolean
+  fontSize: number
 }

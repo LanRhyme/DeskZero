@@ -50,6 +50,12 @@ fn get_file_mtime(path: &std::path::Path) -> u64 {
         .unwrap_or(0)
 }
 
+fn get_file_size(path: &std::path::Path) -> u64 {
+    std::fs::metadata(path)
+        .map(|m| m.len())
+        .unwrap_or(0)
+}
+
 pub fn get_desktop_paths() -> Vec<PathBuf> {
     let mut paths = Vec::new();
 
@@ -71,6 +77,7 @@ struct PreparedEntry {
     item_type: ItemType,
     target_path: Option<String>,
     mtime: u64,
+    size: u64,
     cache_key: String,
     cached_icon: Option<String>,
 }
@@ -120,6 +127,7 @@ pub fn scan_desktop_icons() -> Result<Vec<Item>, String> {
         };
 
         let mtime = get_file_mtime(&path);
+        let size = get_file_size(&path);
         let cache_key = path.to_string_lossy().to_string();
 
         let cached_icon = cache.get(&cache_key).and_then(|entry| {
@@ -136,6 +144,7 @@ pub fn scan_desktop_icons() -> Result<Vec<Item>, String> {
             item_type,
             target_path,
             mtime,
+            size,
             cache_key,
             cached_icon,
         });
@@ -194,6 +203,9 @@ pub fn scan_desktop_icons() -> Result<Vec<Item>, String> {
                 target_path: entry.target_path,
                 is_in_container: false,
                 container_id: None,
+                position: None,
+                size: Some(entry.size),
+                modified_at: Some(entry.mtime),
             }
         })
         .collect();

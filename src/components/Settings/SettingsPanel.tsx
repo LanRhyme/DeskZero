@@ -94,18 +94,34 @@ export default function SettingsPanel({ onClose }: Props) {
           </div>
 
           <div>
-            <label className="text-sm font-medium block mb-1">网格大小</label>
+            <label className="text-sm font-medium block mb-1">网格宽度</label>
             <input
               type="range"
               min="40"
               max="160"
               step="10"
-              value={settings.gridSize}
-              onChange={(e) => saveSettings({ gridSize: Number(e.target.value) })}
+              value={settings.gridWidth}
+              onChange={(e) => saveSettings({ gridWidth: Number(e.target.value) })}
               className="w-full"
             />
             <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-              {settings.gridSize}px
+              {settings.gridWidth}px
+            </span>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium block mb-1">网格高度</label>
+            <input
+              type="range"
+              min="40"
+              max="160"
+              step="10"
+              value={settings.gridHeight}
+              onChange={(e) => saveSettings({ gridHeight: Number(e.target.value) })}
+              className="w-full"
+            />
+            <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+              {settings.gridHeight}px
             </span>
           </div>
         </div>

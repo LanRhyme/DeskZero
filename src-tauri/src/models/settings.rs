@@ -32,11 +32,19 @@ pub enum SelectedItemBackground {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Settings {
     pub theme: Theme,
     pub accent_color: String,
     pub grid_enabled: bool,
-    pub grid_size: u32,
+    #[serde(rename = "gridWidth")]
+    pub grid_width: u32,
+    #[serde(rename = "gridHeight")]
+    pub grid_height: u32,
+    #[serde(rename = "gridGapX")]
+    pub grid_gap_x: u32,
+    #[serde(rename = "gridGapY")]
+    pub grid_gap_y: u32,
     pub icon_size: IconSize,
     pub corner_radius: f64,
     pub background_blur: bool,
@@ -45,6 +53,7 @@ pub struct Settings {
     pub selected_item_background: SelectedItemBackground,
     pub selected_item_blur: bool,
     pub global_blur: bool,
+    pub font_size: u32,
 }
 
 impl Default for Settings {
@@ -53,15 +62,19 @@ impl Default for Settings {
             theme: Theme::System,
             accent_color: "#0078d4".to_string(),
             grid_enabled: true,
-            grid_size: 80,
+            grid_width: 80,
+            grid_height: 104,
+            grid_gap_x: 20,
+            grid_gap_y: 20,
             icon_size: IconSize::Medium,
             corner_radius: 10.0,
             background_blur: true,
-            wallpaper_compatible: true,
+            wallpaper_compatible: false,
             item_background: ItemBackground::Transparent,
             selected_item_background: SelectedItemBackground::White,
             selected_item_blur: false,
             global_blur: true,
+            font_size: 12,
         }
     }
 }

@@ -14,8 +14,17 @@ export interface Size {
 
 export interface ContainerStyle {
   backgroundOpacity: number
+  backgroundColor?: string
   cornerRadius: number
   showHeader: boolean
+  layout?: 'grid' | 'list'
+  gridEnabled?: boolean
+  gridWidth?: number
+  gridHeight?: number
+  gridGapX?: number
+  gridGapY?: number
+  iconSize?: string
+  showDetails?: boolean
 }
 
 export interface Container {

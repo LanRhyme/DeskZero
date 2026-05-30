@@ -89,6 +89,101 @@ export function SettingsPage() {
                     <div className="w-4 h-4 bg-white rounded-full absolute right-0.5 top-0.5 shadow-sm"></div>
                   </div>
                 </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">桌面网格宽度</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">调整桌面图标的水平对齐间距</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="range" 
+                      min="60" 
+                      max="150" 
+                      step="5"
+                      value={settings.gridWidth} 
+                      onChange={(e) => saveSettings({ gridWidth: parseInt(e.target.value) })}
+                      className="w-32"
+                    />
+                    <span className="w-8 text-right text-sm">{settings.gridWidth}px</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">桌面网格高度</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">调整桌面图标的垂直对齐间距</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="range" 
+                      min="60" 
+                      max="150" 
+                      step="5"
+                      value={settings.gridHeight} 
+                      onChange={(e) => saveSettings({ gridHeight: parseInt(e.target.value) })}
+                      className="w-32"
+                    />
+                    <span className="w-8 text-right text-sm">{settings.gridHeight}px</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">水平网格间隙</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">调整网格之间的水平不可放置区域，应用名称可延伸至此</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      step="5"
+                      value={settings.gridGapX || 20} 
+                      onChange={(e) => saveSettings({ gridGapX: parseInt(e.target.value) })}
+                      className="w-32"
+                    />
+                    <span className="w-8 text-right text-sm">{settings.gridGapX || 0}px</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">垂直网格间隙</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">调整网格之间的垂直不可放置区域</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      step="5"
+                      value={settings.gridGapY || 20} 
+                      onChange={(e) => saveSettings({ gridGapY: parseInt(e.target.value) })}
+                      className="w-32"
+                    />
+                    <span className="w-8 text-right text-sm">{settings.gridGapY || 0}px</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">软件名称文字大小</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">调整桌面图标文字的显示大小</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="range" 
+                      min="10" 
+                      max="24" 
+                      step="1"
+                      value={settings.fontSize || 12} 
+                      onChange={(e) => saveSettings({ fontSize: parseInt(e.target.value) })}
+                      className="w-32"
+                    />
+                    <span className="w-8 text-right text-sm">{settings.fontSize || 12}px</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -204,6 +299,23 @@ export function SettingsPage() {
                     className={`w-10 h-5 rounded-full relative cursor-pointer ${settings.globalBlur ? 'bg-blue-500' : 'bg-black/20 dark:bg-white/20'}`}
                   >
                     <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 shadow-sm ${settings.globalBlur ? 'right-0.5' : 'left-0.5'}`}></div>
+                  </div>
+                </div>
+
+                {/* 壁纸模糊兼容模式 */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">壁纸毛玻璃兼容模式</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">如果毛玻璃效果无法穿透到桌面壁纸，请开启此选项</div>
+                  </div>
+                  <div 
+                    onClick={() => saveSettings({ wallpaperCompatible: !settings.wallpaperCompatible })}
+                    role="switch"
+                    aria-checked={settings.wallpaperCompatible}
+                    onKeyDown={(e) => e.key === ' ' && saveSettings({ wallpaperCompatible: !settings.wallpaperCompatible })}
+                    className={`w-10 h-5 rounded-full relative cursor-pointer ${settings.wallpaperCompatible ? 'bg-blue-500' : 'bg-black/20 dark:bg-white/20'}`}
+                  >
+                    <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 shadow-sm ${settings.wallpaperCompatible ? 'right-0.5' : 'left-0.5'}`}></div>
                   </div>
                 </div>
               </div>

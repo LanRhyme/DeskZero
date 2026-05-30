@@ -7,10 +7,11 @@ interface Position {
 }
 
 interface DragOptions {
-  onDragEnd?: (pos: Position) => void
+  onDragEnd?: (pos: Position, clientX: number, clientY: number) => void
   onDragStart?: () => void
   disabled?: boolean
   dragHandleRef?: RefObject<HTMLElement | null>
+  clampToBounds?: boolean
   nativeDragItemPaths?: string[]
   nativeDragIconPath?: string
 }
@@ -82,9 +83,11 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
       let nextX = dragInfo.current.elemStartX + dx;
       let nextY = dragInfo.current.elemStartY + dy;
       
-      // Constrain to screen bounds (assuming 80x96 approximate icon size)
-      nextX = Math.max(0, Math.min(nextX, window.innerWidth - 80));
-      nextY = Math.max(0, Math.min(nextY, window.innerHeight - 96));
+      // Constrain to screen bounds if clampToBounds is true (default true)
+      if (options?.clampToBounds !== false) {
+        nextX = Math.max(0, Math.min(nextX, window.innerWidth - 80));
+        nextY = Math.max(0, Math.min(nextY, window.innerHeight - 96));
+      }
 
       const newPos = {
         x: nextX,
@@ -135,7 +138,7 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
     
     if (dragInfo.current.hasMoved) {
       // Use ref for latest position, not stale React state
-      options?.onDragEnd?.(currentPos.current)
+      options?.onDragEnd?.(currentPos.current, e.clientX, e.clientY)
     }
   }
 

@@ -65,6 +65,18 @@ pub fn update_container(
 }
 
 #[tauri::command]
+pub fn update_container_full(container: Container) -> Result<(), String> {
+    let mut containers = container_store::load_containers()?;
+    if let Some(pos) = containers.iter().position(|c| c.id == container.id) {
+        let mut updated = container.clone();
+        updated.updated_at = chrono::Utc::now().timestamp_millis() as u64;
+        containers[pos] = updated;
+        container_store::save_containers(&containers)?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
 pub fn delete_container(id: String) -> Result<(), String> {
     let mut containers = container_store::load_containers()?;
     containers.retain(|c| c.id != id);

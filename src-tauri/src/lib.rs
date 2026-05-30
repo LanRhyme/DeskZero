@@ -32,8 +32,10 @@ mod win_layer {
 
     const SWP_SHOWWINDOW: UINT = 0x0040;
     const HWND_TOP: isize = 0;
-    const SM_CXSCREEN: i32 = 0;
-    const SM_CYSCREEN: i32 = 1;
+    const SM_XVIRTUALSCREEN: i32 = 76;
+    const SM_YVIRTUALSCREEN: i32 = 77;
+    const SM_CXVIRTUALSCREEN: i32 = 78;
+    const SM_CYVIRTUALSCREEN: i32 = 79;
     const SW_SHOW: i32 = 5;
 
     fn get_class_name(hwnd: HWND) -> String {
@@ -71,8 +73,6 @@ mod win_layer {
             eprintln!("[DeskZero] Sent 0x052C message, result: {}", result);
 
             // Step 3: 查找目标父窗口
-            // 优先查找 Progman 的直接子窗口中的 SHELLDLL_DefView
-            // 如果找不到，则查找 WorkerW 中的 SHELLDLL_DefView
             let mut target_parent: HWND = std::ptr::null_mut();
 
             // 3a: 先检查 Progman 的直接子窗口
@@ -152,16 +152,18 @@ mod win_layer {
                 eprintln!("[DeskZero] SetParent done, old parent: {:?}", old_parent);
             }
             
-            // 4b: 获取屏幕尺寸并设置窗口位置
-            let screen_width = GetSystemMetrics(SM_CXSCREEN);
-            let screen_height = GetSystemMetrics(SM_CYSCREEN);
-            eprintln!("[DeskZero] Screen size: {}x{}", screen_width, screen_height);
+            // 4b: 获取虚拟屏幕尺寸并设置窗口位置
+            let screen_x = GetSystemMetrics(SM_XVIRTUALSCREEN);
+            let screen_y = GetSystemMetrics(SM_YVIRTUALSCREEN);
+            let screen_width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+            let screen_height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+            eprintln!("[DeskZero] Virtual Screen: {}x{} at {},{}", screen_width, screen_height, screen_x, screen_y);
             
             // 4c: 设置窗口位置和大小（覆盖整个屏幕，高度加1以避免Wallpaper Engine识别为全屏导致暂停）
             SetWindowPos(
                 hwnd as HWND,
                 HWND_TOP as HWND,
-                0, 0, screen_width, screen_height - 1,
+                screen_x, screen_y, screen_width, screen_height - 1,
                 SWP_SHOWWINDOW,
             );
             
@@ -241,19 +243,28 @@ pub fn run() {
             commands::container::get_all_containers,
             commands::container::create_container,
             commands::container::update_container,
+            commands::container::update_container_full,
             commands::container::delete_container,
             commands::desktop::scan_desktop_icons,
+            commands::desktop::get_desktop_dir,
             commands::file::open_file,
             commands::file::rename_file,
             commands::file::delete_file,
             commands::file::move_file,
+            commands::file::create_folder,
+            commands::file::create_empty_file,
+            commands::file::open_terminal,
             commands::system::get_settings,
             commands::system::save_settings,
             commands::system::close_settings_window,
             commands::system::drag_settings_window,
+            commands::system::get_wallpaper_base64,
+            commands::system::get_wallpaper_engine_preview,
+            commands::system::capture_desktop_background,
             commands::file::trash_file,
             clipboard::copy_files_to_clipboard,
             clipboard::get_files_from_clipboard,
+            clipboard::check_clipboard_has_files,
             clipboard::paste_files_to_desktop,
             context_menu::show_context_menu,
         ])

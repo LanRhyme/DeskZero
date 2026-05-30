@@ -1,26 +1,46 @@
 import { motion } from 'framer-motion'
 import { cn } from '@/utils/cn'
 import type { Item } from '@/types/item'
+import type { ContainerStyle } from '@/types/container'
 import { File, Folder, Link } from 'lucide-react'
 import { useDesktopStore } from '@/stores/desktopStore'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { useContainerStore } from '@/stores/containerStore'
 import { invoke } from '@tauri-apps/api/core'
 import { useDrag } from '@/hooks/useDrag'
 
 interface FileItemProps {
   item: Item & { position?: { x: number, y: number } }
   className?: string
+  containerStyle?: ContainerStyle
   onClick?: (e: React.MouseEvent) => void
   onDoubleClick?: (e: React.MouseEvent) => void
   onContextMenu?: (e: React.MouseEvent) => void
 }
 
-export function FileItem({ item, className, onClick, onDoubleClick, onContextMenu }: FileItemProps) {
-  const { selectedIds, toggleSelection, setSelection, moveSelectedItems } = useDesktopStore()
+export function FileItem({ item, className, containerStyle, onClick, onDoubleClick, onContextMenu }: FileItemProps) {
+  const { selectedIds, toggleSelection, setSelection, moveSelectedItems, wallpaper } = useDesktopStore()
   const { settings } = useSettingsStore()
-  const isSelected = selectedIds.has(item.id)
   
-  const initialPos = item.position || { x: 0, y: 0 }
+  // Get container specific settings if inside a container
+  let cWidth = settings.gridWidth
+  let cHeight = settings.gridHeight
+  let cGapX = settings.gridGapX ?? 20
+  let cGapY = settings.gridGapY ?? 20
+  let isListView = false
+  let showDetails = false
+
+  if (item.isInContainer && containerStyle) {
+    cWidth = containerStyle.gridWidth || settings.gridWidth
+    cHeight = containerStyle.gridHeight || settings.gridHeight
+    cGapX = containerStyle.gridGapX ?? settings.gridGapX ?? 20
+    cGapY = containerStyle.gridGapY ?? settings.gridGapY ?? 20
+    isListView = containerStyle.layout === 'list'
+    showDetails = containerStyle.showDetails ?? false
+  }
+
+  const isSelected = selectedIds.has(item.id)
+  const initialPos = item.isInContainer ? { x: 0, y: 0 } : (item.position || { x: 0, y: 0 })
 
   let iconPath = item.iconPath || ''
   if (iconPath.startsWith('http')) {
@@ -34,7 +54,16 @@ export function FileItem({ item, className, onClick, onDoubleClick, onContextMen
   }
   
   const paths = Array.from(currentSelectedIds)
-    .map(id => useDesktopStore.getState().items.find(i => i.id === id)?.path)
+    .map(id => {
+       const dItem = useDesktopStore.getState().items.find(i => i.id === id)
+       if (dItem) return dItem.path
+       // If not in desktop store, it might be in container store
+       for (const c of useContainerStore.getState().containers) {
+         const cItem = c.items.find(i => i.id === id)
+         if (cItem) return cItem.path
+       }
+       return null
+    })
     .filter(Boolean) as string[]
     
   if (paths.length === 0) paths.push(item.path)
@@ -43,7 +72,8 @@ export function FileItem({ item, className, onClick, onDoubleClick, onContextMen
   const normalizedIcon = iconPath.replace(/\//g, '\\')
 
   const { ref, pos, isDragging, listeners } = useDrag(initialPos, {
-    disabled: item.isInContainer,
+    disabled: false,
+    clampToBounds: !item.isInContainer,
     nativeDragItemPaths: normalizedPaths,
     nativeDragIconPath: normalizedIcon,
     onDragStart: () => {
@@ -51,29 +81,115 @@ export function FileItem({ item, className, onClick, onDoubleClick, onContextMen
         setSelection([item.id])
       }
     },
-    onDragEnd: (newPos) => {
+    onDragEnd: (newPos, clientX, clientY) => {
+      // Use clientX/clientY for accurate absolute screen position hit testing
       if (!item.isInContainer) {
-        moveSelectedItems(item.id, newPos.x, newPos.y)
+        // Desktop -> Container check
+        const containers = useContainerStore.getState().containers
+        const targetContainer = containers.find(c =>
+          clientX >= c.position.x &&
+          clientX <= c.position.x + c.size.width &&
+          clientY >= c.position.y &&
+          clientY <= c.position.y + c.size.height
+        )
+        
+        if (targetContainer) {
+          useContainerStore.getState().addItemToContainer(targetContainer.id, { 
+            ...item, 
+            isInContainer: true,
+            containerId: targetContainer.id 
+          })
+          useDesktopStore.getState().removeItem(item.id)
+        } else {
+          // Check for desktop item swap
+          const dItems = useDesktopStore.getState().items.filter(i => !i.isInContainer && i.id !== item.id)
+          const dropTarget = dItems.find(i => 
+             i.position && 
+             clientX > i.position.x - 10 && clientX < i.position.x + cWidth + 10 &&
+             clientY > i.position.y - 10 && clientY < i.position.y + cHeight + 10
+          )
+          
+          if (dropTarget && dropTarget.position) {
+             useDesktopStore.getState().swapItemsPosition(item.id, dropTarget.id)
+          } else {
+             moveSelectedItems(item.id, newPos.x, newPos.y)
+          }
+        }
+      } else if (item.containerId) {
+        // Dragging inside a container
+        const container = useContainerStore.getState().containers.find(c => c.id === item.containerId)
+        if (container) {
+          // If dropped outside container bounds, release to desktop
+          if (
+            clientX < container.position.x - 50 || clientX > container.position.x + container.size.width + 50 ||
+            clientY < container.position.y - 50 || clientY > container.position.y + container.size.height + 50
+          ) {
+            useContainerStore.getState().removeItemFromContainer(container.id, item.id)
+            useDesktopStore.getState().moveItemToDesktop(item, clientX, clientY)
+            return
+          }
+
+          let targetId: string | null = null;
+          for (const i of container.items) {
+            if (i.id === item.id) continue;
+            const el = document.querySelector(`[data-item-id="${i.id}"]`);
+            if (el) {
+              const rect = el.getBoundingClientRect();
+              if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+                targetId = i.id;
+                break;
+              }
+            }
+          }
+          
+          if (targetId) {
+            const newItems = [...container.items]
+            const idx1 = newItems.findIndex(i => i.id === item.id)
+            const idx2 = newItems.findIndex(i => i.id === targetId)
+            if (idx1 !== -1 && idx2 !== -1) {
+              useContainerStore.getState().reorderItemsInContainer(container.id, idx1, idx2)
+            }
+          }
+        }
       }
     }
   })
 
+  // In list view, use cHeight as the item height, icon scales accordingly
+  const currentIconSize = isListView 
+    ? Math.max(16, cHeight - 16) 
+    : Math.round(Math.min(cWidth, cHeight) * 0.6)
+
   const renderIcon = () => {
     if (item.iconPath && item.iconPath.startsWith('data:image/')) {
-      return <img src={item.iconPath} alt={item.name} className="w-10 h-10 object-contain pointer-events-none drop-shadow-md" />
+      return <img src={item.iconPath} alt={item.name} 
+        style={{ width: currentIconSize, height: currentIconSize }}
+        className="object-contain pointer-events-none drop-shadow-md" />
     }
-    const iconProps = { className: "w-10 h-10 text-white/80 pointer-events-none drop-shadow-md" }
+    const iconProps = { 
+      style: { width: currentIconSize, height: currentIconSize },
+      className: "text-white/80 pointer-events-none drop-shadow-md" 
+    }
     switch (item.type) {
-      case 'folder': return <Folder {...iconProps} fill="currentColor" className="w-10 h-10 text-yellow-400 pointer-events-none drop-shadow-md" />
+      case 'folder': return <Folder {...iconProps} fill="currentColor" className={cn(iconProps.className, "text-yellow-400")} />
       case 'shortcut': return <Link {...iconProps} />
       case 'url': return <Link {...iconProps} />
       default: return <File {...iconProps} />
     }
   }
 
-  const layoutStyle = item.isInContainer ? {} : {
+  const layoutStyle = item.isInContainer ? {
+    width: isListView ? '100%' : cWidth,
+    height: cHeight,
+    flexDirection: isListView ? 'row' as const : 'column' as const, // Forced column for grid!
+    alignItems: 'center',
+    gap: isListView ? '8px' : '0px',
+  } : {
     position: 'absolute' as const,
     zIndex: isDragging ? 50 : (isSelected ? 20 : 'auto'),
+    width: cWidth,
+    height: cHeight,
+    flexDirection: 'column' as const,
   }
 
   const handleClick = (e: React.MouseEvent) => {
@@ -98,7 +214,6 @@ export function FileItem({ item, className, onClick, onDoubleClick, onContextMen
     e.stopPropagation()
     e.preventDefault()
     
-    // Select the item if it's not already selected
     if (!isSelected) {
       setSelection([item.id])
     }
@@ -106,18 +221,22 @@ export function FileItem({ item, className, onClick, onDoubleClick, onContextMen
     if (onContextMenu) {
       onContextMenu(e)
     } else {
-      // Get all selected item paths
       const currentPaths = isSelected ? paths : [item.path]
       const currentNormalized = currentPaths.map(p => p.replace(/\//g, '\\'))
       invoke('show_context_menu', { paths: currentNormalized, x: e.screenX, y: e.screenY })
     }
   }
 
+  const fontSize = settings.fontSize || 12
+  const textMaxHeight = cHeight + cGapY - currentIconSize - 16
+  const lines = Math.max(2, Math.floor(textMaxHeight / (fontSize * 1.2)))
+
   return (
     <motion.div
       ref={ref}
+      data-item-id={item.id}
       style={layoutStyle}
-      animate={item.isInContainer ? {} : { left: pos.x, top: pos.y }}
+      animate={item.isInContainer ? { x: isDragging ? pos.x : 0, y: isDragging ? pos.y : 0 } : { left: pos.x, top: pos.y }}
       transition={isDragging ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 30 }}
       {...listeners}
       whileHover={{ scale: 1.05 }}
@@ -126,14 +245,33 @@ export function FileItem({ item, className, onClick, onDoubleClick, onContextMen
       onDoubleClick={handleDoubleClick}
       onContextMenu={handleContextMenu}
       className={cn(
-        "flex flex-col items-center justify-start p-2 rounded-md w-20 h-24 select-none touch-none",
-        isDragging ? "opacity-50 cursor-grabbing" : "cursor-default hover:bg-[var(--item-hover-bg)]",
+        "flex p-2 rounded-md select-none touch-none relative overflow-visible",
+        isListView ? "text-left justify-start" : "justify-start",
+        isDragging && item.isInContainer ? "z-50 shadow-2xl opacity-80 bg-[var(--item-hover-bg)]" : "",
+        isDragging && !item.isInContainer ? "opacity-50 cursor-grabbing" : "cursor-default hover:bg-[var(--item-hover-bg)]",
         isSelected && "bg-[var(--item-selected-bg)] ring-1 ring-[var(--item-selected-ring)]",
-        isSelected && settings.selectedItemBlur && "selected-blur",
+        isSelected && settings.selectedItemBlur && !settings.wallpaperCompatible && "selected-blur",
         className
       )}
     >
-      <div className="w-12 h-12 flex items-center justify-center mb-1 relative pointer-events-none">
+      {isSelected && settings.selectedItemBlur && settings.wallpaperCompatible && wallpaper && (
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `url(${wallpaper})`,
+            backgroundAttachment: 'fixed',
+            backgroundPosition: 'top left',
+            backgroundSize: '100vw 100vh',
+            filter: 'blur(20px)',
+            zIndex: -1,
+            borderRadius: 'inherit',
+          }}
+        />
+      )}
+      <div 
+        style={{ width: currentIconSize + 8, height: currentIconSize + 8 }}
+        className="flex items-center justify-center relative pointer-events-none shrink-0"
+      >
         {renderIcon()}
         {item.type === 'shortcut' && (
           <div className="absolute -bottom-1 -left-1 bg-white rounded-sm p-0.5 shadow-sm">
@@ -144,15 +282,55 @@ export function FileItem({ item, className, onClick, onDoubleClick, onContextMen
           </div>
         )}
       </div>
-      <span 
-        className={cn(
-          "text-xs text-center break-words w-full line-clamp-2 drop-shadow-md pointer-events-none text-white",
-          isSelected && ""
+      <div className={cn(
+        "flex flex-col flex-1 min-w-0 pointer-events-none",
+        !isListView && "items-center mt-1 w-full"
+      )}>
+        <span 
+          className={cn(
+            "break-words drop-shadow-md text-white",
+            !isListView && "text-center"
+          )}
+          style={isListView ? {
+            fontSize: fontSize,
+            lineHeight: 1.2,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+          } : { 
+            textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+            fontSize: fontSize,
+            lineHeight: 1.2,
+            width: cWidth + cGapX,
+            marginLeft: -(cGapX / 2),
+            marginRight: -(cGapX / 2),
+            display: '-webkit-box',
+            WebkitBoxOrient: 'vertical',
+            WebkitLineClamp: lines,
+            overflow: 'hidden'
+          }}
+        >
+          {item.name}
+        </span>
+        {isListView && showDetails && (
+          <span 
+            className="text-[10px] text-white/50 truncate mt-0.5"
+            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
+          >
+            {[
+              item.modifiedAt && (() => {
+                const d = new Date(item.modifiedAt * 1000);
+                return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
+              })(),
+              item.type === 'folder' ? '文件夹' : (item.type === 'shortcut' ? '快捷方式' : '文件'),
+              item.size && item.type !== 'folder' && item.size > 0 
+                ? (item.size > 1048576 ? `${(item.size / 1048576).toFixed(1)} MB` : `${Math.round(item.size / 1024)} KB`)
+                : null
+            ].filter(Boolean).join(' • ')}
+          </span>
         )}
-        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
-      >
-        {item.name}
-      </span>
+      </div>
     </motion.div>
   )
 }

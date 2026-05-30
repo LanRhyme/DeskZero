@@ -35,3 +35,28 @@ pub async fn trash_file(path: String) -> Result<(), String> {
 pub fn move_file(from: String, to: String) -> Result<(), String> {
     std::fs::rename(&from, &to).map_err(|e| e.to_string())
 }
+
+#[tauri::command]
+pub fn create_folder(path: String) -> Result<(), String> {
+    std::fs::create_dir_all(path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn create_empty_file(path: String) -> Result<(), String> {
+    std::fs::File::create(path).map(|_| ()).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn open_terminal(shell: String, path: String) -> Result<(), String> {
+    let mut c = std::process::Command::new("cmd");
+    c.arg("/c").arg("start");
+    
+    if shell.to_lowercase() == "cmd" {
+        c.arg("cmd.exe").arg("/K").arg(format!("cd /d \"{}\"", path));
+    } else {
+        c.arg("powershell.exe").arg("-NoExit").arg("-Command").arg(format!("Set-Location -LiteralPath '{}'", path));
+    }
+    
+    c.spawn().map_err(|e| e.to_string())?;
+    Ok(())
+}

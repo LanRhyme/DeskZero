@@ -25,6 +25,7 @@ export interface ContainerStyle {
   gridGapY?: number
   iconSize?: string
   showDetails?: boolean
+  hideAppNames?: boolean
 }
 
 export interface Container {

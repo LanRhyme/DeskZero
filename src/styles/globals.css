@@ -79,6 +79,16 @@ body {
 }
 
 /* Custom Scrollbar */
+.hidden-native-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.hidden-native-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -87,9 +97,12 @@ body {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(150, 150, 150, 0.4);
+  background: transparent;
   border-radius: 4px;
 }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+.custom-scrollbar.is-scrolling::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.4);
+}
+.custom-scrollbar.is-scrolling::-webkit-scrollbar-thumb:hover {
   background: rgba(150, 150, 150, 0.6);
 }

@@ -29,6 +29,7 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
   let cGapY = settings.gridGapY ?? 20
   let isListView = false
   let showDetails = false
+  let hideAppNames = false
 
   if (item.isInContainer && containerStyle) {
     cWidth = containerStyle.gridWidth || settings.gridWidth
@@ -37,6 +38,7 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
     cGapY = containerStyle.gridGapY ?? settings.gridGapY ?? 20
     isListView = containerStyle.layout === 'list'
     showDetails = containerStyle.showDetails ?? false
+    hideAppNames = containerStyle.hideAppNames ?? false
   }
 
   const isSelected = selectedIds.has(item.id)
@@ -183,6 +185,7 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
     height: cHeight,
     flexDirection: isListView ? 'row' as const : 'column' as const, // Forced column for grid!
     alignItems: 'center',
+    justifyContent: (!isListView && hideAppNames) ? 'center' : undefined,
     gap: isListView ? '8px' : '0px',
   } : {
     position: 'absolute' as const,
@@ -284,7 +287,8 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
       </div>
       <div className={cn(
         "flex flex-col flex-1 min-w-0 pointer-events-none",
-        !isListView && "items-center mt-1 w-full"
+        !isListView && "items-center mt-1 w-full",
+        (!isListView && hideAppNames) && "hidden"
       )} style={{ opacity: settings.textOpacity ?? 1.0 }}>
         <span 
           className={cn(

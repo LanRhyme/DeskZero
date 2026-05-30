@@ -32,6 +32,31 @@ export function Container({ container }: ContainerProps) {
     }
   })
 
+  const [isScrolling, setIsScrolling] = useState(false)
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const thumbRef = useRef<HTMLDivElement>(null)
+
+  const handleScroll = () => {
+    setIsScrolling(true)
+    
+    if (scrollContainerRef.current && thumbRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current
+      if (scrollHeight > clientHeight) {
+        const scrollRatio = scrollTop / (scrollHeight - clientHeight)
+        const thumbHeight = Math.max((clientHeight / scrollHeight) * clientHeight, 20)
+        const maxThumbTop = clientHeight - thumbHeight
+        thumbRef.current.style.height = `${thumbHeight}px`
+        thumbRef.current.style.transform = `translateY(${scrollRatio * maxThumbTop}px)`
+      }
+    }
+
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current)
+    scrollTimeoutRef.current = setTimeout(() => {
+      setIsScrolling(false)
+    }, 1000)
+  }
+
   // Resize logic
   const [isResizing, setIsResizing] = useState(false)
   const [size, setSize] = useState(container.size)
@@ -121,7 +146,7 @@ export function Container({ container }: ContainerProps) {
           top: pos.y + resizePosOffset.y,
           width: size.width,
           height: size.height,
-          borderRadius: container.style.cornerRadius || 10,
+          borderRadius: container.style.cornerRadius ?? 10,
           zIndex: isDragging || isResizing ? 40 : 10,
           backgroundColor: (settings.wallpaperCompatible && settings.globalBlur && wallpaper) ? 'transparent' : customBackground,
           backdropFilter: (!settings.wallpaperCompatible && settings.globalBlur) ? 'var(--backdrop-blur)' : 'none',
@@ -204,20 +229,34 @@ export function Container({ container }: ContainerProps) {
         )}
 
         {/* Body - Relative for free layout */}
-        <div 
-          className={cn(
-            "flex-1 p-2 flex gap-1 overflow-y-auto relative custom-scrollbar",
-            layoutStyle
-          )}
-        >
-          {container.items.map(item => (
-            <FileItem key={item.id} item={item} containerStyle={container.style} />
-          ))}
-          {container.items.length === 0 && (
-            <div className="w-full h-full flex items-center justify-center text-sm text-[var(--color-text-secondary)] opacity-50 pointer-events-none">
-              Drag items here
-            </div>
-          )}
+        <div className="relative flex-1 overflow-hidden">
+          <div 
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className={cn(
+              "w-full h-full p-2 flex gap-1 overflow-y-auto relative hidden-native-scrollbar",
+              layoutStyle
+            )}
+          >
+            {container.items.map(item => (
+              <FileItem key={item.id} item={item} containerStyle={container.style} />
+            ))}
+            {container.items.length === 0 && (
+              <div className="w-full h-full flex items-center justify-center text-sm text-[var(--color-text-secondary)] opacity-50 pointer-events-none">
+                Drag items here
+              </div>
+            )}
+          </div>
+          
+          {/* Custom Animated Scrollbar Thumb */}
+          <div 
+            ref={thumbRef}
+            className={cn(
+              "absolute top-0 right-1 w-1.5 bg-black/40 dark:bg-white/40 rounded-full pointer-events-none",
+              "transition-opacity duration-300 ease-in-out",
+              isScrolling ? "opacity-100" : "opacity-0"
+            )}
+          />
         </div>
 
         {/* Resize Handle (Bottom Left) */}

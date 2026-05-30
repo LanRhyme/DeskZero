@@ -20,6 +20,8 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
   const [gridWidth, setGridWidth] = useState(container.style.gridWidth ?? 80)
   const [gridHeight, setGridHeight] = useState(container.style.gridHeight ?? 104)
   const [showDetails, setShowDetails] = useState(container.style.showDetails ?? false)
+  const [hideAppNames, setHideAppNames] = useState(container.style.hideAppNames ?? false)
+  const [cornerRadius, setCornerRadius] = useState(container.style.cornerRadius ?? 10)
 
   const handleSave = () => {
     if (name.trim() && name !== container.name) {
@@ -32,6 +34,8 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
       gridWidth,
       gridHeight,
       showDetails,
+      hideAppNames,
+      cornerRadius,
     })
     onClose()
   }
@@ -91,6 +95,24 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
                 className="w-full h-1 bg-black/10 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Corner Radius */}
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">圆角大小</label>
+          <div className="flex-1">
+            <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1.5">
+              <span>半径</span>
+              <span>{cornerRadius}px</span>
+            </div>
+            <input 
+              type="range" 
+              min="0" max="64" step="1"
+              value={cornerRadius}
+              onChange={(e) => setCornerRadius(parseInt(e.target.value) || 0)}
+              className="w-full h-1 bg-black/10 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+            />
           </div>
         </div>
 
@@ -155,6 +177,20 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] text-[10px] font-medium">H</span>
               </div>
             </div>
+          </div>
+          <div className="space-y-3 pt-4">
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <div className="relative flex items-center">
+                <input 
+                  type="checkbox" 
+                  checked={hideAppNames}
+                  onChange={(e) => setHideAppNames(e.target.checked)}
+                  className="peer sr-only"
+                />
+                <div className="w-8 h-4.5 bg-black/10 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[14px] peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-blue-500 transition-colors"></div>
+              </div>
+              <span className="text-xs font-medium text-[var(--color-text)] group-hover:text-blue-500 transition-colors">隐藏应用名称</span>
+            </label>
           </div>
         </motion.div>
 

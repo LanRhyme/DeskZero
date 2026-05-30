@@ -4,6 +4,7 @@ import { useContainerStore } from '@/stores/containerStore'
 import { X, LayoutGrid, List } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '@/utils/cn'
+import { useDesktopStore } from '@/stores/desktopStore'
 
 interface ContainerSettingsProps {
   container: Container
@@ -41,6 +42,10 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
   }
 
   const handleDelete = () => {
+    const { moveItemToDesktop } = useDesktopStore.getState()
+    container.items.forEach(item => {
+      moveItemToDesktop(item, container.position.x, container.position.y)
+    })
     deleteContainer(container.id)
     onClose()
   }

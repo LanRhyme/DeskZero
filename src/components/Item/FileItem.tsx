@@ -105,7 +105,11 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
             if (targetContainer.items.length > 0) {
               const existingItem = targetContainer.items[0]
               useContainerStore.getState().removeItemFromContainer(targetContainer.id, existingItem.id)
-              useDesktopStore.getState().items.find(i => i.id === existingItem.id)!.isInContainer = false
+              useDesktopStore.getState().moveItemToDesktop(
+                existingItem, 
+                targetContainer.position.x + targetContainer.size.width + 20, 
+                targetContainer.position.y
+              )
             }
             useContainerStore.getState().addItemToContainer(targetContainer.id, { 
               ...item, 

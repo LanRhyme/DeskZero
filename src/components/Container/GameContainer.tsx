@@ -8,6 +8,7 @@ import { useContainerStore } from '@/stores/containerStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { GameContainerSettings } from './GameContainerSettings'
 import { ContextMenu, type MenuItem } from '@/components/ContextMenu/ContextMenu'
+import { useDesktopStore } from '@/stores/desktopStore'
 import { invoke } from '@tauri-apps/api/core'
 
 interface GameContainerProps {
@@ -16,6 +17,7 @@ interface GameContainerProps {
 
 export function GameContainer({ container }: GameContainerProps) {
   const { updateContainerPosition, updateContainerSize, removeItemFromContainer, deleteContainer } = useContainerStore()
+  const { moveItemToDesktop } = useDesktopStore()
   const { settings } = useSettingsStore()
   
   const [resizePosOffset, setResizePosOffset] = useState({ x: 0, y: 0 })
@@ -149,6 +151,7 @@ export function GameContainer({ container }: GameContainerProps) {
     { label: '移除', icon: null, onClick: () => {
         container.items.forEach(item => {
            removeItemFromContainer(container.id, item.id)
+           moveItemToDesktop(item, pos.x, pos.y)
         })
         deleteContainer(container.id)
     }},

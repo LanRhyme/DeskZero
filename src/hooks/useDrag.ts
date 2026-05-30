@@ -142,6 +142,14 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
     }
   }
 
+  const onClickCapture = (e: React.MouseEvent) => {
+    if (dragInfo.current.hasMoved) {
+      e.stopPropagation()
+      e.preventDefault()
+      dragInfo.current.hasMoved = false
+    }
+  }
+
   return {
     ref,
     pos,
@@ -151,6 +159,7 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
       onPointerMove,
       onPointerUp,
       onPointerCancel: onPointerUp,
+      onClickCapture,
     }
   }
 }

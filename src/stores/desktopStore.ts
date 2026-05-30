@@ -153,6 +153,8 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
         let currentY = 10
         const screenH = window?.screen?.height ?? window?.innerHeight ?? 1080
         const grid = getGridSize()
+        const stepX = grid.w + grid.gapX
+        const stepY = grid.h + grid.gapY
 
         const normalizedItems: DesktopItem[] = []
         

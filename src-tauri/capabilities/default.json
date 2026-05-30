@@ -2,7 +2,10 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "默认权限配置",
-  "windows": ["main", "settings"],
+  "windows": [
+    "main",
+    "settings"
+  ],
   "permissions": [
     "core:default",
     "shell:allow-open",
@@ -13,6 +16,7 @@
     "core:window:allow-start-dragging",
     "core:webview:allow-create-webview-window",
     "core:webview:allow-webview-close",
-    "drag:default"
+    "drag:default",
+    "http:default"
   ]
 }

@@ -16,7 +16,10 @@ mod tests {
             name: "测试".to_string(),
             container_type: ContainerType::Normal,
             position: Position { x: 10.0, y: 20.0 },
-            size: Size { width: 200.0, height: 300.0 },
+            size: Size {
+                width: 200.0,
+                height: 300.0,
+            },
             items: vec![],
             style: ContainerStyle::default(),
             folder_path: None,

@@ -11,11 +11,16 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { useDesktopStore } from '@/stores/desktopStore'
 import { ContainerSettings } from './ContainerSettings'
 
+import { GameContainer } from './GameContainer'
+
 interface ContainerProps {
   container: ContainerType
 }
 
 export function Container({ container }: ContainerProps) {
+  if (container.type === 'game') {
+    return <GameContainer container={container} />
+  }
   const { updateContainerPosition, updateContainerSize } = useContainerStore()
   const { settings } = useSettingsStore()
   const { wallpaper } = useDesktopStore()
@@ -26,14 +31,21 @@ export function Container({ container }: ContainerProps) {
   const { ref, pos, isDragging, listeners } = useDrag(container.position, {
     dragHandleRef,
     onDragEnd: (newPos) => {
-      const snapX = Math.round(newPos.x / 20) * 20
-      const snapY = Math.round(newPos.y / 20) * 20
+      const gw = settings.gridWidth || 80
+      const gh = settings.gridHeight || 104
+      const gx = settings.gridGapX ?? 20
+      const gy = settings.gridGapY ?? 20
+      const stepX = gw + gx
+      const stepY = gh + gy
+
+      const snapX = Math.round(Math.max(0, newPos.x - 20) / stepX) * stepX + 20
+      const snapY = Math.round(Math.max(0, newPos.y - 20) / stepY) * stepY + 20
       updateContainerPosition(container.id, { x: snapX, y: snapY })
     }
   })
 
   const [isScrolling, setIsScrolling] = useState(false)
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const thumbRef = useRef<HTMLDivElement>(null)
 
@@ -68,7 +80,17 @@ export function Container({ container }: ContainerProps) {
   const sizeRef = useRef(size)
   sizeRef.current = size
   const commitResize = () => {
-    updateContainerSize(container.id, sizeRef.current)
+    const gw = settings.gridWidth || 80
+    const gh = settings.gridHeight || 104
+    const gx = settings.gridGapX ?? 20
+    const gy = settings.gridGapY ?? 20
+    const stepX = gw + gx
+    const stepY = gh + gy
+
+    const snapW = Math.max(1, Math.round((sizeRef.current.width + gx) / stepX)) * stepX - gx
+    const snapH = Math.max(1, Math.round((sizeRef.current.height + gy) / stepY)) * stepY - gy
+
+    updateContainerSize(container.id, { width: snapW, height: snapH })
   }
 
   const handleResizePointerDown = (e: React.PointerEvent, direction: 'br' | 'bl') => {
@@ -116,7 +138,11 @@ export function Container({ container }: ContainerProps) {
       })
       
       if (finalOffsetX !== 0) {
-        updateContainerPosition(container.id, { x: pos.x + finalOffsetX, y: pos.y })
+        const gw = settings.gridWidth || 80
+        const gx = settings.gridGapX ?? 20
+        const stepX = gw + gx
+        const snapX = Math.round(Math.max(0, (pos.x + finalOffsetX) - 20) / stepX) * stepX + 20
+        updateContainerPosition(container.id, { x: snapX, y: pos.y })
       }
 
       window.removeEventListener('pointermove', handlePointerMove)

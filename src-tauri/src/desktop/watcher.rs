@@ -1,4 +1,4 @@
-use notify::{RecommendedWatcher, RecursiveMode, Watcher, Config};
+use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use std::sync::mpsc::{channel, RecvTimeoutError};
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter};
@@ -9,7 +9,10 @@ pub fn start_desktop_watcher(app_handle: AppHandle) {
     std::thread::spawn(move || {
         let (tx, rx) = channel();
 
-        let mut watcher = match RecommendedWatcher::new(tx, Config::default().with_poll_interval(Duration::from_secs(2))) {
+        let mut watcher = match RecommendedWatcher::new(
+            tx,
+            Config::default().with_poll_interval(Duration::from_secs(2)),
+        ) {
             Ok(w) => w,
             Err(e) => {
                 eprintln!("[DeskZero] Failed to create watcher: {:?}", e);
@@ -40,7 +43,8 @@ pub fn start_desktop_watcher(app_handle: AppHandle) {
             // Block until first event arrives
             match rx.recv() {
                 Ok(Ok(event)) => {
-                    if !event.kind.is_modify() && !event.kind.is_create() && !event.kind.is_remove() {
+                    if !event.kind.is_modify() && !event.kind.is_create() && !event.kind.is_remove()
+                    {
                         continue;
                     }
                 }

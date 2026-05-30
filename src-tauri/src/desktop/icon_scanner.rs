@@ -1,7 +1,7 @@
-use std::path::PathBuf;
-use std::collections::HashMap;
-use std::sync::Mutex;
 use once_cell::sync::Lazy;
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::sync::Mutex;
 
 use crate::models::{Item, ItemType};
 
@@ -51,9 +51,7 @@ fn get_file_mtime(path: &std::path::Path) -> u64 {
 }
 
 fn get_file_size(path: &std::path::Path) -> u64 {
-    std::fs::metadata(path)
-        .map(|m| m.len())
-        .unwrap_or(0)
+    std::fs::metadata(path).map(|m| m.len()).unwrap_or(0)
 }
 
 pub fn get_desktop_paths() -> Vec<PathBuf> {
@@ -193,7 +191,7 @@ pub fn scan_desktop_icons() -> Result<Vec<Item>, String> {
 
             Item {
                 id: {
-                    use base64::{Engine as _, engine::general_purpose::STANDARD};
+                    use base64::{engine::general_purpose::STANDARD, Engine as _};
                     STANDARD.encode(entry.path.to_string_lossy().as_bytes())
                 },
                 name: entry.name,
@@ -213,27 +211,31 @@ pub fn scan_desktop_icons() -> Result<Vec<Item>, String> {
     // Add System Icons based on registry visibility
     let is_hidden = |clsid: &str, default_hidden: bool| -> bool {
         let hkcu = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER);
-        
+
         // 1. Check NewStartPanel
-        if let Ok(key) = hkcu.open_subkey(r#"Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel"#) {
+        if let Ok(key) = hkcu.open_subkey(
+            r#"Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel"#,
+        ) {
             if let Ok(val) = key.get_value::<u32, _>(clsid) {
                 return val == 1;
             }
         }
-        
+
         // 2. Check ClassicStartMenu
         if let Ok(key) = hkcu.open_subkey(r#"Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu"#) {
             if let Ok(val) = key.get_value::<u32, _>(clsid) {
                 return val == 1;
             }
         }
-        
+
         default_hidden
     };
 
     let get_stock_icon_base64 = |stock_icon: win_icon_extractor::StockIcon| -> String {
         if let Ok(icon_data) = win_icon_extractor::extract_stock_icon(stock_icon) {
-            if let Ok(webp_bytes) = win_icon_extractor::encode_webp(&icon_data.rgba, icon_data.width, icon_data.height) {
+            if let Ok(webp_bytes) =
+                win_icon_extractor::encode_webp(&icon_data.rgba, icon_data.width, icon_data.height)
+            {
                 use base64::Engine;
                 let b64 = base64::engine::general_purpose::STANDARD.encode(&webp_bytes);
                 return format!("data:image/webp;base64,{}", b64);
@@ -280,10 +282,7 @@ pub fn scan_desktop_icons() -> Result<Vec<Item>, String> {
     Ok(items)
 }
 
-fn extract_icon_for_path(
-    path: &std::path::Path,
-    target_path: &Option<String>,
-) -> String {
+fn extract_icon_for_path(path: &std::path::Path, target_path: &Option<String>) -> String {
     let extract_path = target_path
         .as_ref()
         .cloned()
@@ -297,7 +296,10 @@ fn extract_icon_for_path(
                 return format!("data:image/webp;base64,{}", base64_img);
             }
             Err(e) => {
-                eprintln!("[DeskZero] extract_icon_webp_base64 failed for {}: {:?}", extract_path, e);
+                eprintln!(
+                    "[DeskZero] extract_icon_webp_base64 failed for {}: {:?}",
+                    extract_path, e
+                );
             }
         }
     } else {
@@ -324,7 +326,11 @@ fn extract_icon_for_path(
         let ext_with_dot = format!(".{}", target_ext);
         match win_icon_extractor::extract_icon_for_extension(&ext_with_dot) {
             Ok(icon_data) => {
-                match win_icon_extractor::encode_webp(&icon_data.rgba, icon_data.width, icon_data.height) {
+                match win_icon_extractor::encode_webp(
+                    &icon_data.rgba,
+                    icon_data.width,
+                    icon_data.height,
+                ) {
                     Ok(webp_bytes) => {
                         use base64::Engine;
                         let b64 = base64::engine::general_purpose::STANDARD.encode(&webp_bytes);
@@ -334,7 +340,10 @@ fn extract_icon_for_path(
                 }
             }
             Err(e) => {
-                eprintln!("[DeskZero] Failed to extract icon for extension {}: {:?}", ext_with_dot, e);
+                eprintln!(
+                    "[DeskZero] Failed to extract icon for extension {}: {:?}",
+                    ext_with_dot, e
+                );
             }
         }
     }
@@ -345,7 +354,11 @@ fn extract_icon_for_path(
         let ext_with_dot = format!(".{}", file_ext);
         match win_icon_extractor::extract_icon_for_extension(&ext_with_dot) {
             Ok(icon_data) => {
-                match win_icon_extractor::encode_webp(&icon_data.rgba, icon_data.width, icon_data.height) {
+                match win_icon_extractor::encode_webp(
+                    &icon_data.rgba,
+                    icon_data.width,
+                    icon_data.height,
+                ) {
                     Ok(webp_bytes) => {
                         use base64::Engine;
                         let b64 = base64::engine::general_purpose::STANDARD.encode(&webp_bytes);
@@ -358,6 +371,9 @@ fn extract_icon_for_path(
         }
     }
 
-    eprintln!("[DeskZero] All icon extraction methods failed for: {}", path.display());
+    eprintln!(
+        "[DeskZero] All icon extraction methods failed for: {}",
+        path.display()
+    );
     String::new()
 }

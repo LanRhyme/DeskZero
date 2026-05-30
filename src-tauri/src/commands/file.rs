@@ -28,7 +28,9 @@ pub fn delete_file(path: String) -> Result<(), String> {
 pub async fn trash_file(path: String) -> Result<(), String> {
     tokio::task::spawn_blocking(move || {
         trash::delete(&path).map_err(|e| format!("Failed to move to trash: {}", e))
-    }).await.map_err(|e| e.to_string())?
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -43,20 +45,38 @@ pub fn create_folder(path: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn create_empty_file(path: String) -> Result<(), String> {
-    std::fs::File::create(path).map(|_| ()).map_err(|e| e.to_string())
+    std::fs::File::create(path)
+        .map(|_| ())
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn open_terminal(shell: String, path: String) -> Result<(), String> {
     let mut c = std::process::Command::new("cmd");
     c.arg("/c").arg("start");
-    
+
     if shell.to_lowercase() == "cmd" {
-        c.arg("cmd.exe").arg("/K").arg(format!("cd /d \"{}\"", path));
+        c.arg("cmd.exe")
+            .arg("/K")
+            .arg(format!("cd /d \"{}\"", path));
     } else {
-        c.arg("powershell.exe").arg("-NoExit").arg("-Command").arg(format!("Set-Location -LiteralPath '{}'", path));
+        c.arg("powershell.exe")
+            .arg("-NoExit")
+            .arg("-Command")
+            .arg(format!("Set-Location -LiteralPath '{}'", path));
     }
-    
+
     c.spawn().map_err(|e| e.to_string())?;
     Ok(())
+}
+
+#[tauri::command]
+pub fn read_shortcut_url(path: String) -> Result<String, String> {
+    let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    for line in content.lines() {
+        if line.starts_with("URL=") {
+            return Ok(line.trim_start_matches("URL=").to_string());
+        }
+    }
+    Err("Not a valid URL shortcut".to_string())
 }

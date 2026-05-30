@@ -1,6 +1,6 @@
+use crate::models::Container;
 use std::fs;
 use std::path::PathBuf;
-use crate::models::Container;
 
 fn get_data_dir() -> PathBuf {
     let mut path = dirs::data_dir().unwrap_or_else(|| PathBuf::from("."));

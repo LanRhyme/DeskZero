@@ -1,6 +1,6 @@
 import type { Item } from './item'
 
-export type ContainerType = 'normal' | 'mapping' | 'folder'
+export type ContainerType = 'normal' | 'mapping' | 'folder' | 'game'
 
 export interface Position {
   x: number
@@ -26,6 +26,7 @@ export interface ContainerStyle {
   iconSize?: string
   showDetails?: boolean
   hideAppNames?: boolean
+  coverImage?: string
 }
 
 export interface Container {

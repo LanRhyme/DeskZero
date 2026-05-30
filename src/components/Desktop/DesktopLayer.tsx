@@ -287,6 +287,17 @@ export default function DesktopLayer() {
         } catch(e: any) {
           window.alert('新建收纳盒失败: ' + String(e));
         }
+      }},
+      { label: '新建游戏容器', icon: <Icon icon="iconamoon:gamepad" />, onClick: async () => {
+        try {
+          await createContainer('新建游戏容器', 'game', { 
+            x: menuState.x, 
+            y: menuState.y 
+          })
+          fetchContainers()
+        } catch(e: any) {
+          window.alert('新建游戏容器失败: ' + String(e));
+        }
       }}
     ]},
     { divider: true, onClick: () => {} },

@@ -33,6 +33,7 @@ winreg = "0.56.0"
 xcap = "0.9.6"
 image = "0.25.10"
 windows = { version = "0.62.2", features = ["Win32_UI_Shell", "Win32_Foundation", "Win32_Graphics_Gdi", "Win32_System_Com", "Win32_UI_WindowsAndMessaging"] }
+tauri-plugin-http = "2"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

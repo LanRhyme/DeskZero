@@ -1,9 +1,9 @@
+mod clipboard;
 mod commands;
+mod context_menu;
 mod desktop;
 mod models;
 mod storage;
-mod clipboard;
-mod context_menu;
 
 use tauri::Manager;
 
@@ -28,9 +28,22 @@ mod win_layer {
 
     extern "system" {
         fn FindWindowA(lpClassName: LPCSTR, lpWindowName: LPCSTR) -> HWND;
-        fn FindWindowExA(hWndParent: HWND, hWndChildAfter: HWND, lpszClass: LPCSTR, lpszWindow: LPCSTR) -> HWND;
+        fn FindWindowExA(
+            hWndParent: HWND,
+            hWndChildAfter: HWND,
+            lpszClass: LPCSTR,
+            lpszWindow: LPCSTR,
+        ) -> HWND;
         fn SetParent(hWndChild: HWND, hWndNewParent: HWND) -> HWND;
-        fn SetWindowPos(hWnd: HWND, hWndInsertAfter: HWND, X: i32, Y: i32, cx: i32, cy: i32, uFlags: UINT) -> BOOL;
+        fn SetWindowPos(
+            hWnd: HWND,
+            hWndInsertAfter: HWND,
+            X: i32,
+            Y: i32,
+            cx: i32,
+            cy: i32,
+            uFlags: UINT,
+        ) -> BOOL;
         fn SetFocus(hWnd: HWND) -> HWND;
         fn SendMessageA(hWnd: HWND, Msg: UINT, wParam: usize, lParam: isize) -> isize;
         fn GetClassNameA(hWnd: HWND, lpClassName: *mut i8, nMaxCount: i32) -> i32;
@@ -59,7 +72,7 @@ mod win_layer {
     pub fn embed_into_icon_layer(hwnd: isize) -> bool {
         unsafe {
             eprintln!("[DeskZero] Starting desktop layer embedding...");
-            
+
             // Step 1: Find Progman (Program Manager)
             let progman = FindWindowA(
                 b"Progman\0".as_ptr() as LPCSTR,
@@ -83,12 +96,7 @@ mod win_layer {
             eprintln!("[DeskZero] Checking Progman's children...");
             let mut child = std::ptr::null_mut();
             loop {
-                child = FindWindowExA(
-                    progman,
-                    child,
-                    std::ptr::null(),
-                    std::ptr::null(),
-                );
+                child = FindWindowExA(progman, child, std::ptr::null(), std::ptr::null());
                 if child.is_null() {
                     break;
                 }
@@ -117,12 +125,7 @@ mod win_layer {
 
                     let mut child = std::ptr::null_mut();
                     loop {
-                        child = FindWindowExA(
-                            worker,
-                            child,
-                            std::ptr::null(),
-                            std::ptr::null(),
-                        );
+                        child = FindWindowExA(worker, child, std::ptr::null(), std::ptr::null());
                         if child.is_null() {
                             break;
                         }
@@ -133,7 +136,7 @@ mod win_layer {
                             break;
                         }
                     }
-                    
+
                     if !target_parent.is_null() {
                         break;
                     }
@@ -147,7 +150,7 @@ mod win_layer {
             }
 
             eprintln!("[DeskZero] Setting parent to: {:?}", target_parent);
-            
+
             // 4a: 设置父窗口
             let old_parent = SetParent(hwnd as HWND, target_parent);
             if old_parent.is_null() {
@@ -155,28 +158,36 @@ mod win_layer {
             } else {
                 eprintln!("[DeskZero] SetParent done, old parent: {:?}", old_parent);
             }
-            
+
             // 4b: 获取父窗口的物理尺寸以避免 DPI 缩放和多显示器坐标问题
-            let mut rect = RECT { left: 0, top: 0, right: 0, bottom: 0 };
+            let mut rect = RECT {
+                left: 0,
+                top: 0,
+                right: 0,
+                bottom: 0,
+            };
             GetClientRect(target_parent, &mut rect);
             let width = rect.right - rect.left;
             let height = rect.bottom - rect.top;
             eprintln!("[DeskZero] Parent client rect: {}x{}", width, height);
-            
+
             // 4c: 设置窗口位置和大小为相对父窗口 (0, 0)，高度加1以避免Wallpaper Engine识别为全屏导致暂停
             SetWindowPos(
                 hwnd as HWND,
                 HWND_TOP as HWND,
-                0, 0, width, height - 1,
+                0,
+                0,
+                width,
+                height - 1,
                 SWP_SHOWWINDOW,
             );
-            
+
             // 4d: 显示窗口
             ShowWindow(hwnd as HWND, SW_SHOW);
-            
+
             // 4e: 设置焦点
             SetFocus(hwnd as HWND);
-            
+
             eprintln!("[DeskZero] Successfully embedded into desktop layer!");
             true
         }
@@ -186,6 +197,7 @@ mod win_layer {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_drag::init())
         .setup(|app| {
@@ -258,6 +270,7 @@ pub fn run() {
             commands::file::create_folder,
             commands::file::create_empty_file,
             commands::file::open_terminal,
+            commands::file::read_shortcut_url,
             commands::system::get_settings,
             commands::system::save_settings,
             commands::system::close_settings_window,

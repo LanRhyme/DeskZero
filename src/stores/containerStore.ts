@@ -18,7 +18,7 @@ interface ContainerState {
 
   // Actions
   fetchContainers: () => Promise<void>
-  createContainer: (name: string, type: Container['type'], position: Position) => Promise<void>
+  createContainer: (name: string, type: Container['type'], position: Position) => Promise<Container>
   updateContainerPosition: (id: string, position: Position) => void
   updateContainerSize: (id: string, size: Size) => void
   updateContainerStyle: (id: string, style: Partial<Container['style']>) => void
@@ -61,6 +61,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
       set((state) => ({ containers: [...state.containers, newContainer] }))
       const updated = get().containers.find(c => c.id === newContainer.id)
       if (updated) persistContainer(updated)
+      return updated!
     } catch (err: any) {
       console.error(err)
       window.alert('创建收纳盒容器失败: ' + String(err))

@@ -8,6 +8,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { useContainerStore } from '@/stores/containerStore'
 import { invoke } from '@tauri-apps/api/core'
 import { useDrag } from '@/hooks/useDrag'
+import { fetch } from '@tauri-apps/plugin-http'
 
 interface FileItemProps {
   item: Item & { position?: { x: number, y: number } }
@@ -96,12 +97,58 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
         )
         
         if (targetContainer) {
-          useContainerStore.getState().addItemToContainer(targetContainer.id, { 
-            ...item, 
-            isInContainer: true,
-            containerId: targetContainer.id 
-          })
-          useDesktopStore.getState().removeItem(item.id)
+          if (targetContainer.type === 'game') {
+            if (item.type !== 'url' && item.type !== 'shortcut') {
+              window.alert('只能放置快捷方式')
+              return
+            }
+            if (targetContainer.items.length > 0) {
+              const existingItem = targetContainer.items[0]
+              useContainerStore.getState().removeItemFromContainer(targetContainer.id, existingItem.id)
+              useDesktopStore.getState().items.find(i => i.id === existingItem.id)!.isInContainer = false
+            }
+            useContainerStore.getState().addItemToContainer(targetContainer.id, { 
+              ...item, 
+              isInContainer: true,
+              containerId: targetContainer.id 
+            })
+            useDesktopStore.getState().removeItem(item.id)
+            
+            // Fetch cover
+            invoke<string>('read_shortcut_url', { path: item.path })
+              .then(async (targetUrl) => {
+                let coverUrl = ''
+                if (targetUrl.startsWith('steam://rungameid/')) {
+                  const appId = targetUrl.replace('steam://rungameid/', '').trim()
+                  coverUrl = `https://steamcdn-a.akamaihd.net/steam/apps/${appId}/library_600x900_2x.jpg`
+                } else if (targetUrl.includes('epicgames.launcher')) {
+                  const gameName = item.name.replace(/\.(url|lnk)$/i, '')
+                  try {
+                    const res = await fetch(`https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(gameName)}&l=english&cc=US`, { method: 'GET' })
+                    const data = await res.json()
+                    if (data.total > 0 && data.items && data.items.length > 0) {
+                      const appId = data.items[0].id
+                      coverUrl = `https://steamcdn-a.akamaihd.net/steam/apps/${appId}/library_600x900_2x.jpg`
+                    }
+                  } catch (e) {
+                    console.error('Failed to search Steam for Epic game cover', e)
+                  }
+                }
+                
+                if (coverUrl) {
+                  useContainerStore.getState().updateContainerStyle(targetContainer.id, { coverImage: coverUrl })
+                }
+              })
+              .catch(e => console.error('Failed to read shortcut url', e))
+
+          } else {
+            useContainerStore.getState().addItemToContainer(targetContainer.id, { 
+              ...item, 
+              isInContainer: true,
+              containerId: targetContainer.id 
+            })
+            useDesktopStore.getState().removeItem(item.id)
+          }
         } else {
           // Check for desktop item swap
           const dItems = useDesktopStore.getState().items.filter(i => !i.isInContainer && i.id !== item.id)

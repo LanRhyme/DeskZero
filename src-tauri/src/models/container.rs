@@ -6,6 +6,7 @@ pub enum ContainerType {
     Normal,
     Mapping,
     Folder,
+    Game,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -32,7 +33,10 @@ pub struct Size {
 
 impl Default for Size {
     fn default() -> Self {
-        Self { width: 200.0, height: 300.0 }
+        Self {
+            width: 200.0,
+            height: 300.0,
+        }
     }
 }
 
@@ -53,6 +57,7 @@ pub struct ContainerStyle {
     pub icon_size: Option<String>,
     pub show_details: Option<bool>,
     pub hide_app_names: Option<bool>,
+    pub cover_image: Option<String>,
 }
 
 impl Default for ContainerStyle {
@@ -71,6 +76,7 @@ impl Default for ContainerStyle {
             icon_size: None,
             show_details: None,
             hide_app_names: None,
+            cover_image: None,
         }
     }
 }
@@ -101,7 +107,10 @@ impl Default for Container {
             name: "New Container".to_string(),
             container_type: ContainerType::Normal,
             position: Position { x: 0.0, y: 0.0 },
-            size: Size { width: 200.0, height: 300.0 },
+            size: Size {
+                width: 200.0,
+                height: 300.0,
+            },
             items: Vec::new(),
             style: Default::default(),
             folder_path: None,

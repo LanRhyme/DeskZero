@@ -18,7 +18,10 @@ mod tests {
             name: "测试容器".to_string(),
             container_type: ContainerType::Normal,
             position: Position { x: 100.0, y: 200.0 },
-            size: Size { width: 200.0, height: 300.0 },
+            size: Size {
+                width: 200.0,
+                height: 300.0,
+            },
             items: vec![],
             style: ContainerStyle::default(),
             folder_path: None,
@@ -50,7 +53,10 @@ mod tests {
             name: "容器".to_string(),
             container_type: ContainerType::Normal,
             position: Position { x: 0.0, y: 0.0 },
-            size: Size { width: 200.0, height: 300.0 },
+            size: Size {
+                width: 200.0,
+                height: 300.0,
+            },
             items: vec![item],
             style: ContainerStyle::default(),
             folder_path: None,

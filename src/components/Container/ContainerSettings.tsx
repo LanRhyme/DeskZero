@@ -104,7 +104,7 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
           <div className="flex-1">
             <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1.5">
               <span>半径</span>
-              <span>{cornerRadius}px</span>
+              <span className="text-[var(--color-text)]">{cornerRadius}px</span>
             </div>
             <input 
               type="range" 

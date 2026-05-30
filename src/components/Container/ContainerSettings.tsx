@@ -5,6 +5,8 @@ import { X, LayoutGrid, List } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '@/utils/cn'
 import { useDesktopStore } from '@/stores/desktopStore'
+import { Slider } from '@/components/UI/Slider'
+import { NumberInput } from '@/components/UI/NumberInput'
 
 interface ContainerSettingsProps {
   container: Container
@@ -51,18 +53,18 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
   }
 
   return (
-    <div className="w-full transform overflow-hidden rounded-xl bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-3xl p-4 text-left align-middle shadow-2xl transition-all border border-black/5 dark:border-white/10 ring-1 ring-black/5">
-      <div className="text-base font-medium leading-6 text-[var(--color-text)] flex justify-between items-center mb-4">
-        <span>收纳盒设置 <span className="text-xs font-normal text-[var(--color-text-secondary)] opacity-70">({container.name})</span></span>
+    <div className="w-full transform overflow-hidden rounded-xl bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-3xl p-3 text-left align-middle shadow-2xl transition-all border border-black/5 dark:border-white/10 ring-1 ring-black/5">
+      <div className="text-sm font-medium leading-5 text-[var(--color-text)] flex justify-between items-center mb-3">
+        <span>收纳盒设置 <span className="text-[10px] font-normal text-[var(--color-text-secondary)] opacity-70">({container.name})</span></span>
         <button 
           onClick={onClose}
           className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-[var(--color-text-secondary)]"
         >
-          <X size={14} />
+          <X size={12} />
         </button>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {/* Name */}
         <div className="space-y-2">
           <label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">收纳盒名称</label>
@@ -88,16 +90,14 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
               />
             </div>
             <div className="flex-1">
-              <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1.5">
+              <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-2">
                 <span>透明度</span>
                 <span>{Math.round(opacity * 100)}%</span>
               </div>
-              <input 
-                type="range" 
-                min="0" max="1" step="0.05"
+              <Slider 
+                min={0} max={1} step={0.05}
                 value={opacity}
-                onChange={(e) => setOpacity(parseFloat(e.target.value))}
-                className="w-full h-1 bg-black/10 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                onChange={setOpacity}
               />
             </div>
           </div>
@@ -107,16 +107,14 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
         <div className="space-y-2">
           <label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">圆角大小</label>
           <div className="flex-1">
-            <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1.5">
+            <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-2">
               <span>半径</span>
               <span className="text-[var(--color-text)]">{cornerRadius}px</span>
             </div>
-            <input 
-              type="range" 
-              min="0" max="64" step="1"
+            <Slider 
+              min={0} max={64} step={1}
               value={cornerRadius}
-              onChange={(e) => setCornerRadius(parseInt(e.target.value) || 0)}
-              className="w-full h-1 bg-black/10 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+              onChange={setCornerRadius}
             />
           </div>
         </div>
@@ -162,25 +160,21 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
         >
           <div className="space-y-2 pt-2">
             <label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">网格尺寸</label>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="relative">
-                <input 
-                  type="number" 
-                  value={gridWidth}
-                  onChange={(e) => setGridWidth(parseInt(e.target.value) || 0)}
-                  className="w-full bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded-lg py-1.5 px-2 pl-7 text-xs border border-transparent focus:border-blue-500/50 focus:bg-transparent outline-none transition-all"
-                />
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] text-[10px] font-medium">W</span>
-              </div>
-              <div className="relative">
-                <input 
-                  type="number" 
-                  value={gridHeight}
-                  onChange={(e) => setGridHeight(parseInt(e.target.value) || 0)}
-                  className="w-full bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded-lg py-1.5 px-2 pl-7 text-xs border border-transparent focus:border-blue-500/50 focus:bg-transparent outline-none transition-all"
-                />
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] text-[10px] font-medium">H</span>
-              </div>
+            <div className="flex gap-2">
+              <NumberInput 
+                value={gridWidth}
+                onChange={setGridWidth}
+                prefix="W"
+                className="flex-1"
+                min={20}
+              />
+              <NumberInput 
+                value={gridHeight}
+                onChange={setGridHeight}
+                prefix="H"
+                className="flex-1"
+                min={20}
+              />
             </div>
           </div>
           <div className="space-y-3 pt-4">
@@ -208,15 +202,12 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
           <div className="space-y-3 pt-2">
             <div className="space-y-2">
               <label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">列表项高度</label>
-              <div className="relative">
-                <input 
-                  type="number" 
-                  value={gridHeight}
-                  onChange={(e) => setGridHeight(parseInt(e.target.value) || 0)}
-                  className="w-full bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded-lg py-1.5 px-2 pl-7 text-xs border border-transparent focus:border-blue-500/50 focus:bg-transparent outline-none transition-all"
-                />
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] text-[10px] font-medium">H</span>
-              </div>
+              <NumberInput 
+                value={gridHeight}
+                onChange={setGridHeight}
+                prefix="H"
+                min={20}
+              />
             </div>
             
             <label className="flex items-center gap-2 cursor-pointer group">

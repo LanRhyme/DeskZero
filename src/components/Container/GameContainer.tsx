@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { cn } from '@/utils/cn'
 import type { Container as ContainerType } from '@/types/container'
@@ -23,6 +24,7 @@ export function GameContainer({ container }: GameContainerProps) {
   const [resizePosOffset, setResizePosOffset] = useState({ x: 0, y: 0 })
   const [menuState, setMenuState] = useState<{visible: boolean, x: number, y: number}>({ visible: false, x: 0, y: 0 })
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [settingsPos, setSettingsPos] = useState({ x: 0, y: 0 })
 
   // Default size 1x2 grids
   const defaultWidth = settings.gridWidth || 80
@@ -61,6 +63,25 @@ export function GameContainer({ container }: GameContainerProps) {
   useEffect(() => {
     setSize({ width, height })
   }, [width, height])
+
+  // Calculate dynamic position for settings modal to prevent overflow
+  useEffect(() => {
+    if (isSettingsOpen) {
+      const popupWidth = 288;
+      const popupHeight = 400; // approx height for GameContainerSettings
+      let x = pos.x + size.width + 10;
+      if (x + popupWidth > window.innerWidth) {
+        x = pos.x - popupWidth - 10;
+        if (x < 0) x = 10;
+      }
+      let y = pos.y;
+      if (y + popupHeight > window.innerHeight) {
+        y = window.innerHeight - popupHeight - 10;
+        if (y < 0) y = 10;
+      }
+      setSettingsPos({ x, y })
+    }
+  }, [isSettingsOpen, pos.x, pos.y, size.width])
 
   const sizeRef = useRef(size)
   sizeRef.current = size
@@ -269,16 +290,15 @@ export function GameContainer({ container }: GameContainerProps) {
       </motion.div>
       
       {/* Settings Modal - absolute positioned over the container without blocking the whole screen */}
-      {isSettingsOpen && (
+      {isSettingsOpen && createPortal(
          <motion.div 
-           initial={{ opacity: 0, y: 10 }}
-           animate={{ opacity: 1, y: 0 }}
-           className="absolute z-[100] bg-white/90 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 p-4 rounded-xl shadow-2xl w-72 pointer-events-auto"
+           initial={{ opacity: 0, scale: 0.95 }}
+           animate={{ opacity: 1, scale: 1 }}
+           className="fixed z-[100] bg-white/90 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 p-4 rounded-xl shadow-2xl w-72 pointer-events-auto"
            style={{ 
-             left: pos.x + size.width + 10, // Try to place it to the right of the container
-             top: pos.y,
-             // Prevent it from going offscreen
-             maxWidth: 'calc(100vw - 20px)'
+             left: settingsPos.x,
+             top: settingsPos.y,
+             width: 288,
            }}
            onPointerDown={e => e.stopPropagation()}
          >
@@ -287,7 +307,8 @@ export function GameContainer({ container }: GameContainerProps) {
                  <button onClick={() => setIsSettingsOpen(false)} className="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">x</button>
              </div>
              <GameContainerSettings container={container} onClose={() => setIsSettingsOpen(false)} />
-         </motion.div>
+         </motion.div>,
+         document.body
       )}
 
       {menuState.visible && (

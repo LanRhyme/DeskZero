@@ -4,7 +4,7 @@ import { cn } from '@/utils/cn'
 import type { Container as ContainerType } from '@/types/container'
 import { FileItem } from '../Item/FileItem'
 import { Settings } from 'lucide-react'
-import { Popover, Transition } from '@headlessui/react'
+import { Popover, Transition, Portal } from '@headlessui/react'
 import { useDrag } from '@/hooks/useDrag'
 import { useContainerStore } from '@/stores/containerStore'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -27,6 +27,7 @@ export function Container({ container }: ContainerProps) {
   const dragHandleRef = useRef<HTMLDivElement>(null)
   
   const [resizePosOffset, setResizePosOffset] = useState({ x: 0, y: 0 })
+  const [settingsPos, setSettingsPos] = useState({ x: 0, y: 0 })
 
   const { ref, pos, isDragging, listeners } = useDrag(container.position, {
     dragHandleRef,
@@ -70,6 +71,22 @@ export function Container({ container }: ContainerProps) {
   useEffect(() => {
     setSize(container.size)
   }, [container.size.width, container.size.height])
+
+  useEffect(() => {
+    const popupWidth = 288;
+    const popupHeight = 500;
+    let x = pos.x + size.width + 10;
+    if (x + popupWidth > window.innerWidth) {
+      x = pos.x - popupWidth - 10;
+      if (x < 0) x = 10;
+    }
+    let y = pos.y;
+    if (y + popupHeight > window.innerHeight) {
+      y = window.innerHeight - popupHeight - 10;
+      if (y < 0) y = 10;
+    }
+    setSettingsPos({ x, y })
+  }, [pos.x, pos.y, size.width])
 
   const sizeRef = useRef(size)
   sizeRef.current = size
@@ -234,12 +251,15 @@ export function Container({ container }: ContainerProps) {
                       leaveFrom="opacity-100 translate-y-0"
                       leaveTo="opacity-0 translate-y-1"
                     >
-                      <Popover.Panel 
-                        className="absolute z-50 mt-2 top-full right-0 w-72"
-                        onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
-                      >
-                        <ContainerSettings container={container} onClose={close} />
-                      </Popover.Panel>
+                      <Portal>
+                        <Popover.Panel 
+                          className="fixed z-[100] shadow-2xl pointer-events-auto"
+                          style={{ left: settingsPos.x, top: settingsPos.y, width: 288 }}
+                          onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
+                        >
+                          <ContainerSettings container={container} onClose={close} />
+                        </Popover.Panel>
+                      </Portal>
                     </Transition>
                   </>
                 )}

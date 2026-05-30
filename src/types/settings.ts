@@ -20,4 +20,7 @@ export interface Settings {
   selectedItemBlur: boolean
   globalBlur: boolean
   fontSize: number
+  hideShortcutBadge?: boolean
+  iconOpacity?: number
+  textOpacity?: number
 }

@@ -269,11 +269,11 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
         />
       )}
       <div 
-        style={{ width: currentIconSize + 8, height: currentIconSize + 8 }}
+        style={{ width: currentIconSize + 8, height: currentIconSize + 8, opacity: settings.iconOpacity ?? 1.0 }}
         className="flex items-center justify-center relative pointer-events-none shrink-0"
       >
         {renderIcon()}
-        {item.type === 'shortcut' && (
+        {item.type === 'shortcut' && !settings.hideShortcutBadge && (
           <div className="absolute -bottom-1 -left-1 bg-white rounded-sm p-0.5 shadow-sm">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-black">
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
@@ -285,7 +285,7 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
       <div className={cn(
         "flex flex-col flex-1 min-w-0 pointer-events-none",
         !isListView && "items-center mt-1 w-full"
-      )}>
+      )} style={{ opacity: settings.textOpacity ?? 1.0 }}>
         <span 
           className={cn(
             "break-words drop-shadow-md text-white",

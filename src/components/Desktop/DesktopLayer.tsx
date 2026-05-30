@@ -231,7 +231,12 @@ export default function DesktopLayer() {
         await invoke('create_empty_file', { path })
       }
       if (createPrompt) {
-        placeNewFiles([finalName], createPrompt.x, createPrompt.y)
+        let stem = finalName
+        const lastDot = finalName.lastIndexOf('.')
+        if (lastDot > 0) {
+          stem = finalName.substring(0, lastDot)
+        }
+        placeNewFiles([stem], createPrompt.x, createPrompt.y)
       }
       setTimeout(() => fetchDesktopItems(), 500)
     } catch (e: any) {

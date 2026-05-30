@@ -54,6 +54,9 @@ pub struct Settings {
     pub selected_item_blur: bool,
     pub global_blur: bool,
     pub font_size: u32,
+    pub hide_shortcut_badge: bool,
+    pub icon_opacity: f64,
+    pub text_opacity: f64,
 }
 
 impl Default for Settings {
@@ -75,6 +78,9 @@ impl Default for Settings {
             selected_item_blur: false,
             global_blur: true,
             font_size: 12,
+            hide_shortcut_badge: false,
+            icon_opacity: 1.0,
+            text_opacity: 1.0,
         }
     }
 }

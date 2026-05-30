@@ -61,17 +61,15 @@ pub async fn paste_files_to_desktop(paths: Vec<String>, target_dir: String) -> R
                     counter += 1;
                 }
 
-                let final_path = dest.to_string_lossy().to_string();
-                use base64::{Engine as _, engine::general_purpose::STANDARD};
-                let id = STANDARD.encode(final_path.as_bytes());
+                let name_to_return = dest.file_stem().unwrap_or_default().to_string_lossy().to_string();
 
                 if src.is_dir() {
                     if std::fs::create_dir_all(&dest).is_ok() {
-                        created_names.push(id);
+                        created_names.push(name_to_return);
                     }
                 } else {
                     if std::fs::copy(src, dest).is_ok() {
-                        created_names.push(id);
+                        created_names.push(name_to_return);
                     }
                 }
             }

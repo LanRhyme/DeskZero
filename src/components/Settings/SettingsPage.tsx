@@ -318,6 +318,63 @@ export function SettingsPage() {
                     <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 shadow-sm ${settings.wallpaperCompatible ? 'right-0.5' : 'left-0.5'}`}></div>
                   </div>
                 </div>
+
+                {/* 隐藏快捷方式角标 */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">隐藏快捷方式角标</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">隐藏桌面快捷方式左下角的小箭头图标</div>
+                  </div>
+                  <div 
+                    onClick={() => saveSettings({ hideShortcutBadge: !settings.hideShortcutBadge })}
+                    role="switch"
+                    aria-checked={!!settings.hideShortcutBadge}
+                    onKeyDown={(e) => e.key === ' ' && saveSettings({ hideShortcutBadge: !settings.hideShortcutBadge })}
+                    className={`w-10 h-5 rounded-full relative cursor-pointer ${settings.hideShortcutBadge ? 'bg-blue-500' : 'bg-black/20 dark:bg-white/20'}`}
+                  >
+                    <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 shadow-sm ${settings.hideShortcutBadge ? 'right-0.5' : 'left-0.5'}`}></div>
+                  </div>
+                </div>
+
+                {/* 图标不透明度 */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">图标不透明度</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">调整桌面图标的整体不透明度</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="range" 
+                      min="0.1" 
+                      max="1.0" 
+                      step="0.05"
+                      value={settings.iconOpacity ?? 1.0} 
+                      onChange={(e) => saveSettings({ iconOpacity: parseFloat(e.target.value) })}
+                      className="w-32"
+                    />
+                    <span className="w-12 text-right text-sm">{Math.round((settings.iconOpacity ?? 1.0) * 100)}%</span>
+                  </div>
+                </div>
+
+                {/* 字体不透明度 */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">字体不透明度</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">调整桌面图标文字的整体不透明度</div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="range" 
+                      min="0.1" 
+                      max="1.0" 
+                      step="0.05"
+                      value={settings.textOpacity ?? 1.0} 
+                      onChange={(e) => saveSettings({ textOpacity: parseFloat(e.target.value) })}
+                      className="w-32"
+                    />
+                    <span className="w-12 text-right text-sm">{Math.round((settings.textOpacity ?? 1.0) * 100)}%</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}

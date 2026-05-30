@@ -128,13 +128,13 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
             id: item.id,
             name: item.name,
             path: item.path,
-            iconPath: item.icon_path || '',
-            type: item.item_type?.toLowerCase() || 'file',
-            targetPath: item.target_path,
+            iconPath: item.iconPath || item.icon_path || '',
+            type: (item.type || item.item_type)?.toLowerCase() || 'file',
+            targetPath: item.targetPath || item.target_path,
             isInContainer: true,
             position: undefined,
             size: item.size,
-            modifiedAt: item.modified_at
+            modifiedAt: item.modifiedAt || item.modified_at
           })
           continue
         }
@@ -157,13 +157,13 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
           id: item.id,
           name: item.name,
           path: item.path,
-          iconPath: item.icon_path || '',
-          type: item.item_type?.toLowerCase() || 'file',
-          targetPath: item.target_path,
+          iconPath: item.iconPath || item.icon_path || '',
+          type: (item.type || item.item_type)?.toLowerCase() || 'file',
+          targetPath: item.targetPath || item.target_path,
           isInContainer: false,
           position: slot,
           size: item.size,
-          modifiedAt: item.modified_at
+          modifiedAt: item.modifiedAt || item.modified_at
         })
       }
 

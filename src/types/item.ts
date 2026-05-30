@@ -1,4 +1,4 @@
-export type ItemType = 'file' | 'folder' | 'shortcut' | 'url'
+export type ItemType = 'file' | 'folder' | 'shortcut' | 'url' | 'system'
 
 export interface Item {
   id: string

@@ -13,6 +13,14 @@ use tauri::Manager;
 mod win_layer {
     use std::ffi::c_void;
 
+    #[repr(C)]
+    struct RECT {
+        left: i32,
+        top: i32,
+        right: i32,
+        bottom: i32,
+    }
+
     type HWND = *mut c_void;
     type BOOL = i32;
     type UINT = u32;
@@ -27,15 +35,11 @@ mod win_layer {
         fn SendMessageA(hWnd: HWND, Msg: UINT, wParam: usize, lParam: isize) -> isize;
         fn GetClassNameA(hWnd: HWND, lpClassName: *mut i8, nMaxCount: i32) -> i32;
         fn ShowWindow(hWnd: HWND, nCmdShow: i32) -> BOOL;
-        fn GetSystemMetrics(nIndex: i32) -> i32;
+        fn GetClientRect(hWnd: HWND, lpRect: *mut RECT) -> BOOL;
     }
 
     const SWP_SHOWWINDOW: UINT = 0x0040;
     const HWND_TOP: isize = 0;
-    const SM_XVIRTUALSCREEN: i32 = 76;
-    const SM_YVIRTUALSCREEN: i32 = 77;
-    const SM_CXVIRTUALSCREEN: i32 = 78;
-    const SM_CYVIRTUALSCREEN: i32 = 79;
     const SW_SHOW: i32 = 5;
 
     fn get_class_name(hwnd: HWND) -> String {
@@ -152,18 +156,18 @@ mod win_layer {
                 eprintln!("[DeskZero] SetParent done, old parent: {:?}", old_parent);
             }
             
-            // 4b: 获取虚拟屏幕尺寸并设置窗口位置
-            let screen_x = GetSystemMetrics(SM_XVIRTUALSCREEN);
-            let screen_y = GetSystemMetrics(SM_YVIRTUALSCREEN);
-            let screen_width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-            let screen_height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-            eprintln!("[DeskZero] Virtual Screen: {}x{} at {},{}", screen_width, screen_height, screen_x, screen_y);
+            // 4b: 获取父窗口的物理尺寸以避免 DPI 缩放和多显示器坐标问题
+            let mut rect = RECT { left: 0, top: 0, right: 0, bottom: 0 };
+            GetClientRect(target_parent, &mut rect);
+            let width = rect.right - rect.left;
+            let height = rect.bottom - rect.top;
+            eprintln!("[DeskZero] Parent client rect: {}x{}", width, height);
             
-            // 4c: 设置窗口位置和大小（覆盖整个屏幕，高度加1以避免Wallpaper Engine识别为全屏导致暂停）
+            // 4c: 设置窗口位置和大小为相对父窗口 (0, 0)，高度加1以避免Wallpaper Engine识别为全屏导致暂停
             SetWindowPos(
                 hwnd as HWND,
                 HWND_TOP as HWND,
-                screen_x, screen_y, screen_width, screen_height - 1,
+                0, 0, width, height - 1,
                 SWP_SHOWWINDOW,
             );
             

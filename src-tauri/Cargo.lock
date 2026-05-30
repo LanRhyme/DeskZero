@@ -1050,6 +1050,7 @@ dependencies = [
  "uuid",
  "win-context-menu",
  "win-icon-extractor",
+ "windows 0.62.2",
  "winreg 0.56.0",
  "xcap",
 ]

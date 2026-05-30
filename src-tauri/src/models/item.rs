@@ -7,6 +7,7 @@ pub enum ItemType {
     Folder,
     Shortcut,
     Url,
+    System,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

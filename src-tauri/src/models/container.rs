@@ -52,6 +52,7 @@ pub struct ContainerStyle {
     pub grid_gap_y: Option<f64>,
     pub icon_size: Option<String>,
     pub show_details: Option<bool>,
+    pub hide_app_names: Option<bool>,
 }
 
 impl Default for ContainerStyle {
@@ -69,6 +70,7 @@ impl Default for ContainerStyle {
             grid_gap_y: None,
             icon_size: None,
             show_details: None,
+            hide_app_names: None,
         }
     }
 }

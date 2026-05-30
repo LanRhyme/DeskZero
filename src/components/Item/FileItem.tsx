@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { cn } from '@/utils/cn'
 import type { Item } from '@/types/item'
 import type { ContainerStyle } from '@/types/container'
-import { File, Folder, Link } from 'lucide-react'
+import { File, Folder, Link, Monitor, Trash2, Network, Settings, User } from 'lucide-react'
 import { useDesktopStore } from '@/stores/desktopStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useContainerStore } from '@/stores/containerStore'
@@ -176,6 +176,13 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
       case 'folder': return <Folder {...iconProps} fill="currentColor" className={cn(iconProps.className, "text-yellow-400")} />
       case 'shortcut': return <Link {...iconProps} />
       case 'url': return <Link {...iconProps} />
+      case 'system': 
+        if (item.targetPath?.includes('20D04FE0-3AEA-1069-A2D8-08002B30309D')) return <Monitor {...iconProps} className={cn(iconProps.className, "text-blue-400")} />
+        if (item.targetPath?.includes('645FF040-5081-101B-9F08-00AA002F954E')) return <Trash2 {...iconProps} className={cn(iconProps.className, "text-gray-300")} />
+        if (item.targetPath?.includes('F02C1A0D-BE21-4350-88B0-7367FC96EF3C')) return <Network {...iconProps} className={cn(iconProps.className, "text-blue-300")} />
+        if (item.targetPath?.includes('5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0')) return <Settings {...iconProps} className={cn(iconProps.className, "text-blue-500")} />
+        if (item.targetPath?.includes('59031a47-3f72-44a7-89c5-5595fe6b30ee')) return <User {...iconProps} className={cn(iconProps.className, "text-green-400")} />
+        return <Monitor {...iconProps} className={cn(iconProps.className, "text-blue-400")} />
       default: return <File {...iconProps} />
     }
   }
@@ -327,7 +334,7 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
                 const d = new Date(item.modifiedAt * 1000);
                 return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
               })(),
-              item.type === 'folder' ? '文件夹' : (item.type === 'shortcut' ? '快捷方式' : '文件'),
+              item.type === 'folder' ? '文件夹' : (item.type === 'shortcut' ? '快捷方式' : (item.type === 'system' ? '系统应用' : '文件')),
               item.size && item.type !== 'folder' && item.size > 0 
                 ? (item.size > 1048576 ? `${(item.size / 1048576).toFixed(1)} MB` : `${Math.round(item.size / 1024)} KB`)
                 : null

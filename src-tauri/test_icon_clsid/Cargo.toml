@@ -1,0 +1,11 @@
+[package]
+name = "test_icon_clsid"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+base64 = "0.22.1"
+opener = "0.8.4"
+win-icon-extractor = "0.2.0"
+windows = { version = "0.62.2", features = ["Win32_UI_Shell", "Win32_Foundation", "Win32_Graphics_Gdi", "Win32_System_Com", "Win32_UI_WindowsAndMessaging"] }
+winreg = "0.56.0"

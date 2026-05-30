@@ -280,7 +280,9 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
     } else {
       const currentPaths = isSelected ? paths : [item.path]
       const currentNormalized = currentPaths.map(p => p.replace(/\//g, '\\'))
-      invoke('show_context_menu', { paths: currentNormalized, x: e.screenX, y: e.screenY })
+      window.dispatchEvent(new CustomEvent('show-item-context-menu', {
+        detail: { paths: currentNormalized, x: e.clientX, y: e.clientY }
+      }))
     }
   }
 

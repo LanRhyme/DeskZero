@@ -6,6 +6,7 @@ import { Container } from '@/components/Container/Container'
 import { FileItem } from '@/components/Item/FileItem'
 import { DesktopGrid } from './DesktopGrid'
 import { ContextMenu, type MenuItem } from '@/components/ContextMenu/ContextMenu'
+import { ItemContextMenu } from '@/components/ContextMenu/ItemContextMenu'
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { Icon } from '@iconify/react'
 
@@ -16,8 +17,10 @@ export default function DesktopLayer() {
   const { items, fetchDesktopItems, clearSelection, setSelection, realignToGrid, sortDesktopItems, setWallpaper } = useDesktopStore()
   const { settings } = useSettingsStore()
   const [menuState, setMenuState] = useState<{visible: boolean, x: number, y: number}>({ visible: false, x: 0, y: 0 })
+  const [itemMenuState, setItemMenuState] = useState<{visible: boolean, x: number, y: number, paths: string[]}>({ visible: false, x: 0, y: 0, paths: [] })
   const [canPaste, setCanPaste] = useState(false)
   const [createPrompt, setCreatePrompt] = useState<{visible: boolean, isFolder: boolean, defaultName: string, x: number, y: number} | null>(null)
+  const [renamePrompt, setRenamePrompt] = useState<{visible: boolean, targetPath: string, oldName: string, x: number, y: number} | null>(null)
   
   const prevGridWidth = useRef(settings.gridWidth)
   const prevGridHeight = useRef(settings.gridHeight)
@@ -147,10 +150,16 @@ export default function DesktopLayer() {
 
     window.addEventListener('keydown', handleKeyDown);
 
+    const handleShowItemMenu = (e: any) => {
+      setItemMenuState({ visible: true, x: e.detail.x, y: e.detail.y, paths: e.detail.paths })
+    }
+    window.addEventListener('show-item-context-menu', handleShowItemMenu)
+
     return () => {
       if (unlistenDirChanged) unlistenDirChanged()
       if (unlistenDrop) unlistenDrop()
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('show-item-context-menu', handleShowItemMenu)
     }
   }, [settings.wallpaperCompatible])
 
@@ -420,6 +429,75 @@ export default function DesktopLayer() {
             />
           </div>
         )}
+
+        {/* Rename Prompt Popup */}
+        {renamePrompt && renamePrompt.visible && (
+          <div 
+            className="absolute z-50 bg-white/90 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 shadow-2xl rounded-xl p-3 flex flex-col gap-2 min-w-[200px]"
+            style={{ left: renamePrompt.x, top: renamePrompt.y }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div className="text-xs font-medium text-[var(--color-text)] mb-1">
+              重命名：
+            </div>
+            <input 
+              type="text" 
+              autoFocus
+              defaultValue={renamePrompt.oldName}
+              className="w-full bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded px-2 py-1 text-xs border border-transparent focus:border-blue-500/50 focus:bg-transparent outline-none transition-all"
+              onFocus={(e) => {
+                // select text without extension by default
+                const lastDot = e.target.value.lastIndexOf('.')
+                if (lastDot > 0) {
+                  e.target.setSelectionRange(0, lastDot)
+                } else {
+                  e.target.select()
+                }
+              }}
+              onBlur={async (e) => {
+                // If it's already hidden, do nothing
+                if (!renamePrompt || !renamePrompt.visible) return;
+                const newName = e.target.value;
+                if (newName && newName !== renamePrompt.oldName) {
+                  try {
+                    const { invoke } = await import('@tauri-apps/api/core');
+                    const newPath = await invoke('rename_file', { path: renamePrompt.targetPath, newName }) as string;
+                    
+                    // Migrate layout position
+                    const oldItem = items.find(i => i.path === renamePrompt.targetPath);
+                    if (oldItem && oldItem.position) {
+                      const savedLayoutStr = localStorage.getItem('deskzero_layout');
+                      const savedLayout = savedLayoutStr ? JSON.parse(savedLayoutStr) : {};
+                      
+                      const utf8Bytes = new TextEncoder().encode(newPath);
+                      const binaryStr = Array.from(utf8Bytes).map(b => String.fromCharCode(b)).join('');
+                      const base64Id = btoa(binaryStr);
+                      
+                      savedLayout[base64Id] = savedLayout[oldItem.id] || oldItem.position;
+                      localStorage.setItem('deskzero_layout', JSON.stringify(savedLayout));
+                    }
+
+                    setTimeout(() => {
+                      fetchDesktopItems();
+                      fetchContainers();
+                    }, 500);
+                  } catch (err) {
+                    window.alert('重命名失败: ' + String(err));
+                  }
+                }
+                setRenamePrompt(null);
+              }}
+              onKeyDown={async (e) => {
+                if (e.key === 'Enter') {
+                  e.currentTarget.blur();
+                } else if (e.key === 'Escape') {
+                  e.currentTarget.value = renamePrompt.oldName;
+                  e.currentTarget.blur();
+                }
+              }}
+            />
+          </div>
+        )}
         
         <DesktopGrid>
           {/* Render Desktop Items */}
@@ -439,6 +517,28 @@ export default function DesktopLayer() {
             y={menuState.y} 
             items={desktopMenuItems} 
             onClose={() => setMenuState(prev => ({...prev, visible: false}))} 
+          />
+        )}
+
+        {itemMenuState.visible && (
+          <ItemContextMenu
+            x={itemMenuState.x}
+            y={itemMenuState.y}
+            paths={itemMenuState.paths}
+            onClose={() => setItemMenuState(prev => ({...prev, visible: false}))}
+            onRename={() => {
+              if (itemMenuState.paths.length === 1) {
+                const path = itemMenuState.paths[0]
+                const oldName = path.substring(Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/')) + 1)
+                setRenamePrompt({
+                  visible: true,
+                  targetPath: path,
+                  oldName,
+                  x: itemMenuState.x,
+                  y: itemMenuState.y
+                })
+              }
+            }}
           />
         )}
       </div>

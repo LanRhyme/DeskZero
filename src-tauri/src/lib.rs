@@ -256,7 +256,8 @@ pub fn run() {
 
             let refresh_i = tauri::menu::MenuItem::with_id(app, "refresh", "刷新桌面", true, None::<&str>)?;
             let settings_i = tauri::menu::MenuItem::with_id(app, "settings", "DeskZero 设置", true, None::<&str>)?;
-            let menu = tauri::menu::Menu::with_items(app, &[&refresh_i, &settings_i])?;
+            let quit_i = tauri::menu::MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
+            let menu = tauri::menu::Menu::with_items(app, &[&refresh_i, &settings_i, &quit_i])?;
 
             let _tray = tauri::tray::TrayIconBuilder::new()
                 .icon(app.default_window_icon().cloned().unwrap())
@@ -268,6 +269,9 @@ pub fn run() {
                     }
                     "settings" => {
                         app.emit("open-settings", ()).unwrap();
+                    }
+                    "quit" => {
+                        app.exit(0);
                     }
                     _ => {}
                 })

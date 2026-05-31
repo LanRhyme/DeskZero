@@ -5,7 +5,6 @@ import { cn } from '@/utils/cn'
 import type { Container as ContainerType } from '@/types/container'
 import type { Item, ItemType } from '@/types/item'
 import { FileItem } from '../Item/FileItem'
-import { Settings, RefreshCw, Folder } from 'lucide-react'
 import { useDrag } from '@/hooks/useDrag'
 import { useContainerStore } from '@/stores/containerStore'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -13,6 +12,7 @@ import { useDesktopStore } from '@/stores/desktopStore'
 import { ContainerSettings } from './ContainerSettings'
 import { ContextMenu, type MenuItem } from '@/components/ContextMenu/ContextMenu'
 import { invoke } from '@tauri-apps/api/core'
+import { RefreshCw, ArrowDownUp, Type, Box, Tag, Clock, Eye, LayoutGrid, List, Edit2, Settings, Trash2, Folder } from 'lucide-react'
 
 interface ContainerProps {
   container: ContainerType
@@ -255,32 +255,32 @@ export function FolderContainer({ container }: ContainerProps) {
   const contextMenuItems: MenuItem[] = [
     { label: '刷新', icon: <RefreshCw size={14} />, onClick: () => fetchFolderItems() },
     { divider: true, onClick: () => {} },
-    { label: '排列方式', icon: null, onClick: () => {}, subItems: [
-      { label: `名称 ${sortBy === 'name' ? (sortDesc ? '↓' : '↑') : ''}`, icon: null, onClick: () => {
+    { label: '排列方式', icon: <ArrowDownUp size={14} />, onClick: () => {}, subItems: [
+      { label: `名称 ${sortBy === 'name' ? (sortDesc ? '↓' : '↑') : ''}`, icon: <Type size={14} />, onClick: () => {
           if (sortBy === 'name') updateContainerStyle(container.id, { sortDesc: !sortDesc })
           else updateContainerStyle(container.id, { sortBy: 'name', sortDesc: false })
       }},
-      { label: `大小 ${sortBy === 'size' ? (sortDesc ? '↓' : '↑') : ''}`, icon: null, onClick: () => {
+      { label: `大小 ${sortBy === 'size' ? (sortDesc ? '↓' : '↑') : ''}`, icon: <Box size={14} />, onClick: () => {
           if (sortBy === 'size') updateContainerStyle(container.id, { sortDesc: !sortDesc })
           else updateContainerStyle(container.id, { sortBy: 'size', sortDesc: true })
       }},
-      { label: `类型 ${sortBy === 'type' ? (sortDesc ? '↓' : '↑') : ''}`, icon: null, onClick: () => {
+      { label: `类型 ${sortBy === 'type' ? (sortDesc ? '↓' : '↑') : ''}`, icon: <Tag size={14} />, onClick: () => {
           if (sortBy === 'type') updateContainerStyle(container.id, { sortDesc: !sortDesc })
           else updateContainerStyle(container.id, { sortBy: 'type', sortDesc: false })
       }},
-      { label: `修改日期 ${sortBy === 'date' ? (sortDesc ? '↓' : '↑') : ''}`, icon: null, onClick: () => {
+      { label: `修改日期 ${sortBy === 'date' ? (sortDesc ? '↓' : '↑') : ''}`, icon: <Clock size={14} />, onClick: () => {
           if (sortBy === 'date') updateContainerStyle(container.id, { sortDesc: !sortDesc })
           else updateContainerStyle(container.id, { sortBy: 'date', sortDesc: true })
       }},
     ]},
-    { label: '视图', icon: null, onClick: () => {}, subItems: [
-      { label: '大图标', icon: null, onClick: () => updateContainerStyle(container.id, { layout: 'grid' }) },
-      { label: '列表', icon: null, onClick: () => updateContainerStyle(container.id, { layout: 'list' }) },
+    { label: '视图', icon: <Eye size={14} />, onClick: () => {}, subItems: [
+      { label: '大图标', icon: <LayoutGrid size={14} />, onClick: () => updateContainerStyle(container.id, { layout: 'grid' }) },
+      { label: '列表', icon: <List size={14} />, onClick: () => updateContainerStyle(container.id, { layout: 'list' }) },
     ]},
     { divider: true, onClick: () => {} },
-    { label: '重命名', icon: null, onClick: () => setIsEditingName(true) },
+    { label: '重命名', icon: <Edit2 size={14} />, onClick: () => setIsEditingName(true) },
     { label: '设置', icon: <Settings size={14} />, onClick: () => setIsSettingsOpen(true) },
-    { label: '移除', icon: null, onClick: () => {
+    { label: '移除', icon: <Trash2 size={14} />, onClick: () => {
         useContainerStore.getState().deleteContainer(container.id)
     }}
   ]

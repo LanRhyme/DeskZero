@@ -8,7 +8,10 @@ import { DesktopGrid } from './DesktopGrid'
 import { ContextMenu, type MenuItem } from '@/components/ContextMenu/ContextMenu'
 import { ItemContextMenu } from '@/components/ContextMenu/ItemContextMenu'
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
-import { Icon } from '@iconify/react'
+import { 
+  RefreshCw, Eye, EyeOff, ArrowDownUp, Type, Box, Tag, Clock, Wand2, Terminal,
+  Plus, FolderPlus, FilePlus, LayoutGrid, Gamepad2, FolderSearch, ClipboardPaste, Settings
+} from 'lucide-react'
 import { useToastStore } from '@/stores/toastStore'
 
 export default function DesktopLayer() {
@@ -279,38 +282,38 @@ export default function DesktopLayer() {
   }
 
   const desktopMenuItems: MenuItem[] = [
-    { label: '刷新', icon: <Icon icon="iconamoon:refresh" />, onClick: () => fetchDesktopItems() },
-    { label: '查看', icon: <Icon icon="iconamoon:eye" />, onClick: () => {}, subItems: [
-      { label: isIconsHidden ? '显示桌面图标' : '隐藏桌面图标', icon: <Icon icon={isIconsHidden ? 'iconamoon:eye' : 'iconamoon:eye-off'} />, onClick: () => setIsIconsHidden(!isIconsHidden) }
+    { label: '刷新', icon: <RefreshCw size={14} />, onClick: () => fetchDesktopItems() },
+    { label: '查看', icon: <Eye size={14} />, onClick: () => {}, subItems: [
+      { label: isIconsHidden ? '显示桌面图标' : '隐藏桌面图标', icon: isIconsHidden ? <Eye size={14} /> : <EyeOff size={14} />, onClick: () => setIsIconsHidden(!isIconsHidden) }
     ]},
-    { label: '排序方式', icon: <Icon icon="iconamoon:sorting-left" />, onClick: () => {}, subItems: [
-      { label: '名称 A-Z', icon: <Icon icon="iconamoon:text-align-left" />, onClick: () => sortDesktopItems('name') },
-      { label: '大小', icon: <Icon icon="iconamoon:box" />, onClick: () => sortDesktopItems('size') },
-      { label: '项目类型', icon: <Icon icon="iconamoon:category" />, onClick: () => sortDesktopItems('type') },
-      { label: '修改日期', icon: <Icon icon="iconamoon:clock" />, onClick: () => sortDesktopItems('date') },
+    { label: '排序方式', icon: <ArrowDownUp size={14} />, onClick: () => {}, subItems: [
+      { label: '名称 A-Z', icon: <Type size={14} />, onClick: () => sortDesktopItems('name') },
+      { label: '大小', icon: <Box size={14} />, onClick: () => sortDesktopItems('size') },
+      { label: '项目类型', icon: <Tag size={14} />, onClick: () => sortDesktopItems('type') },
+      { label: '修改日期', icon: <Clock size={14} />, onClick: () => sortDesktopItems('date') },
       { divider: true },
-      { label: '自动分类排序', icon: <Icon icon="iconamoon:wand" />, onClick: () => realignToGrid() }
+      { label: '自动分类排序', icon: <Wand2 size={14} />, onClick: () => realignToGrid() }
     ]},
-    { label: '打开方式', icon: <Icon icon="iconamoon:terminal" />, onClick: () => {}, subItems: [
-      { label: '在此处打开 powershell 窗口', icon: <Icon icon="iconamoon:terminal" />, onClick: async () => {
+    { label: '打开方式', icon: <Terminal size={14} />, onClick: () => {}, subItems: [
+      { label: '在此处打开 powershell 窗口', icon: <Terminal size={14} />, onClick: async () => {
         const { invoke } = await import('@tauri-apps/api/core')
         const dir = await invoke<string>('get_desktop_dir')
         invoke('open_terminal', { shell: 'powershell', path: dir })
       }},
-      { label: '在此处打开 cmd 窗口', icon: <Icon icon="iconamoon:terminal" />, onClick: async () => {
+      { label: '在此处打开 cmd 窗口', icon: <Terminal size={14} />, onClick: async () => {
         const { invoke } = await import('@tauri-apps/api/core')
         const dir = await invoke<string>('get_desktop_dir')
         invoke('open_terminal', { shell: 'cmd', path: dir })
       }}
     ]},
-    { label: '新建', icon: <Icon icon="iconamoon:file-add" />, onClick: () => {}, subItems: [
-      { label: '新建文件夹', icon: <Icon icon="iconamoon:folder-add" />, onClick: (e) => {
+    { label: '新建', icon: <Plus size={14} />, onClick: () => {}, subItems: [
+      { label: '新建文件夹', icon: <FolderPlus size={14} />, onClick: (e) => {
         setCreatePrompt({ visible: true, isFolder: true, defaultName: '新建文件夹', x: e?.clientX ?? menuState.x, y: e?.clientY ?? menuState.y })
       }},
-      { label: '新建文件', icon: <Icon icon="iconamoon:file-add" />, onClick: (e) => {
+      { label: '新建文件', icon: <FilePlus size={14} />, onClick: (e) => {
         setCreatePrompt({ visible: true, isFolder: false, defaultName: '新建文本文件.txt', x: e?.clientX ?? menuState.x, y: e?.clientY ?? menuState.y })
       }},
-      { label: '新建收纳盒容器', icon: <Icon icon="iconamoon:grid-view" />, onClick: async () => {
+      { label: '新建收纳盒容器', icon: <LayoutGrid size={14} />, onClick: async () => {
         try {
           await createContainer('新建收纳盒', 'normal', { 
             x: menuState.x, 
@@ -322,7 +325,7 @@ export default function DesktopLayer() {
           useToastStore.getState().addToast('新建收纳盒失败: ' + String(e), 'error');
         }
       }},
-      { label: '新建游戏容器', icon: <Icon icon="iconamoon:gamepad" />, onClick: async () => {
+      { label: '新建游戏容器', icon: <Gamepad2 size={14} />, onClick: async () => {
         try {
           await createContainer('新建游戏容器', 'game', { 
             x: menuState.x, 
@@ -334,7 +337,7 @@ export default function DesktopLayer() {
           useToastStore.getState().addToast('新建游戏容器失败: ' + String(e), 'error');
         }
       }},
-      { label: '新建目录索引容器', icon: <Icon icon="iconamoon:folder" />, onClick: async () => {
+      { label: '新建目录索引容器', icon: <FolderSearch size={14} />, onClick: async () => {
         try {
           const { open } = await import('@tauri-apps/plugin-dialog');
           const selected = await open({
@@ -359,9 +362,9 @@ export default function DesktopLayer() {
       }}
     ]},
     { divider: true, onClick: () => {} },
-    { label: '粘贴', icon: <Icon icon="iconamoon:copy" />, disabled: !canPaste, onClick: () => handlePaste(menuState.x, menuState.y) },
+    { label: '粘贴', icon: <ClipboardPaste size={14} />, disabled: !canPaste, onClick: () => handlePaste(menuState.x, menuState.y) },
     { divider: true, onClick: () => {} },
-    { label: 'DeskZero 设置', icon: <Icon icon="iconamoon:settings" />, onClick: () => {
+    { label: 'DeskZero 设置', icon: <Settings size={14} />, onClick: () => {
         new WebviewWindow('settings', {
           url: '/settings',
           title: 'DeskZero 设置',

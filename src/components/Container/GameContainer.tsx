@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { cn } from '@/utils/cn'
 import type { Container as ContainerType } from '@/types/container'
-import { Settings } from 'lucide-react'
+
 import { useDrag } from '@/hooks/useDrag'
 import { useContainerStore } from '@/stores/containerStore'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -11,6 +11,7 @@ import { GameContainerSettings } from './GameContainerSettings'
 import { ContextMenu, type MenuItem } from '@/components/ContextMenu/ContextMenu'
 import { useDesktopStore } from '@/stores/desktopStore'
 import { invoke } from '@tauri-apps/api/core'
+import { Settings, Trash2, Copy } from 'lucide-react'
 
 interface GameContainerProps {
   container: ContainerType
@@ -169,14 +170,14 @@ export function GameContainer({ container }: GameContainerProps) {
 
   const contextMenuItems: MenuItem[] = [
     { label: '设置', icon: <Settings size={14} />, onClick: () => setIsSettingsOpen(true) },
-    { label: '移除', icon: null, onClick: () => {
+    { label: '移除', icon: <Trash2 size={14} />, onClick: () => {
         container.items.forEach(item => {
            removeItemFromContainer(container.id, item.id)
            moveItemToDesktop(item, pos.x, pos.y)
         })
         deleteContainer(container.id)
     }},
-    { label: '复制', icon: null, onClick: async () => {
+    { label: '复制', icon: <Copy size={14} />, onClick: async () => {
         const newContainer = await useContainerStore.getState().createContainer(container.name + ' 副本', 'game', { x: pos.x + 20, y: pos.y + 20 })
         useContainerStore.getState().updateContainerSize(newContainer.id, container.size)
         useContainerStore.getState().updateContainerStyle(newContainer.id, container.style)

@@ -208,9 +208,7 @@ export function FolderContainer({ container }: ContainerProps) {
   }
 
   const bgOpacity = container.style.backgroundOpacity ?? 0.3
-  const blurAmount = container.style.blurAmount ?? 20
   const cornerRadius = container.style.cornerRadius ?? 16
-  const bgType = container.style.backgroundType || 'default'
   const isListView = container.style.layout === 'list'
   const bgColor = container.style.backgroundColor || 'theme'
   
@@ -309,7 +307,6 @@ export function FolderContainer({ container }: ContainerProps) {
   }
 
   const isVisualLight = bgOpacity >= 0.5 ? isBaseLight : false
-  const headerColor = isVisualLight ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.95)'
 
   return (
     <>

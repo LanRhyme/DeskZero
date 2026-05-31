@@ -42,7 +42,7 @@ export function NumberInput({ value, onChange, min = -Infinity, max = Infinity, 
 
   return (
     <div 
-      className={cn("flex items-center h-6 bg-black/5 dark:bg-white/5 rounded-md border border-transparent focus-within:border-blue-500/50 transition-all", className)}
+      className={cn("flex items-center h-6 bg-black/5 dark:bg-white/5 rounded-md border border-transparent focus-within:border-[var(--color-accent)]/50 transition-all", className)}
       onDoubleClick={(e) => e.stopPropagation()}
     >
       {prefix && <span className="pl-2 pr-0.5 text-[10px] text-[var(--color-text-secondary)] select-none flex items-center h-full">{prefix}</span>}

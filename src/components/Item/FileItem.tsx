@@ -284,12 +284,12 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
       case 'shortcut': return <Link {...iconProps} />
       case 'url': return <Link {...iconProps} />
       case 'system': 
-        if (item.targetPath?.includes('20D04FE0-3AEA-1069-A2D8-08002B30309D')) return <Monitor {...iconProps} className={cn(iconProps.className, "text-blue-400")} />
+        if (item.targetPath?.includes('20D04FE0-3AEA-1069-A2D8-08002B30309D')) return <Monitor {...iconProps} className={cn(iconProps.className, "text-[var(--color-accent)]")} />
         if (item.targetPath?.includes('645FF040-5081-101B-9F08-00AA002F954E')) return <Trash2 {...iconProps} className={cn(iconProps.className, "text-gray-300")} />
-        if (item.targetPath?.includes('F02C1A0D-BE21-4350-88B0-7367FC96EF3C')) return <Network {...iconProps} className={cn(iconProps.className, "text-blue-300")} />
-        if (item.targetPath?.includes('5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0')) return <Settings {...iconProps} className={cn(iconProps.className, "text-blue-500")} />
+        if (item.targetPath?.includes('F02C1A0D-BE21-4350-88B0-7367FC96EF3C')) return <Network {...iconProps} className={cn(iconProps.className, "text-[var(--color-accent)]")} />
+        if (item.targetPath?.includes('5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0')) return <Settings {...iconProps} className={cn(iconProps.className, "text-[var(--color-accent)]")} />
         if (item.targetPath?.includes('59031a47-3f72-44a7-89c5-5595fe6b30ee')) return <User {...iconProps} className={cn(iconProps.className, "text-green-400")} />
-        return <Monitor {...iconProps} className={cn(iconProps.className, "text-blue-400")} />
+        return <Monitor {...iconProps} className={cn(iconProps.className, "text-[var(--color-accent)]")} />
       default: return <File {...iconProps} />
     }
   }

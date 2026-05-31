@@ -452,7 +452,7 @@ export default function DesktopLayer() {
       >
         {marqueeRect && marqueeRect.width > 0 && marqueeRect.height > 0 && (
           <div 
-            className="absolute bg-blue-500/20 border border-blue-500/50 z-50 pointer-events-none"
+            className="absolute bg-[var(--color-accent)]/20 border border-[var(--color-accent)]/50 z-50 pointer-events-none"
             style={{
               left: marqueeRect.left,
               top: marqueeRect.top,
@@ -466,7 +466,7 @@ export default function DesktopLayer() {
         {isLoading && (
           <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/40 backdrop-blur-md transition-opacity duration-300 pointer-events-none">
             <div className="flex flex-col items-center gap-4 bg-white/90 dark:bg-[#1a1a1a]/90 px-8 py-6 rounded-2xl shadow-2xl border border-white/20 pointer-events-auto">
-              <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-10 h-10 border-4 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin"></div>
               <div className="text-[var(--color-text)] font-medium tracking-widest text-sm">正在加载桌面 / LOADING...</div>
             </div>
           </div>
@@ -486,7 +486,7 @@ export default function DesktopLayer() {
               type="text" 
               autoFocus
               defaultValue={createPrompt.defaultName}
-              className="w-full bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded px-2 py-1 text-xs border border-transparent focus:border-blue-500/50 focus:bg-transparent outline-none transition-all"
+              className="w-full bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded px-2 py-1 text-xs border border-transparent focus:border-[var(--color-accent)]/50 focus:bg-transparent outline-none transition-all"
               onKeyDown={async (e) => {
                 if (e.key === 'Enter') {
                   const name = (e.target as HTMLInputElement).value
@@ -516,7 +516,7 @@ export default function DesktopLayer() {
               type="text" 
               autoFocus
               defaultValue={renamePrompt.oldName}
-              className="w-full bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded px-2 py-1 text-xs border border-transparent focus:border-blue-500/50 focus:bg-transparent outline-none transition-all"
+              className="w-full bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded px-2 py-1 text-xs border border-transparent focus:border-[var(--color-accent)]/50 focus:bg-transparent outline-none transition-all"
               onFocus={(e) => {
                 // select text without extension by default
                 const lastDot = e.target.value.lastIndexOf('.')

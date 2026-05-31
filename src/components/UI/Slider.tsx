@@ -59,7 +59,7 @@ export function Slider({ min, max, step, value, onChange, className }: SliderPro
     >
       <div ref={trackRef} className="absolute w-full h-1.5 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
         <div 
-          className="h-full bg-blue-500 transition-all duration-75 ease-out"
+          className="h-full bg-[var(--color-accent)] transition-all duration-75 ease-out"
           style={{ width: `${percentage}%` }}
         />
       </div>

@@ -270,7 +270,7 @@ export function Container({ container }: ContainerProps) {
             <div className="w-6 pointer-events-none" /> {/* Placeholder for layout balance */}
             <span 
               className="absolute left-1/2 -translate-x-1/2 text-xs font-medium pointer-events-none transition-colors"
-              style={{ color: headerColor, textShadow }}
+              style={{ color: headerColor, textShadow, opacity: settings.textOpacity ?? 1.0 }}
             >
               {container.name}
             </span>
@@ -282,7 +282,7 @@ export function Container({ container }: ContainerProps) {
                       as="button"
                       onPointerDown={(e: React.PointerEvent) => e.stopPropagation()} 
                       className="p-1 rounded transition-colors cursor-pointer focus:outline-none hover:bg-black/10 dark:hover:bg-white/10"
-                      style={{ color: iconColor, filter: iconFilter }}
+                      style={{ color: iconColor, filter: iconFilter, opacity: settings.iconOpacity ?? 1.0 }}
                     >
                       <Settings size={12} />
                     </Popover.Button>

@@ -46,6 +46,20 @@ const applyTheme = (theme: Theme) => {
   }
 }
 
+const applyAccentColor = (color: string) => {
+  const root = document.documentElement
+  root.style.setProperty('--color-accent', color)
+  
+  // Calculate subtle version (hex to rgb)
+  let r = 0, g = 120, b = 212; // default
+  if (color.startsWith('#') && color.length === 7) {
+    r = parseInt(color.slice(1, 3), 16)
+    g = parseInt(color.slice(3, 5), 16)
+    b = parseInt(color.slice(5, 7), 16)
+  }
+  root.style.setProperty('--color-accent-subtle', `rgba(${r}, ${g}, ${b}, 0.1)`)
+}
+
 const applySelectedBackground = (background: 'white' | 'black') => {
   document.documentElement.setAttribute('data-selected-bg', background)
 }
@@ -65,6 +79,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const settings = await invoke<Settings>('get_settings')
       set({ settings, loading: false })
       applyTheme(settings.theme)
+      applyAccentColor(settings.accentColor || '#0078d4')
       applySelectedBackground(settings.selectedItemBackground)
       applyGlobalBlur(settings.globalBlur)
     } catch (err) {
@@ -82,6 +97,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       
       if (changes.theme) {
         applyTheme(newSettings.theme)
+      }
+      if (changes.accentColor) {
+        applyAccentColor(newSettings.accentColor)
       }
       if (changes.selectedItemBackground) {
         applySelectedBackground(newSettings.selectedItemBackground)
@@ -120,6 +138,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const newSettings = event.payload
       set({ settings: newSettings })
       applyTheme(newSettings.theme)
+      applyAccentColor(newSettings.accentColor || '#0078d4')
       applySelectedBackground(newSettings.selectedItemBackground)
       applyGlobalBlur(newSettings.globalBlur)
     })

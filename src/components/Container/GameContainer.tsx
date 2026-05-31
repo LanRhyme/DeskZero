@@ -210,7 +210,7 @@ export function GameContainer({ container }: GameContainerProps) {
         animate={{ opacity: isDragging ? 0.9 : bgOpacity, scale: 1 }}
         className={cn(
           "flex flex-col transition-shadow select-none relative bg-transparent",
-          isDragging && "shadow-2xl ring-2 ring-blue-500/50"
+          isDragging && "shadow-2xl ring-2 ring-[var(--color-accent)]/50"
         )}
         onContextMenu={handleContextMenu}
         onDoubleClick={() => {

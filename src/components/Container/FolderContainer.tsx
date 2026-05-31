@@ -313,7 +313,7 @@ export function FolderContainer({ container }: ContainerProps) {
         className={cn(
           "flex flex-col overflow-hidden transition-colors border shadow-xl select-none",
           "border-[var(--color-border)]",
-          isDragging && "shadow-2xl ring-2 ring-blue-500/50"
+          isDragging && "shadow-2xl ring-2 ring-[var(--color-accent)]/50"
         )}
         onContextMenu={handleContextMenu}
       >
@@ -346,7 +346,7 @@ export function FolderContainer({ container }: ContainerProps) {
           className="relative z-10 px-2 py-1 shrink-0 cursor-grab active:cursor-grabbing border-b border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5 min-h-[24px]"
           style={{ backgroundColor: 'transparent' }}
         >
-          <Folder size={14} className="text-blue-500 shrink-0" />
+          <Folder size={14} className="text-[var(--color-accent)] shrink-0" style={{ opacity: settings.iconOpacity ?? 1.0 }} />
           {isEditingName ? (
             <input
               autoFocus
@@ -370,7 +370,7 @@ export function FolderContainer({ container }: ContainerProps) {
             />
           ) : (
             <div className="flex-1 min-w-0" onDoubleClick={() => setIsEditingName(true)}>
-              <h3 className="font-medium text-xs text-[var(--color-text)] truncate">{container.name}</h3>
+              <h3 className="font-medium text-xs text-[var(--color-text)] truncate" style={{ opacity: settings.textOpacity ?? 1.0 }}>{container.name}</h3>
             </div>
           )}
         </div>

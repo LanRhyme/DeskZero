@@ -88,7 +88,7 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
               className={cn(
                 "flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200",
                 bgColor === 'theme' || !bgColor
-                  ? "bg-blue-500 text-white shadow-sm shadow-blue-500/20" 
+                  ? "bg-[var(--color-accent)] text-white shadow-sm shadow-[var(--color-accent)]/20" 
                   : "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)] hover:bg-black/10 dark:hover:bg-white/10"
               )}
             >
@@ -99,7 +99,7 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
               className={cn(
                 "flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200",
                 bgColor !== 'theme' && bgColor
-                  ? "bg-blue-500 text-white shadow-sm shadow-blue-500/20" 
+                  ? "bg-[var(--color-accent)] text-white shadow-sm shadow-[var(--color-accent)]/20" 
                   : "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)] hover:bg-black/10 dark:hover:bg-white/10"
               )}
             >
@@ -120,7 +120,7 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
             )}
             <div className="flex-1">
               <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-2">
-                <span>透明度</span>
+                <span>不透明度</span>
                 <span>{Math.round(opacity * 100)}%</span>
               </div>
               <Slider 
@@ -159,7 +159,7 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
               className={cn(
                 "flex-1 py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-all duration-200",
                 layout === 'grid' 
-                  ? "bg-blue-500 text-white shadow-sm shadow-blue-500/20" 
+                  ? "bg-[var(--color-accent)] text-white shadow-sm shadow-[var(--color-accent)]/20" 
                   : "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)] hover:bg-black/10 dark:hover:bg-white/10"
               )}
             >
@@ -171,7 +171,7 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
               className={cn(
                 "flex-1 py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-all duration-200",
                 layout === 'list' 
-                  ? "bg-blue-500 text-white shadow-sm shadow-blue-500/20" 
+                  ? "bg-[var(--color-accent)] text-white shadow-sm shadow-[var(--color-accent)]/20" 
                   : "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)] hover:bg-black/10 dark:hover:bg-white/10"
               )}
             >
@@ -215,9 +215,9 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
                   onChange={(e) => setHideAppNames(e.target.checked)}
                   className="peer sr-only"
                 />
-                <div className="w-8 h-4.5 bg-black/10 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[14px] peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-blue-500 transition-colors"></div>
+                <div className="w-8 h-4.5 bg-black/10 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[14px] peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-[var(--color-accent)] transition-colors"></div>
               </div>
-              <span className="text-xs font-medium text-[var(--color-text)] group-hover:text-blue-500 transition-colors">隐藏应用名称</span>
+              <span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">隐藏应用名称</span>
             </label>
           </div>
         </motion.div>
@@ -247,9 +247,9 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
                   onChange={(e) => setShowDetails(e.target.checked)}
                   className="peer sr-only"
                 />
-                <div className="w-8 h-4.5 bg-black/10 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[14px] peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-blue-500 transition-colors"></div>
+                <div className="w-8 h-4.5 bg-black/10 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[14px] peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-[var(--color-accent)] transition-colors"></div>
               </div>
-              <span className="text-xs font-medium text-[var(--color-text)] group-hover:text-blue-500 transition-colors">显示详细信息</span>
+              <span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">显示详细信息</span>
             </label>
           </div>
         </motion.div>
@@ -271,7 +271,7 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
           </button>
           <button
             type="button"
-            className="flex-1 justify-center rounded-lg border border-transparent bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-600 transition-colors shadow-md shadow-blue-500/25 focus:outline-none"
+            className="flex-1 justify-center rounded-lg border border-transparent bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-accent)] transition-colors shadow-md shadow-[var(--color-accent)]/25 focus:outline-none"
             onClick={handleSave}
           >
             保存

@@ -51,7 +51,7 @@ export function GameContainerSettings({ container, onClose }: GameContainerSetti
       </div>
 
       <div className="flex flex-col gap-2">
-        <label className="text-[11px] text-[var(--color-text-secondary)] font-bold">透明度 ({Math.round((container.style.backgroundOpacity ?? 1) * 100)}%)</label>
+        <label className="text-[11px] text-[var(--color-text-secondary)] font-bold">不透明度 ({Math.round((container.style.backgroundOpacity ?? 1) * 100)}%)</label>
         <Slider 
           min={0} max={1} step={0.1} 
           value={container.style.backgroundOpacity ?? 1} 
@@ -75,7 +75,7 @@ export function GameContainerSettings({ container, onClose }: GameContainerSetti
           placeholder="可输入自定义图片链接或本地路径"
           value={container.style.coverImage || ''}
           onChange={e => updateContainerStyle(container.id, { coverImage: e.target.value })}
-          className="w-full px-2 py-1 text-xs bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded border border-transparent focus:border-blue-500 outline-none"
+          className="w-full px-2 py-1 text-xs bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded border border-transparent focus:border-[var(--color-accent)] outline-none"
         />
         <span className="text-[10px] text-[var(--color-text-secondary)]">自动获取失败时可手动设置，支持本地图片路径或网络链接。</span>
       </div>
@@ -83,7 +83,7 @@ export function GameContainerSettings({ container, onClose }: GameContainerSetti
       <div className="flex justify-end pt-1">
         <button 
           onClick={onClose}
-          className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          className="px-3 py-1 text-xs bg-[var(--color-accent)] text-white rounded hover:bg-[var(--color-accent)] transition-colors"
         >
           完成
         </button>

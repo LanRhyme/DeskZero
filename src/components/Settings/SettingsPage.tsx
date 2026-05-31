@@ -13,8 +13,8 @@ function CustomSwitch({ checked, onChange }: { checked: boolean, onChange: (val:
       checked={checked}
       onChange={onChange}
       className={cn(
-        checked ? 'bg-blue-500' : 'bg-black/10 dark:bg-white/10',
-        'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent border border-black/5 dark:border-white/5'
+        checked ? 'bg-[var(--color-accent)]' : 'bg-black/10 dark:bg-white/10',
+        'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent border border-black/5 dark:border-white/5'
       )}
     >
       <span className="sr-only">Toggle</span>
@@ -102,8 +102,8 @@ export function SettingsPage() {
     <div className="w-screen h-screen flex flex-col bg-[#fafafa] dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100 select-none overflow-hidden font-sans">
       
       {loading && (
-        <div className="fixed top-0 left-0 right-0 h-1 bg-blue-500/20 z-50 overflow-hidden">
-          <div className="w-1/3 h-full bg-blue-500 rounded-full animate-ping"></div>
+        <div className="fixed top-0 left-0 right-0 h-1 bg-[var(--color-accent)]/20 z-50 overflow-hidden">
+          <div className="w-1/3 h-full bg-[var(--color-accent)] rounded-full animate-ping"></div>
         </div>
       )}
 
@@ -120,14 +120,14 @@ export function SettingsPage() {
 
       <Tab.Group vertical as="div" className="flex flex-1 overflow-hidden min-h-0 w-full relative">
           {/* Subtle ambient background glow */}
-          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-500/10 dark:bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
-          <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-indigo-500/10 dark:bg-indigo-500/5 blur-[120px] rounded-full pointer-events-none" />
+          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[var(--color-accent-subtle)] blur-[120px] rounded-full pointer-events-none" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-[var(--color-accent-subtle)] blur-[120px] rounded-full pointer-events-none" />
 
           {/* Sidebar */}
           <Tab.List className="w-64 p-6 border-r border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/20 backdrop-blur-2xl flex flex-col gap-2 z-10 shadow-[1px_0_10px_rgba(0,0,0,0.02)]">
             <div className="mb-8 px-2 pt-2">
-              <div className="text-2xl font-extrabold bg-gradient-to-br from-blue-600 to-indigo-500 bg-clip-text text-transparent inline-flex items-center gap-3 tracking-tight">
-                <LayoutGrid className="text-blue-600 w-7 h-7" />
+              <div className="text-2xl font-extrabold text-[var(--color-accent)] inline-flex items-center gap-3 tracking-tight">
+                <LayoutGrid className="text-[var(--color-accent)] w-7 h-7" />
                 DeskZero
               </div>
             </div>
@@ -139,14 +139,14 @@ export function SettingsPage() {
                     className={cn(
                       'relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors outline-none w-full text-left group',
                       selected 
-                        ? 'text-blue-600 dark:text-blue-400' 
+                        ? 'text-[var(--color-accent)]' 
                         : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/5'
                     )}
                   >
                     {selected && (
                       <motion.div
                         layoutId="active-tab"
-                        className="absolute inset-0 bg-blue-500/10 dark:bg-blue-500/20 rounded-xl"
+                        className="absolute inset-0 bg-[var(--color-accent)]/10 dark:bg-[var(--color-accent)]/20 rounded-xl"
                         initial={false}
                         transition={{ type: "spring", stiffness: 400, damping: 30 }}
                       />
@@ -250,6 +250,42 @@ export function SettingsPage() {
                         </div>
                       </SettingRow>
 
+                      <SettingRow title="主题色" desc="设置高亮和焦点控件的强调色">
+                        <div className="flex gap-3 items-center">
+                          {['#0078d4', '#8b5cf6', '#10b981', '#f43f5e'].map(color => (
+                            <div 
+                              key={color}
+                              onClick={() => saveSettings({ accentColor: color })}
+                              className={cn(
+                                "w-6 h-6 rounded-full cursor-pointer transition-transform shadow-inner border-2",
+                                (settings.accentColor || '#0078d4') === color ? "border-black/30 dark:border-white/50 scale-110" : "border-transparent hover:scale-110"
+                              )}
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
+                          <div className="w-px h-6 bg-black/10 dark:bg-white/10 mx-1"></div>
+                          <div className="relative group">
+                            <input 
+                              type="color" 
+                              value={settings.accentColor || '#0078d4'}
+                              onChange={(e) => saveSettings({ accentColor: e.target.value })}
+                              className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
+                            />
+                            <div 
+                              className={cn(
+                                "w-6 h-6 rounded-full transition-transform shadow-inner border-2",
+                                !['#0078d4', '#8b5cf6', '#10b981', '#f43f5e'].includes(settings.accentColor || '#0078d4') ? "border-black/30 dark:border-white/50 scale-110" : "border-transparent group-hover:scale-110"
+                              )}
+                              style={{ 
+                                background: !['#0078d4', '#8b5cf6', '#10b981', '#f43f5e'].includes(settings.accentColor || '#0078d4') 
+                                  ? settings.accentColor 
+                                  : 'conic-gradient(from 90deg, #f43f5e, #8b5cf6, #0078d4, #10b981, #eab308, #f43f5e)'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </SettingRow>
+
                       <SettingRow title="选中图标背景" desc="设置图标处于选中状态时的背板颜色">
                         <div className="flex bg-black/5 dark:bg-white/5 rounded-xl p-1 gap-1">
                           <button 
@@ -322,7 +358,7 @@ export function SettingsPage() {
                             exit={{ height: 0, opacity: 0 }}
                             className="overflow-hidden"
                           >
-                            <div className="pl-6 pb-2 relative before:absolute before:left-2 before:top-0 before:bottom-6 before:w-[2px] before:rounded-full before:bg-blue-500/20">
+                            <div className="pl-6 pb-2 relative before:absolute before:left-2 before:top-0 before:bottom-6 before:w-[2px] before:rounded-full before:bg-[var(--color-accent)]/20">
                               <SettingSliderRow 
                                 title="发光范围" desc="调整图标发光效果的扩散程度" 
                                 value={settings.iconGlowRadius ?? 12} onChange={(v: number) => saveSettings({ iconGlowRadius: v })} 
@@ -368,7 +404,7 @@ export function SettingsPage() {
                       <h3 className="text-3xl font-black text-[var(--color-text)] tracking-tight">{appConfig.name}</h3>
                       <div className="text-[var(--color-text-secondary)] font-medium mt-1">Version {appConfig.version}</div>
                       <div className="text-sm text-[var(--color-text-secondary)] mt-3 leading-relaxed">
-                        一款现代化的 Windows 桌面整理工具，<br/>为您提供毛玻璃质感、丝滑的拖拽动画与高效的分区收纳体验
+                        一款现代化的 Windows 桌面整理工具，<br/>为您提供毛玻璃质感、丝滑的拖拽动画与高效的分区收纳体验。
                       </div>
                     </div>
                   </div>
@@ -392,7 +428,7 @@ export function SettingsPage() {
                         href="https://github.com/LanRhyme/DeskZero" 
                         target="_blank" 
                         rel="noreferrer" 
-                        className="px-4 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 rounded-lg text-sm font-medium transition-colors outline-none cursor-pointer"
+                        className="px-4 py-1.5 bg-[var(--color-accent-subtle)] text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20 rounded-lg text-sm font-medium transition-colors outline-none cursor-pointer"
                         onClick={async (e) => {
                            e.preventDefault();
                            try {
@@ -481,4 +517,3 @@ export function SettingsPage() {
     </div>
   )
 }
-

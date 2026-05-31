@@ -4,6 +4,7 @@ import { Slider } from '@/components/UI/Slider'
 import { cn } from '@/utils/cn'
 import { Icon } from '@iconify/react'
 import { Fragment, useRef, useState } from 'react'
+import appConfig from '../../../deskzero.config.json'
 
 function CustomSwitch({ checked, onChange }: { checked: boolean, onChange: (val: boolean) => void }) {
   return (
@@ -320,9 +321,9 @@ export function SettingsPage() {
                 <img src="/icon.png" alt="DeskZero Logo" className="relative w-28 h-28 object-contain drop-shadow-xl hover:scale-105 transition-transform duration-500" />
               </div>
               
-              <h2 className="text-3xl font-extrabold text-[var(--color-text)] tracking-tight">DeskZero</h2>
+              <h2 className="text-3xl font-extrabold text-[var(--color-text)] tracking-tight">{appConfig.name}</h2>
               <div className="text-sm font-medium text-blue-500 bg-blue-500/10 px-3 py-1 rounded-full mt-3">
-                Beta Version 0.1.0
+                Beta Version {appConfig.version}
               </div>
               
               <p className="text-[var(--color-text-secondary)] max-w-md text-center mt-6 leading-relaxed">

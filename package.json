@@ -1,10 +1,12 @@
 {
   "name": "deskzero",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/sync-config.js",
     "dev": "vite",
+    "prebuild": "node scripts/sync-config.js",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "tauri": "tauri"

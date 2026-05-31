@@ -1,0 +1,47 @@
+name: Build DeskZero Windows
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Node dependencies
+        run: npm install
+
+      - name: Build Tauri app
+        run: npm run tauri build -- --bundles nsis
+
+      - name: Upload Portable Executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeskZero-Portable
+          path: src-tauri/target/release/deskzero.exe
+
+      - name: Upload NSIS Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeskZero-Installer
+          path: src-tauri/target/release/bundle/nsis/*.exe

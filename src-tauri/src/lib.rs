@@ -252,6 +252,38 @@ pub fn run() {
                 eprintln!("[DeskZero] Storage initialization failed: {}", e);
             }
 
+            use tauri::Emitter;
+
+            let refresh_i = tauri::menu::MenuItem::with_id(app, "refresh", "刷新桌面", true, None::<&str>)?;
+            let settings_i = tauri::menu::MenuItem::with_id(app, "settings", "DeskZero 设置", true, None::<&str>)?;
+            let menu = tauri::menu::Menu::with_items(app, &[&refresh_i, &settings_i])?;
+
+            let _tray = tauri::tray::TrayIconBuilder::new()
+                .icon(app.default_window_icon().cloned().unwrap())
+                .menu(&menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "refresh" => {
+                        app.emit("refresh-desktop", ()).unwrap();
+                    }
+                    "settings" => {
+                        app.emit("open-settings", ()).unwrap();
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| match event {
+                    tauri::tray::TrayIconEvent::Click {
+                        button: tauri::tray::MouseButton::Left,
+                        button_state: tauri::tray::MouseButtonState::Up,
+                        ..
+                    } => {
+                        let app = tray.app_handle();
+                        app.emit("refresh-desktop", ()).unwrap();
+                    }
+                    _ => {}
+                })
+                .build(app)?;
+
             let app_handle = app.handle().clone();
             crate::desktop::watcher::start_desktop_watcher(app_handle);
 

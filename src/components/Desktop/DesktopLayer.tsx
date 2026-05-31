@@ -66,13 +66,37 @@ export default function DesktopLayer() {
       setWallpaper(null)
     }
     
+    let isCancelled = false;
     let unlistenDirChanged: (() => void) | undefined;
     let unlistenDrop: (() => void) | undefined;
+    
+    let unlistenOpenSettings: (() => void) | undefined;
+    let unlistenRefreshDesktop: (() => void) | undefined;
     
     import('@tauri-apps/api/event').then(({ listen }) => {
       listen('desktop-dir-changed', () => {
         fetchDesktopItems()
-      }).then(u => unlistenDirChanged = u)
+      }).then(u => {
+        if (isCancelled) u(); else unlistenDirChanged = u;
+      })
+
+      listen('refresh-desktop', () => {
+        fetchDesktopItems()
+      }).then(u => {
+        if (isCancelled) u(); else unlistenRefreshDesktop = u;
+      })
+
+      listen('open-settings', () => {
+        new WebviewWindow('settings', {
+          url: '/settings',
+          title: 'DeskZero 设置',
+          width: 800,
+          height: 600,
+          resizable: true
+        })
+      }).then(u => {
+        if (isCancelled) u(); else unlistenOpenSettings = u;
+      })
     })
     
     import('@tauri-apps/api/webview').then(({ getCurrentWebview }) => {
@@ -106,7 +130,9 @@ export default function DesktopLayer() {
             }
           }
         }
-      }).then(u => unlistenDrop = u)
+      }).then(u => {
+        if (isCancelled) u(); else unlistenDrop = u;
+      })
     })
 
     const handleKeyDown = async (e: KeyboardEvent) => {
@@ -163,8 +189,11 @@ export default function DesktopLayer() {
     window.addEventListener('show-item-context-menu', handleShowItemMenu)
 
     return () => {
+      isCancelled = true;
       if (unlistenDirChanged) unlistenDirChanged()
       if (unlistenDrop) unlistenDrop()
+      if (unlistenOpenSettings) unlistenOpenSettings()
+      if (unlistenRefreshDesktop) unlistenRefreshDesktop()
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('show-item-context-menu', handleShowItemMenu)
     }

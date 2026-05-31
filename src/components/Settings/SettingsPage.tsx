@@ -2,8 +2,9 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { Tab, Switch } from '@headlessui/react'
 import { Slider } from '@/components/UI/Slider'
 import { cn } from '@/utils/cn'
-import { Icon } from '@iconify/react'
+import { Settings, Palette, Info, AlertCircle, LayoutGrid, X } from 'lucide-react'
 import { Fragment, useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import appConfig from '../../../deskzero.config.json'
 
 function CustomSwitch({ checked, onChange }: { checked: boolean, onChange: (val: boolean) => void }) {
@@ -12,27 +13,30 @@ function CustomSwitch({ checked, onChange }: { checked: boolean, onChange: (val:
       checked={checked}
       onChange={onChange}
       className={cn(
-        checked ? 'bg-blue-500' : 'bg-black/20 dark:bg-white/20',
-        'relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent'
+        checked ? 'bg-blue-500' : 'bg-black/10 dark:bg-white/10',
+        'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent border border-black/5 dark:border-white/5'
       )}
     >
       <span className="sr-only">Toggle</span>
       <span
         aria-hidden="true"
         className={cn(
-          checked ? 'translate-x-[22px]' : 'translate-x-0.5',
-          'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out'
+          checked ? 'translate-x-[22px]' : 'translate-x-1',
+          'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-300 ease-in-out'
         )}
       />
     </Switch>
   )
 }
 
-function SettingRow({ title, desc, children }: { title: string, desc: string, children: React.ReactNode }) {
+function SettingRow({ title, desc, children, noBorder = false }: { title: string, desc: string, children: React.ReactNode, noBorder?: boolean }) {
   return (
-    <div className="flex items-center justify-between py-4 border-b border-black/5 dark:border-white/5 last:border-0 group">
-      <div className="pr-8">
-        <div className="font-medium text-sm text-[var(--color-text)] mb-1">{title}</div>
+    <div className={cn(
+      "flex items-center justify-between py-4 group transition-colors",
+      !noBorder && "border-b border-black/5 dark:border-white/5"
+    )}>
+      <div className="pr-8 flex-1">
+        <div className="font-medium text-sm text-[var(--color-text)] mb-1 tracking-wide">{title}</div>
         <div className="text-xs text-[var(--color-text-secondary)] leading-relaxed group-hover:text-[var(--color-text)]/80 transition-colors duration-300">{desc}</div>
       </div>
       <div className="shrink-0 flex items-center justify-end min-w-[120px]">
@@ -42,9 +46,9 @@ function SettingRow({ title, desc, children }: { title: string, desc: string, ch
   )
 }
 
-function SettingSliderRow({ title, desc, value, onChange, min, max, step, format = (v: number) => `${v}` }: any) {
+function SettingSliderRow({ title, desc, value, onChange, min, max, step, format = (v: number) => `${v}`, noBorder = false }: any) {
   return (
-    <SettingRow title={title} desc={desc}>
+    <SettingRow title={title} desc={desc} noBorder={noBorder}>
       <div className="flex items-center gap-4 w-48">
         <Slider value={value} onChange={onChange} min={min} max={max} step={step} className="flex-1" />
         <span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{format(value)}</span>
@@ -60,6 +64,8 @@ export function SettingsPage() {
   const thumbRef = useRef<HTMLDivElement>(null)
   const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [isScrolling, setIsScrolling] = useState(false)
+  
+  const [isLicenseDialogOpen, setIsLicenseDialogOpen] = useState(false)
 
   const handleScroll = () => {
     const el = scrollContainerRef.current
@@ -87,13 +93,13 @@ export function SettingsPage() {
   }
 
   const tabs = [
-    { id: 'general', name: '通用设置', icon: 'iconamoon:settings' },
-    { id: 'appearance', name: '外观个性化', icon: 'iconamoon:color-palette' },
-    { id: 'about', name: '关于 DeskZero', icon: 'iconamoon:information-circle' },
+    { id: 'general', name: '通用设置', icon: Settings },
+    { id: 'appearance', name: '外观个性化', icon: Palette },
+    { id: 'about', name: '关于 DeskZero', icon: Info },
   ]
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-white dark:bg-[#121212] text-gray-900 dark:text-gray-100 select-none overflow-hidden font-sans">
+    <div className="w-screen h-screen flex flex-col bg-[#fafafa] dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100 select-none overflow-hidden font-sans">
       
       {loading && (
         <div className="fixed top-0 left-0 right-0 h-1 bg-blue-500/20 z-50 overflow-hidden">
@@ -102,18 +108,26 @@ export function SettingsPage() {
       )}
 
       {error && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-red-500/90 backdrop-blur-md text-white text-xs px-4 py-2 rounded-full shadow-lg z-50 flex items-center gap-2">
-          <Icon icon="iconamoon:attention-circle" />
+        <motion.div 
+          initial={{ opacity: 0, y: -20, x: '-50%' }}
+          animate={{ opacity: 1, y: 16, x: '-50%' }}
+          className="fixed top-0 left-1/2 bg-red-500/90 backdrop-blur-xl text-white text-xs px-4 py-2.5 rounded-full shadow-lg shadow-red-500/20 z-50 flex items-center gap-2 font-medium"
+        >
+          <AlertCircle size={14} />
           {error}
-        </div>
+        </motion.div>
       )}
 
-      <Tab.Group vertical as="div" className="flex flex-1 overflow-hidden min-h-0 w-full">
+      <Tab.Group vertical as="div" className="flex flex-1 overflow-hidden min-h-0 w-full relative">
+          {/* Subtle ambient background glow */}
+          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-500/10 dark:bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-indigo-500/10 dark:bg-indigo-500/5 blur-[120px] rounded-full pointer-events-none" />
+
           {/* Sidebar */}
-          <Tab.List className="w-56 p-4 border-r border-black/5 dark:border-white/5 bg-transparent flex flex-col gap-1.5 z-10">
-            <div className="mb-6 px-3 pt-2">
-              <div className="text-xl font-bold bg-gradient-to-br from-blue-500 to-indigo-500 bg-clip-text text-transparent inline-flex items-center gap-2 tracking-tight">
-                <Icon icon="iconamoon:category" className="text-blue-500" />
+          <Tab.List className="w-64 p-6 border-r border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/20 backdrop-blur-2xl flex flex-col gap-2 z-10 shadow-[1px_0_10px_rgba(0,0,0,0.02)]">
+            <div className="mb-8 px-2 pt-2">
+              <div className="text-2xl font-extrabold bg-gradient-to-br from-blue-600 to-indigo-500 bg-clip-text text-transparent inline-flex items-center gap-3 tracking-tight">
+                <LayoutGrid className="text-blue-600 w-7 h-7" />
                 DeskZero
               </div>
             </div>
@@ -123,14 +137,22 @@ export function SettingsPage() {
                 {({ selected }) => (
                   <button
                     className={cn(
-                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 outline-none',
+                      'relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors outline-none w-full text-left group',
                       selected 
-                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm' 
-                        : 'text-[var(--color-text-secondary)] hover:bg-black/5 dark:hover:bg-white/5 hover:text-[var(--color-text)]'
+                        ? 'text-blue-600 dark:text-blue-400' 
+                        : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/5'
                     )}
                   >
-                    <Icon icon={tab.icon} className={cn("text-lg", selected ? "text-blue-500" : "")} />
-                    {tab.name}
+                    {selected && (
+                      <motion.div
+                        layoutId="active-tab"
+                        className="absolute inset-0 bg-blue-500/10 dark:bg-blue-500/20 rounded-xl"
+                        initial={false}
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                      />
+                    )}
+                    <tab.icon className={cn("relative z-10 w-5 h-5 transition-transform duration-300", selected ? "scale-110" : "group-hover:scale-110")} />
+                    <span className="relative z-10">{tab.name}</span>
                   </button>
                 )}
               </Tab>
@@ -138,208 +160,258 @@ export function SettingsPage() {
           </Tab.List>
 
           {/* Content */}
-          <div className="flex-1 relative overflow-hidden bg-transparent">
+          <div className="flex-1 relative overflow-hidden bg-transparent z-10">
             <Tab.Panels 
               ref={scrollContainerRef}
               onScroll={handleScroll}
-              className="w-full h-full overflow-y-auto hidden-native-scrollbar"
+              className="w-full h-full overflow-y-auto hidden-native-scrollbar relative"
             >
-              <Tab.Panel className="p-8 max-w-3xl mx-auto min-h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h2 className="text-2xl font-bold mb-8 text-[var(--color-text)] tracking-tight">通用设置</h2>
-              <div className="bg-black/[0.02] dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2">
-                
-                <SettingRow title="开机启动" desc="登录 Windows 时自动运行 DeskZero（功能开发中）">
-                  <CustomSwitch checked={false} onChange={() => {}} />
-                </SettingRow>
+              {/* General Settings */}
+              <Tab.Panel className="p-10 max-w-4xl mx-auto min-h-full">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+                  <h2 className="text-3xl font-extrabold mb-8 text-[var(--color-text)] tracking-tight">通用设置</h2>
+                  
+                  <div className="space-y-6">
+                    <div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
+                      <SettingRow title="开机启动" desc="登录 Windows 时自动运行 DeskZero（功能开发中）">
+                        <CustomSwitch checked={false} onChange={() => {}} />
+                      </SettingRow>
 
-                <SettingRow title="隐藏文件后缀名" desc="桌面非快捷方式文件是否隐藏后缀名">
-                  <CustomSwitch 
-                    checked={settings.hideFileExtensions !== false} 
-                    onChange={() => saveSettings({ hideFileExtensions: !(settings.hideFileExtensions !== false) })} 
-                  />
-                </SettingRow>
+                      <SettingRow title="隐藏文件后缀名" desc="桌面非快捷方式文件是否隐藏后缀名">
+                        <CustomSwitch 
+                          checked={settings.hideFileExtensions !== false} 
+                          onChange={() => saveSettings({ hideFileExtensions: !(settings.hideFileExtensions !== false) })} 
+                        />
+                      </SettingRow>
 
-                <SettingRow title="双击隐藏桌面图标" desc="在桌面空白处双击可快速隐藏或显示所有图标">
-                  <CustomSwitch 
-                    checked={settings.doubleClickHide !== false} 
-                    onChange={() => saveSettings({ doubleClickHide: !settings.doubleClickHide })} 
-                  />
-                </SettingRow>
+                      <SettingRow title="双击隐藏桌面图标" desc="在桌面空白处双击可快速隐藏或显示所有图标" noBorder>
+                        <CustomSwitch 
+                          checked={settings.doubleClickHide !== false} 
+                          onChange={() => saveSettings({ doubleClickHide: !settings.doubleClickHide })} 
+                        />
+                      </SettingRow>
+                    </div>
 
-                <SettingSliderRow 
-                  title="桌面网格宽度" desc="调整桌面图标的水平对齐间距" 
-                  value={settings.gridWidth || 80} onChange={(v: number) => saveSettings({ gridWidth: v })} 
-                  min={60} max={150} step={5} format={(v: number) => `${v}px`} 
-                />
-                <SettingSliderRow 
-                  title="桌面网格高度" desc="调整桌面图标的垂直对齐间距" 
-                  value={settings.gridHeight || 104} onChange={(v: number) => saveSettings({ gridHeight: v })} 
-                  min={60} max={150} step={5} format={(v: number) => `${v}px`} 
-                />
-                <SettingSliderRow 
-                  title="水平网格间隙" desc="调整网格之间的水平不可放置区域" 
-                  value={settings.gridGapX || 20} onChange={(v: number) => saveSettings({ gridGapX: v })} 
-                  min={0} max={100} step={5} format={(v: number) => `${v}px`} 
-                />
-                <SettingSliderRow 
-                  title="垂直网格间隙" desc="调整网格之间的垂直不可放置区域" 
-                  value={settings.gridGapY || 20} onChange={(v: number) => saveSettings({ gridGapY: v })} 
-                  min={0} max={100} step={5} format={(v: number) => `${v}px`} 
-                />
-                <SettingSliderRow 
-                  title="软件名称文字大小" desc="调整桌面图标文字的显示大小" 
-                  value={settings.fontSize || 12} onChange={(v: number) => saveSettings({ fontSize: v })} 
-                  min={10} max={24} step={1} format={(v: number) => `${v}px`} 
-                />
-
-              </div>
-            </Tab.Panel>
-
-            <Tab.Panel className="p-8 max-w-3xl mx-auto min-h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h2 className="text-2xl font-bold mb-8 text-[var(--color-text)] tracking-tight">外观个性化</h2>
-              <div className="bg-black/[0.02] dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2">
-                
-                <SettingRow title="主题" desc="选择应用的主题外观风格">
-                  <div className="flex bg-black/5 dark:bg-white/5 rounded-lg p-1 gap-1">
-                    {['light', 'dark', 'system'].map(t => (
-                      <button 
-                        key={t}
-                        onClick={() => saveSettings({ theme: t as any })}
-                        className={cn(
-                          "px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200",
-                          settings.theme === t 
-                            ? "bg-white dark:bg-black/40 text-[var(--color-text)] shadow-sm" 
-                            : "text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
-                        )}
-                      >
-                        {t === 'light' ? '浅色' : t === 'dark' ? '深色' : '跟随系统'}
-                      </button>
-                    ))}
-                  </div>
-                </SettingRow>
-
-                <SettingRow title="主题色" desc="设置高亮和焦点控件的强调色（开发中）">
-                  <div className="flex gap-3">
-                    {['#0078d4', '#8b5cf6', '#10b981', '#f43f5e'].map(color => (
-                      <div 
-                        key={color}
-                        className="w-6 h-6 rounded-full cursor-pointer hover:scale-110 transition-transform shadow-inner"
-                        style={{ backgroundColor: color }}
+                    <div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
+                      <SettingSliderRow 
+                        title="桌面网格宽度" desc="调整桌面图标的水平对齐间距" 
+                        value={settings.gridWidth || 80} onChange={(v: number) => saveSettings({ gridWidth: v })} 
+                        min={60} max={150} step={5} format={(v: number) => `${v}px`} 
                       />
-                    ))}
+                      <SettingSliderRow 
+                        title="桌面网格高度" desc="调整桌面图标的垂直对齐间距" 
+                        value={settings.gridHeight || 104} onChange={(v: number) => saveSettings({ gridHeight: v })} 
+                        min={60} max={150} step={5} format={(v: number) => `${v}px`} 
+                      />
+                      <SettingSliderRow 
+                        title="水平网格间隙" desc="调整网格之间的水平不可放置区域" 
+                        value={settings.gridGapX || 20} onChange={(v: number) => saveSettings({ gridGapX: v })} 
+                        min={0} max={100} step={5} format={(v: number) => `${v}px`} 
+                      />
+                      <SettingSliderRow 
+                        title="垂直网格间隙" desc="调整网格之间的垂直不可放置区域" 
+                        value={settings.gridGapY || 20} onChange={(v: number) => saveSettings({ gridGapY: v })} 
+                        min={0} max={100} step={5} format={(v: number) => `${v}px`} 
+                      />
+                      <SettingSliderRow 
+                        title="软件名称文字大小" desc="调整桌面图标文字的显示大小" 
+                        value={settings.fontSize || 12} onChange={(v: number) => saveSettings({ fontSize: v })} 
+                        min={10} max={24} step={1} format={(v: number) => `${v}px`} 
+                        noBorder
+                      />
+                    </div>
                   </div>
-                </SettingRow>
+                </motion.div>
+              </Tab.Panel>
 
-                <SettingRow title="选中图标背景" desc="设置图标处于选中状态时的背板颜色">
-                  <div className="flex bg-black/5 dark:bg-white/5 rounded-lg p-1 gap-1">
-                    <button 
-                      onClick={() => saveSettings({ selectedItemBackground: 'white' })}
-                      className={cn(
-                        "px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200",
-                        settings.selectedItemBackground === 'white' 
-                          ? "bg-white dark:bg-black/40 text-[var(--color-text)] shadow-sm" 
-                          : "text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
-                      )}
-                    >
-                      明亮半透明
-                    </button>
-                    <button 
-                      onClick={() => saveSettings({ selectedItemBackground: 'black' })}
-                      className={cn(
-                        "px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200",
-                        settings.selectedItemBackground === 'black' 
-                          ? "bg-white dark:bg-black/40 text-[var(--color-text)] shadow-sm" 
-                          : "text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
-                      )}
-                    >
-                      暗色半透明
-                    </button>
+              {/* Appearance Settings */}
+              <Tab.Panel className="p-10 max-w-4xl mx-auto min-h-full">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+                  <h2 className="text-3xl font-extrabold mb-8 text-[var(--color-text)] tracking-tight">外观个性化</h2>
+                  
+                  <div className="space-y-6">
+                    <div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
+                      <SettingRow title="主题" desc="选择应用的主题外观风格">
+                        <div className="flex bg-black/5 dark:bg-white/5 rounded-xl p-1 gap-1">
+                          {['light', 'dark', 'system'].map(t => (
+                            <button 
+                              key={t}
+                              onClick={() => saveSettings({ theme: t as any })}
+                              className={cn(
+                                "px-4 py-2 rounded-lg text-xs font-medium transition-all duration-300",
+                                settings.theme === t 
+                                  ? "bg-white dark:bg-black/60 text-[var(--color-text)] shadow-sm scale-100" 
+                                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text)] scale-95 hover:scale-100"
+                              )}
+                            >
+                              {t === 'light' ? '浅色' : t === 'dark' ? '深色' : '跟随系统'}
+                            </button>
+                          ))}
+                        </div>
+                      </SettingRow>
+
+                      <SettingRow title="选中图标背景" desc="设置图标处于选中状态时的背板颜色">
+                        <div className="flex bg-black/5 dark:bg-white/5 rounded-xl p-1 gap-1">
+                          <button 
+                            onClick={() => saveSettings({ selectedItemBackground: 'white' })}
+                            className={cn(
+                              "px-4 py-2 rounded-lg text-xs font-medium transition-all duration-300",
+                              settings.selectedItemBackground === 'white' 
+                                ? "bg-white dark:bg-black/60 text-[var(--color-text)] shadow-sm scale-100" 
+                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text)] scale-95 hover:scale-100"
+                            )}
+                          >
+                            明亮半透明
+                          </button>
+                          <button 
+                            onClick={() => saveSettings({ selectedItemBackground: 'black' })}
+                            className={cn(
+                              "px-4 py-2 rounded-lg text-xs font-medium transition-all duration-300",
+                              settings.selectedItemBackground === 'black' 
+                                ? "bg-white dark:bg-black/60 text-[var(--color-text)] shadow-sm scale-100" 
+                                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text)] scale-95 hover:scale-100"
+                            )}
+                          >
+                            暗色半透明
+                          </button>
+                        </div>
+                      </SettingRow>
+
+                      <SettingRow title="选中图标毛玻璃效果" desc="为选中项背板添加高斯模糊效果">
+                        <CustomSwitch 
+                          checked={!!settings.selectedItemBlur} 
+                          onChange={() => saveSettings({ selectedItemBlur: !settings.selectedItemBlur })} 
+                        />
+                      </SettingRow>
+
+                      <SettingRow title="全局毛玻璃效果" desc="为收纳盒等容器和界面元素添加毛玻璃">
+                        <CustomSwitch 
+                          checked={!!settings.globalBlur} 
+                          onChange={() => saveSettings({ globalBlur: !settings.globalBlur })} 
+                        />
+                      </SettingRow>
+
+                      <SettingRow title="壁纸模糊穿透兼容模式" desc="若毛玻璃无法穿透至桌面壁纸，请开启此选项">
+                        <CustomSwitch 
+                          checked={!!settings.wallpaperCompatible} 
+                          onChange={() => saveSettings({ wallpaperCompatible: !settings.wallpaperCompatible })} 
+                        />
+                      </SettingRow>
+
+                      <SettingRow title="隐藏快捷方式角标" desc="隐藏桌面快捷方式左下角的小箭头标识" noBorder>
+                        <CustomSwitch 
+                          checked={!!settings.hideShortcutBadge} 
+                          onChange={() => saveSettings({ hideShortcutBadge: !settings.hideShortcutBadge })} 
+                        />
+                      </SettingRow>
+                    </div>
+
+                    <div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl transition-all duration-500">
+                      <SettingRow title="图标发光效果" desc="为桌面图标添加柔和的环境发光效果" noBorder={!settings.iconGlow}>
+                        <CustomSwitch 
+                          checked={!!settings.iconGlow} 
+                          onChange={() => saveSettings({ iconGlow: !settings.iconGlow })} 
+                        />
+                      </SettingRow>
+
+                      <AnimatePresence>
+                        {settings.iconGlow && (
+                          <motion.div 
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="pl-6 pb-2 relative before:absolute before:left-2 before:top-0 before:bottom-6 before:w-[2px] before:rounded-full before:bg-blue-500/20">
+                              <SettingSliderRow 
+                                title="发光范围" desc="调整图标发光效果的扩散程度" 
+                                value={settings.iconGlowRadius ?? 12} onChange={(v: number) => saveSettings({ iconGlowRadius: v })} 
+                                min={2} max={30} step={1} format={(v: number) => `${v}px`} 
+                              />
+                              <SettingSliderRow 
+                                title="发光强度" desc="调整发光效果的透明度和亮度" 
+                                value={settings.iconGlowIntensity ?? 0.6} onChange={(v: number) => saveSettings({ iconGlowIntensity: v })} 
+                                min={0.1} max={1.0} step={0.05} format={(v: number) => `${Math.round(v * 100)}%`} 
+                                noBorder
+                              />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    <div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
+                      <SettingSliderRow 
+                        title="图标不透明度" desc="调整桌面所有图标的整体不透明度" 
+                        value={settings.iconOpacity ?? 1.0} onChange={(v: number) => saveSettings({ iconOpacity: v })} 
+                        min={0.1} max={1.0} step={0.05} format={(v: number) => `${Math.round(v * 100)}%`} 
+                      />
+                      <SettingSliderRow 
+                        title="字体不透明度" desc="调整桌面图标文字的不透明度" 
+                        value={settings.textOpacity ?? 1.0} onChange={(v: number) => saveSettings({ textOpacity: v })} 
+                        min={0.1} max={1.0} step={0.05} format={(v: number) => `${Math.round(v * 100)}%`} 
+                        noBorder
+                      />
+                    </div>
                   </div>
-                </SettingRow>
+                </motion.div>
+              </Tab.Panel>
 
-                <SettingRow title="选中图标毛玻璃效果" desc="为选中项背板添加高斯模糊效果">
-                  <CustomSwitch 
-                    checked={!!settings.selectedItemBlur} 
-                    onChange={() => saveSettings({ selectedItemBlur: !settings.selectedItemBlur })} 
-                  />
-                </SettingRow>
-
-                <SettingRow title="全局毛玻璃效果" desc="为收纳盒等容器和界面元素添加毛玻璃">
-                  <CustomSwitch 
-                    checked={!!settings.globalBlur} 
-                    onChange={() => saveSettings({ globalBlur: !settings.globalBlur })} 
-                  />
-                </SettingRow>
-
-                <SettingRow title="壁纸模糊穿透兼容模式" desc="若毛玻璃无法穿透至桌面壁纸，请开启此选项">
-                  <CustomSwitch 
-                    checked={!!settings.wallpaperCompatible} 
-                    onChange={() => saveSettings({ wallpaperCompatible: !settings.wallpaperCompatible })} 
-                  />
-                </SettingRow>
-
-                <SettingRow title="隐藏快捷方式角标" desc="隐藏桌面快捷方式左下角的小箭头标识">
-                  <CustomSwitch 
-                    checked={!!settings.hideShortcutBadge} 
-                    onChange={() => saveSettings({ hideShortcutBadge: !settings.hideShortcutBadge })} 
-                  />
-                </SettingRow>
-
-                <SettingRow title="图标发光效果" desc="为桌面图标添加柔和的环境发光效果">
-                  <CustomSwitch 
-                    checked={!!settings.iconGlow} 
-                    onChange={() => saveSettings({ iconGlow: !settings.iconGlow })} 
-                  />
-                </SettingRow>
-
-                {settings.iconGlow && (
-                  <div className="pl-6 pb-2 relative before:absolute before:left-2 before:top-0 before:bottom-6 before:w-px before:bg-black/10 dark:before:bg-white/10">
-                    <SettingSliderRow 
-                      title="发光范围" desc="调整图标发光效果的扩散程度" 
-                      value={settings.iconGlowRadius ?? 12} onChange={(v: number) => saveSettings({ iconGlowRadius: v })} 
-                      min={2} max={30} step={1} format={(v: number) => `${v}px`} 
-                    />
-                    <SettingSliderRow 
-                      title="发光强度" desc="调整发光效果的透明度和亮度" 
-                      value={settings.iconGlowIntensity ?? 0.6} onChange={(v: number) => saveSettings({ iconGlowIntensity: v })} 
-                      min={0.1} max={1.0} step={0.05} format={(v: number) => `${Math.round(v * 100)}%`} 
-                    />
+              {/* About Settings */}
+              <Tab.Panel className="p-10 max-w-4xl mx-auto min-h-full">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+                  <h2 className="text-3xl font-extrabold mb-8 text-[var(--color-text)] tracking-tight">关于 DeskZero</h2>
+                  
+                  <div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 p-8 shadow-sm backdrop-blur-xl mb-6 flex items-center gap-8">
+                    <img src="/icon.png" alt="DeskZero Logo" className="w-24 h-24 object-contain drop-shadow-md" />
+                    <div>
+                      <h3 className="text-3xl font-black text-[var(--color-text)] tracking-tight">{appConfig.name}</h3>
+                      <div className="text-[var(--color-text-secondary)] font-medium mt-1">Version {appConfig.version}</div>
+                      <div className="text-sm text-[var(--color-text-secondary)] mt-3 leading-relaxed">
+                        一款现代化的 Windows 桌面整理工具，<br/>为您提供毛玻璃质感、丝滑的拖拽动画与高效的分区收纳体验
+                      </div>
+                    </div>
                   </div>
-                )}
 
-                <SettingSliderRow 
-                  title="图标不透明度" desc="调整桌面所有图标的整体不透明度" 
-                  value={settings.iconOpacity ?? 1.0} onChange={(v: number) => saveSettings({ iconOpacity: v })} 
-                  min={0.1} max={1.0} step={0.05} format={(v: number) => `${Math.round(v * 100)}%`} 
-                />
-                
-                <SettingSliderRow 
-                  title="字体不透明度" desc="调整桌面图标文字的不透明度" 
-                  value={settings.textOpacity ?? 1.0} onChange={(v: number) => saveSettings({ textOpacity: v })} 
-                  min={0.1} max={1.0} step={0.05} format={(v: number) => `${Math.round(v * 100)}%`} 
-                />
+                  <div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
+                    <SettingRow title="开发者" desc="DeskZero 作者及主要维护者" noBorder={false}>
+                      <span className="text-sm font-medium text-[var(--color-text)] px-2">LanRhyme</span>
+                    </SettingRow>
 
-              </div>
-            </Tab.Panel>
+                    <SettingRow title="开源许可" desc="查看 DeskZero 使用的第三方库及授权协议" noBorder={false}>
+                      <button 
+                        onClick={() => setIsLicenseDialogOpen(true)}
+                        className="px-4 py-1.5 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 rounded-lg text-sm font-medium transition-colors outline-none cursor-pointer"
+                      >
+                        查看许可证
+                      </button>
+                    </SettingRow>
 
-            <Tab.Panel className="p-8 max-w-3xl mx-auto min-h-full flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-500">
-              <div className="relative group cursor-pointer mb-8 flex justify-center">
-                <div className="absolute inset-0 bg-blue-500 rounded-3xl blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
-                <img src="/icon.png" alt="DeskZero Logo" className="relative w-28 h-28 object-contain drop-shadow-xl hover:scale-105 transition-transform duration-500" />
-              </div>
-              
-              <h2 className="text-3xl font-extrabold text-[var(--color-text)] tracking-tight">{appConfig.name}</h2>
-              <div className="text-sm font-medium text-blue-500 bg-blue-500/10 px-3 py-1 rounded-full mt-3">
-                Beta Version {appConfig.version}
-              </div>
-              
-              <p className="text-[var(--color-text-secondary)] max-w-md text-center mt-6 leading-relaxed">
-                一款现代化的 Windows 桌面整理工具，为您提供毛玻璃质感、丝滑的拖拽动画与高效的分区收纳体验。让桌面重回整洁与纯粹。
-              </p>
-              
-              <div className="mt-12 text-xs text-[var(--color-text-secondary)]/50">
-                &copy; 2026 DeskZero Team. All rights reserved.
-              </div>
+                    <SettingRow title="开源仓库" desc="在 GitHub 上查看源码、提交问题或贡献代码" noBorder={true}>
+                      <a 
+                        href="https://github.com/LanRhyme/DeskZero" 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        className="px-4 py-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 rounded-lg text-sm font-medium transition-colors outline-none cursor-pointer"
+                        onClick={async (e) => {
+                           e.preventDefault();
+                           try {
+                             const { invoke } = await import('@tauri-apps/api/core');
+                             await invoke('open_file', { path: 'https://github.com/LanRhyme/DeskZero' });
+                           } catch (err) {
+                             window.open('https://github.com/LanRhyme/DeskZero', '_blank');
+                           }
+                        }}
+                      >
+                        前往 GitHub
+                      </a>
+                    </SettingRow>
+                  </div>
+                  
+                  <div className="mt-8 pl-2 text-xs text-[var(--color-text-secondary)]/50 font-medium tracking-wide uppercase">
+                    &copy; {new Date().getFullYear()} LanRhyme. All rights reserved.
+                  </div>
+                </motion.div>
               </Tab.Panel>
             </Tab.Panels>
             
@@ -347,13 +419,66 @@ export function SettingsPage() {
             <div 
               ref={thumbRef}
               className={cn(
-                "absolute top-0 right-1 w-1.5 bg-black/20 dark:bg-white/20 rounded-full pointer-events-none",
-                "transition-opacity duration-300 ease-in-out",
+                "absolute top-0 right-1.5 w-1.5 bg-black/20 dark:bg-white/20 rounded-full pointer-events-none",
+                "transition-opacity duration-300 ease-in-out backdrop-blur-sm",
                 isScrolling ? "opacity-100" : "opacity-0"
               )}
             />
           </div>
       </Tab.Group>
+
+      {/* License Dialog */}
+      <AnimatePresence>
+        {isLicenseDialogOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsLicenseDialogOpen(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", duration: 0.5, bounce: 0 }}
+              className="relative w-full max-w-2xl max-h-[85vh] bg-[#fafafa] dark:bg-[#1a1a1a] rounded-2xl shadow-2xl border border-black/5 dark:border-white/10 flex flex-col overflow-hidden"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/20">
+                <h3 className="text-xl font-bold tracking-tight text-[var(--color-text)]">第三方开源库授权</h3>
+                <button
+                  onClick={() => setIsLicenseDialogOpen(false)}
+                  className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors outline-none"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 hidden-native-scrollbar">
+                {[
+                  { name: 'React', license: 'MIT License', desc: 'A JavaScript library for building user interfaces' },
+                  { name: 'Tauri', license: 'Apache License 2.0 / MIT License', desc: 'Build smaller, faster, and more secure desktop applications with a web frontend' },
+                  { name: 'Tailwind CSS', license: 'MIT License', desc: 'A utility-first CSS framework for rapid UI development' },
+                  { name: 'Framer Motion', license: 'MIT License', desc: 'Open source, production-ready animation and gesture library for React' },
+                  { name: 'Zustand', license: 'MIT License', desc: 'A small, fast and scalable bearbones state-management solution' },
+                  { name: 'Lucide React', license: 'ISC License', desc: 'Beautiful & consistent icons' },
+                  { name: 'Headless UI', license: 'MIT License', desc: 'Completely unstyled, fully accessible UI components' },
+                  { name: 'Rusqlite', license: 'MIT License', desc: 'Ergonomic bindings to SQLite for Rust' }
+                ].map(lib => (
+                  <div key={lib.name} className="bg-white dark:bg-white/[0.02] p-4 rounded-xl border border-black/5 dark:border-white/5 shadow-sm">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-[var(--color-text)]">{lib.name}</span>
+                      <span className="text-xs px-2 py-1 bg-black/5 dark:bg-white/10 rounded-md font-mono text-[var(--color-text-secondary)]">{lib.license}</span>
+                    </div>
+                    <p className="text-xs text-[var(--color-text-secondary)]">{lib.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
+

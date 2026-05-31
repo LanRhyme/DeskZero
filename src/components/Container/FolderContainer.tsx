@@ -285,28 +285,11 @@ export function FolderContainer({ container }: ContainerProps) {
     }}
   ]
 
-  const isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-  const isThemeDark = settings.theme === 'dark' || (settings.theme === 'system' && isSystemDark)
-
   const customBackground = bgColor === 'theme'
     ? `rgba(var(--color-container-bg-rgb), ${bgOpacity})`
     : bgColor.startsWith('#') || bgColor.startsWith('rgb') 
       ? `rgba(${hexToRgb(bgColor)}, ${bgOpacity})` 
       : bgColor
-
-  let isBaseLight = !isThemeDark
-  if (customBackground !== 'theme' && customBackground.startsWith('rgba')) {
-    const parts = customBackground.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
-    if (parts) {
-      const r = parseInt(parts[1], 10)
-      const g = parseInt(parts[2], 10)
-      const b = parseInt(parts[3], 10)
-      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-      isBaseLight = luminance > 0.5
-    }
-  }
-
-  const isVisualLight = bgOpacity >= 0.5 ? isBaseLight : false
 
   return (
     <>

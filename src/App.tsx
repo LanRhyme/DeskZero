@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import DesktopLayer from '@/components/Desktop/DesktopLayer'
 import { SettingsPage } from '@/components/Settings/SettingsPage'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { ToastContainer } from '@/components/UI/ToastContainer'
 
 function App() {
   const isSettings = window.location.pathname === '/settings'
@@ -13,11 +14,12 @@ function App() {
     return cleanup
   }, [loadSettings, initThemeListener])
 
-  if (isSettings) {
-    return <SettingsPage />
-  }
-
-  return <DesktopLayer />
+  return (
+    <>
+      <ToastContainer />
+      {isSettings ? <SettingsPage /> : <DesktopLayer />}
+    </>
+  )
 }
 
 export default App

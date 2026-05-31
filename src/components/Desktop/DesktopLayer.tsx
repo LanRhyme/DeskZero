@@ -9,6 +9,7 @@ import { ContextMenu, type MenuItem } from '@/components/ContextMenu/ContextMenu
 import { ItemContextMenu } from '@/components/ContextMenu/ItemContextMenu'
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
 import { Icon } from '@iconify/react'
+import { useToastStore } from '@/stores/toastStore'
 
 export default function DesktopLayer() {
   const containers = useContainerStore(state => state.containers)
@@ -118,6 +119,7 @@ export default function DesktopLayer() {
             const { invoke } = await import('@tauri-apps/api/core');
             const normalizedPaths = paths.map(p => p.replace(/\//g, '\\'));
             await invoke('copy_files_to_clipboard', { paths: normalizedPaths });
+            useToastStore.getState().addToast(`已复制 ${paths.length} 个文件`, 'success');
           }
         }
       } else if (e.ctrlKey && e.key === 'v') {
@@ -140,8 +142,10 @@ export default function DesktopLayer() {
                 await Promise.all(paths.map(p => invoke('trash_file', { path: p })));
               }
               await useDesktopStore.getState().fetchDesktopItems();
+              useToastStore.getState().addToast(`已删除 ${paths.length} 个文件`, 'success');
             } catch (err) {
               console.error("Delete failed:", err);
+              useToastStore.getState().addToast(`删除失败: ${String(err)}`, 'error');
             }
           }
         }
@@ -219,9 +223,11 @@ export default function DesktopLayer() {
         const newFiles = await invoke<string[]>('paste_files_to_desktop', { paths, targetDir });
         placeNewFiles(newFiles, x, y);
         await useDesktopStore.getState().fetchDesktopItems();
+        useToastStore.getState().addToast(`已粘贴 ${newFiles.length} 个文件`, 'success');
       }
     } catch (e) {
       console.error("Paste failed:", e);
+      useToastStore.getState().addToast(`粘贴失败: ${String(e)}`, 'error');
     }
   }
 
@@ -265,9 +271,10 @@ export default function DesktopLayer() {
         placeNewFiles([stem], createPrompt.x, createPrompt.y)
       }
       setTimeout(() => fetchDesktopItems(), 500)
+      useToastStore.getState().addToast(`已创建${isFolder ? '文件夹' : '文件'} ${finalName}`, 'success');
     } catch (e: any) {
       console.error(e)
-      window.alert('创建文件失败: ' + String(e))
+      useToastStore.getState().addToast(`创建${isFolder ? '文件夹' : '文件'}失败: ${String(e)}`, 'error');
     }
   }
 
@@ -310,8 +317,9 @@ export default function DesktopLayer() {
             y: menuState.y 
           })
           fetchContainers()
+          useToastStore.getState().addToast('已创建收纳盒', 'success');
         } catch(e: any) {
-          window.alert('新建收纳盒失败: ' + String(e));
+          useToastStore.getState().addToast('新建收纳盒失败: ' + String(e), 'error');
         }
       }},
       { label: '新建游戏容器', icon: <Icon icon="iconamoon:gamepad" />, onClick: async () => {
@@ -321,8 +329,9 @@ export default function DesktopLayer() {
             y: menuState.y 
           })
           fetchContainers()
+          useToastStore.getState().addToast('已创建游戏容器', 'success');
         } catch(e: any) {
-          window.alert('新建游戏容器失败: ' + String(e));
+          useToastStore.getState().addToast('新建游戏容器失败: ' + String(e), 'error');
         }
       }},
       { label: '新建目录索引容器', icon: <Icon icon="iconamoon:folder" />, onClick: async () => {
@@ -342,9 +351,10 @@ export default function DesktopLayer() {
               y: menuState.y 
             }, folderPath);
             fetchContainers();
+            useToastStore.getState().addToast(`已创建目录索引: ${folderName}`, 'success');
           }
         } catch(e: any) {
-          window.alert('新建目录索引容器失败: ' + String(e));
+          useToastStore.getState().addToast('新建目录索引容器失败: ' + String(e), 'error');
         }
       }}
     ]},
@@ -553,8 +563,9 @@ export default function DesktopLayer() {
                       fetchDesktopItems();
                       fetchContainers();
                     }, 500);
+                    useToastStore.getState().addToast(`已重命名为 ${newName}`, 'success');
                   } catch (err) {
-                    window.alert('重命名失败: ' + String(err));
+                    useToastStore.getState().addToast('重命名失败: ' + String(err), 'error');
                   }
                 }
                 setRenamePrompt(null);
@@ -591,9 +602,10 @@ export default function DesktopLayer() {
                   } else {
                     window.dispatchEvent(new CustomEvent('folder-container-refresh', { detail: { dir: prompt.targetDir } }));
                   }
+                  useToastStore.getState().addToast('成功复制到当前位置', 'success');
                 } catch(e) {
                   console.error(e);
-                  window.alert("复制失败: " + String(e));
+                  useToastStore.getState().addToast("复制失败: " + String(e), 'error');
                 }
               }}
             >
@@ -612,9 +624,10 @@ export default function DesktopLayer() {
                   if (prompt.targetType === 'folderContainer') {
                     window.dispatchEvent(new CustomEvent('folder-container-refresh', { detail: { dir: prompt.targetDir } }));
                   }
+                  useToastStore.getState().addToast('成功移动到当前位置', 'success');
                 } catch(e) {
                   console.error(e);
-                  window.alert("移动失败: " + String(e));
+                  useToastStore.getState().addToast("移动失败: " + String(e), 'error');
                 }
               }}
             >

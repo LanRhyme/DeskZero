@@ -6,6 +6,7 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import { useDesktopStore } from '@/stores/desktopStore'
 import { invoke } from '@tauri-apps/api/core'
 import { Icon } from '@iconify/react'
+import { useToastStore } from '@/stores/toastStore'
 
 export interface ItemContextMenuProps {
   x: number
@@ -50,9 +51,11 @@ export function ItemContextMenu({ x, y, paths, onClose, onRename }: ItemContextM
   const handleCopy = async () => {
     try {
       await invoke('copy_files_to_clipboard', { paths })
+      useToastStore.getState().addToast(`已复制 ${paths.length} 个文件`, 'success')
       onClose()
     } catch (e) {
       console.error(e)
+      useToastStore.getState().addToast(`复制失败: ${String(e)}`, 'error')
     }
   }
 
@@ -60,9 +63,11 @@ export function ItemContextMenu({ x, y, paths, onClose, onRename }: ItemContextM
     // Currently no cut_files_to_clipboard. Fallback to copy.
     try {
       await invoke('copy_files_to_clipboard', { paths })
+      useToastStore.getState().addToast(`已剪切 ${paths.length} 个文件`, 'success')
       onClose()
     } catch (e) {
       console.error(e)
+      useToastStore.getState().addToast(`剪切失败: ${String(e)}`, 'error')
     }
   }
 
@@ -70,9 +75,11 @@ export function ItemContextMenu({ x, y, paths, onClose, onRename }: ItemContextM
     try {
       await Promise.all(paths.map(p => invoke('trash_file', { path: p })))
       fetchDesktopItems()
+      useToastStore.getState().addToast(`已删除 ${paths.length} 个文件`, 'success')
       onClose()
     } catch (e) {
       console.error(e)
+      useToastStore.getState().addToast(`删除失败: ${String(e)}`, 'error')
     }
   }
 

@@ -1,10 +1,11 @@
 use crate::models::{Container, container::{ContainerType, ContainerStyle, Position, Size}, item::{Item, ItemType}};
+use std::collections::HashMap;
 use super::db::get_connection;
 
 pub fn load_containers() -> Result<Vec<Container>, String> {
     let conn = get_connection().map_err(|e| e.to_string())?;
     
-    // Read containers
+    // 读取容器
     let mut stmt = conn.prepare("SELECT id, name, type, x, y, width, height, style, folder_path, created_at, updated_at FROM containers").map_err(|e| e.to_string())?;
     let container_rows = stmt.query_map([], |row| {
         let id: String = row.get(0)?;
@@ -19,6 +20,7 @@ pub fn load_containers() -> Result<Vec<Container>, String> {
         let created_at: i64 = row.get(9)?;
         let updated_at: i64 = row.get(10)?;
         
+        // 使用自定义反序列化：未知类型会被保留为 Other(String)，不会丢失
         let container_type: ContainerType = serde_json::from_str(&format!("\"{}\"", type_str)).unwrap_or(ContainerType::Normal);
         let style: ContainerStyle = serde_json::from_str(&style_str).unwrap_or_default();
         
@@ -33,6 +35,7 @@ pub fn load_containers() -> Result<Vec<Container>, String> {
             folder_path,
             created_at: created_at as u64,
             updated_at: updated_at as u64,
+            extra: HashMap::new(),
         })
     }).map_err(|e| e.to_string())?;
     
@@ -43,7 +46,7 @@ pub fn load_containers() -> Result<Vec<Container>, String> {
         }
     }
     
-    // Read items
+    // 读取项目
     let mut item_stmt = conn.prepare("SELECT id, container_id, name, path, icon_path, item_type, target_path, size, modified_at, x, y, order_index FROM container_items ORDER BY container_id, order_index").map_err(|e| e.to_string())?;
     
     let item_rows = item_stmt.query_map([], |row| {
@@ -59,6 +62,7 @@ pub fn load_containers() -> Result<Vec<Container>, String> {
         let x: Option<f64> = row.get(9)?;
         let y: Option<f64> = row.get(10)?;
         
+        // 使用自定义反序列化：未知类型会被保留为 Other(String)
         let item_type: ItemType = serde_json::from_str(&format!("\"{}\"", item_type_str)).unwrap_or(ItemType::File);
         let position = match (x, y) {
             (Some(px), Some(py)) => Some(Position { x: px, y: py }),
@@ -91,20 +95,70 @@ pub fn load_containers() -> Result<Vec<Container>, String> {
     Ok(containers)
 }
 
+/// 保存容器数据 — 使用差异删除 + UPSERT 策略替代全量 DELETE + INSERT，
+/// 确保未来版本新增的数据库列不会被老版本误删。
 pub fn save_containers(containers: &[Container]) -> Result<(), String> {
     let mut conn = get_connection().map_err(|e| e.to_string())?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     
-    // Clear old data
-    tx.execute("DELETE FROM containers", []).map_err(|e| e.to_string())?;
-    tx.execute("DELETE FROM container_items", []).map_err(|e| e.to_string())?;
+    // 收集当前要保存的容器 ID 和项目 ID
+    let new_container_ids: Vec<&str> = containers.iter().map(|c| c.id.as_str()).collect();
+    let new_item_ids: Vec<&str> = containers.iter()
+        .flat_map(|c| c.items.iter().map(|i| i.id.as_str()))
+        .collect();
     
+    // 差异删除：只删除不再存在的容器及其关联项目
+    {
+        let mut existing_ids_stmt = tx.prepare("SELECT id FROM containers").map_err(|e| e.to_string())?;
+        let existing_ids: Vec<String> = existing_ids_stmt.query_map([], |row| {
+            row.get::<_, String>(0)
+        }).map_err(|e| e.to_string())?
+          .filter_map(|r| r.ok())
+          .collect();
+        
+        for eid in &existing_ids {
+            if !new_container_ids.contains(&eid.as_str()) {
+                // 容器被删除，同时清除其所有项目
+                tx.execute("DELETE FROM container_items WHERE container_id = ?1", [eid]).map_err(|e| e.to_string())?;
+                tx.execute("DELETE FROM containers WHERE id = ?1", [eid]).map_err(|e| e.to_string())?;
+            }
+        }
+    }
+    
+    // 差异删除：只删除不再存在的项目
+    {
+        let mut existing_item_ids_stmt = tx.prepare("SELECT id FROM container_items").map_err(|e| e.to_string())?;
+        let existing_item_ids: Vec<String> = existing_item_ids_stmt.query_map([], |row| {
+            row.get::<_, String>(0)
+        }).map_err(|e| e.to_string())?
+          .filter_map(|r| r.ok())
+          .collect();
+        
+        for eid in &existing_item_ids {
+            if !new_item_ids.contains(&eid.as_str()) {
+                tx.execute("DELETE FROM container_items WHERE id = ?1", [eid]).map_err(|e| e.to_string())?;
+            }
+        }
+    }
+    
+    // UPSERT 容器：只更新自己认识的列，不影响未来版本新增的列
     for container in containers {
         let type_str = serde_json::to_string(&container.container_type).unwrap_or_else(|_| "\"normal\"".to_string()).replace("\"", "");
         let style_str = serde_json::to_string(&container.style).unwrap_or_else(|_| "{}".to_string());
         
         tx.execute(
-            "INSERT INTO containers (id, name, type, x, y, width, height, style, folder_path, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            "INSERT INTO containers (id, name, type, x, y, width, height, style, folder_path, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+             ON CONFLICT(id) DO UPDATE SET
+                name = excluded.name,
+                type = excluded.type,
+                x = excluded.x,
+                y = excluded.y,
+                width = excluded.width,
+                height = excluded.height,
+                style = excluded.style,
+                folder_path = excluded.folder_path,
+                updated_at = excluded.updated_at",
             (
                 &container.id,
                 &container.name,
@@ -120,13 +174,27 @@ pub fn save_containers(containers: &[Container]) -> Result<(), String> {
             ),
         ).map_err(|e| e.to_string())?;
         
+        // UPSERT 项目
         for (i, item) in container.items.iter().enumerate() {
             let item_type_str = serde_json::to_string(&item.item_type).unwrap_or_else(|_| "\"file\"".to_string()).replace("\"", "");
             let pos_x = item.position.as_ref().map(|p| p.x);
             let pos_y = item.position.as_ref().map(|p| p.y);
             
             tx.execute(
-                "INSERT INTO container_items (id, container_id, name, path, icon_path, item_type, target_path, size, modified_at, x, y, order_index) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+                "INSERT INTO container_items (id, container_id, name, path, icon_path, item_type, target_path, size, modified_at, x, y, order_index)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+                 ON CONFLICT(id) DO UPDATE SET
+                    container_id = excluded.container_id,
+                    name = excluded.name,
+                    path = excluded.path,
+                    icon_path = excluded.icon_path,
+                    item_type = excluded.item_type,
+                    target_path = excluded.target_path,
+                    size = excluded.size,
+                    modified_at = excluded.modified_at,
+                    x = excluded.x,
+                    y = excluded.y,
+                    order_index = excluded.order_index",
                 (
                     &item.id,
                     &container.id,

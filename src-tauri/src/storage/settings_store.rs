@@ -1,6 +1,8 @@
 use crate::models::Settings;
 use super::db::get_connection;
 
+/// 加载设置 — 依赖 serde 的 `#[serde(default)]` 和 `extra` 字段自动处理缺失/未知属性，
+/// 不再手动逐字段补全，降低维护成本并天然兼容未来版本。
 pub fn load_settings() -> Result<Settings, String> {
     let conn = get_connection().map_err(|e| e.to_string())?;
     
@@ -13,65 +15,16 @@ pub fn load_settings() -> Result<Settings, String> {
         return Ok(Settings::default());
     };
 
-    // 使用serde_json::Value来处理缺少的字段
-    let mut value: serde_json::Value = serde_json::from_str(&data).unwrap_or_else(|_| serde_json::json!({}));
-
-    // 确保所有必需的字段都存在
-    if let Some(obj) = value.as_object_mut() {
-        if !obj.contains_key("selectedItemBackground") {
-            obj.insert(
-                "selectedItemBackground".to_string(),
-                serde_json::Value::String("white".to_string()),
-            );
-        }
-        if !obj.contains_key("selectedItemBlur") {
-            obj.insert(
-                "selectedItemBlur".to_string(),
-                serde_json::Value::Bool(false),
-            );
-        }
-        if !obj.contains_key("globalBlur") {
-            obj.insert("globalBlur".to_string(), serde_json::Value::Bool(true));
-        }
-        if !obj.contains_key("wallpaperCompatible") {
-            obj.insert(
-                "wallpaperCompatible".to_string(),
-                serde_json::Value::Bool(false),
-            );
-        }
-        if !obj.contains_key("gridWidth") {
-            obj.insert(
-                "gridWidth".to_string(),
-                serde_json::Value::Number(serde_json::Number::from(80)),
-            );
-        }
-        if !obj.contains_key("gridHeight") {
-            obj.insert(
-                "gridHeight".to_string(),
-                serde_json::Value::Number(serde_json::Number::from(104)),
-            );
-        }
-        if !obj.contains_key("gridGapX") {
-            obj.insert(
-                "gridGapX".to_string(),
-                serde_json::Value::Number(serde_json::Number::from(20)),
-            );
-        }
-        if !obj.contains_key("gridGapY") {
-            obj.insert(
-                "gridGapY".to_string(),
-                serde_json::Value::Number(serde_json::Number::from(20)),
-            );
-        }
-        if !obj.contains_key("fontSize") {
-            obj.insert(
-                "fontSize".to_string(),
-                serde_json::Value::Number(serde_json::Number::from(12)),
-            );
+    // serde(default) 会自动为缺失字段填充默认值，
+    // serde(flatten) extra 会自动保留未知字段，
+    // 不需要手动逐字段补全
+    match serde_json::from_str::<Settings>(&data) {
+        Ok(settings) => Ok(settings),
+        Err(e) => {
+            eprintln!("设置反序列化失败，使用默认值: {}", e);
+            Ok(Settings::default())
         }
     }
-
-    serde_json::from_value(value).map_err(|e| e.to_string())
 }
 
 pub fn save_settings(settings: &Settings) -> Result<(), String> {

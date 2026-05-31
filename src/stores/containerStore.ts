@@ -3,12 +3,24 @@ import { invoke } from '@tauri-apps/api/core'
 import type { Container, Position, Size } from '@/types/container'
 import type { Item } from '@/types/item'
 
+// 每个容器独立的防抖定时器，避免拖拽/调整大小时每帧都触发数据库写入
+const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
 const persistContainer = async (container: Container) => {
-  try {
-    await invoke('update_container_full', { container })
-  } catch (err) {
-    console.error('Failed to persist container:', err)
-  }
+  // 清除该容器之前的定时器
+  const existing = debounceTimers.get(container.id)
+  if (existing) clearTimeout(existing)
+  
+  // 300ms 防抖：只有最后一次调用才真正写入数据库
+  const timer = setTimeout(async () => {
+    debounceTimers.delete(container.id)
+    try {
+      await invoke('update_container_full', { container })
+    } catch (err) {
+      console.error('Failed to persist container:', err)
+    }
+  }, 300)
+  debounceTimers.set(container.id, timer)
 }
 
 interface ContainerState {

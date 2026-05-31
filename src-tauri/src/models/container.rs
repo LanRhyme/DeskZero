@@ -1,12 +1,42 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "lowercase")]
+/// 容器类型枚举 — 通过自定义序列化支持未知类型，
+/// 避免新版本添加的类型在老版本中被强制回退为 Normal 导致数据损坏。
+#[derive(Debug, Clone, PartialEq)]
 pub enum ContainerType {
     Normal,
     Mapping,
     Folder,
     Game,
+    /// 保留未知类型的原始字符串，防止跨版本数据丢失
+    Other(String),
+}
+
+impl Serialize for ContainerType {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let s = match self {
+            ContainerType::Normal => "normal",
+            ContainerType::Mapping => "mapping",
+            ContainerType::Folder => "folder",
+            ContainerType::Game => "game",
+            ContainerType::Other(raw) => raw.as_str(),
+        };
+        serializer.serialize_str(s)
+    }
+}
+
+impl<'de> Deserialize<'de> for ContainerType {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "normal" => ContainerType::Normal,
+            "mapping" => ContainerType::Mapping,
+            "folder" => ContainerType::Folder,
+            "game" => ContainerType::Game,
+            _ => ContainerType::Other(s),
+        })
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,6 +70,8 @@ impl Default for Size {
     }
 }
 
+/// 容器样式 — 使用 `extra` 字段（`#[serde(flatten)]`）保留当前版本不认识的 JSON 属性，
+/// 确保新版本写入的样式配置不会在老版本读写后丢失。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(default)]
@@ -61,6 +93,9 @@ pub struct ContainerStyle {
     pub cover_image: Option<String>,
     pub sort_by: Option<String>,
     pub sort_desc: Option<bool>,
+    /// 保留当前版本未定义的样式属性，防止跨版本丢失
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 impl Default for ContainerStyle {
@@ -83,10 +118,12 @@ impl Default for ContainerStyle {
             cover_image: None,
             sort_by: None,
             sort_desc: None,
+            extra: HashMap::new(),
         }
     }
 }
 
+/// 容器结构体 — 使用 `extra` 字段保留未来版本可能添加的顶层属性
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(default)]
@@ -104,6 +141,9 @@ pub struct Container {
     pub created_at: u64,
     #[serde(alias = "updated_at")]
     pub updated_at: u64,
+    /// 保留当前版本未定义的容器属性，防止跨版本丢失
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 impl Default for Container {
@@ -122,6 +162,7 @@ impl Default for Container {
             folder_path: None,
             created_at: 0,
             updated_at: 0,
+            extra: HashMap::new(),
         }
     }
 }

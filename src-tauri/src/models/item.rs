@@ -1,13 +1,44 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "lowercase")]
+/// 项目类型枚举 — 通过自定义序列化支持未知类型，
+/// 避免新版本添加的类型在老版本中被强制回退为 File 导致数据损坏。
+#[derive(Debug, Clone, PartialEq)]
 pub enum ItemType {
     File,
     Folder,
     Shortcut,
     Url,
     System,
+    /// 保留未知类型的原始字符串，防止跨版本数据丢失
+    Other(String),
+}
+
+impl Serialize for ItemType {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let s = match self {
+            ItemType::File => "file",
+            ItemType::Folder => "folder",
+            ItemType::Shortcut => "shortcut",
+            ItemType::Url => "url",
+            ItemType::System => "system",
+            ItemType::Other(raw) => raw.as_str(),
+        };
+        serializer.serialize_str(s)
+    }
+}
+
+impl<'de> Deserialize<'de> for ItemType {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "file" => ItemType::File,
+            "folder" => ItemType::Folder,
+            "shortcut" => ItemType::Shortcut,
+            "url" => ItemType::Url,
+            "system" => ItemType::System,
+            _ => ItemType::Other(s),
+        })
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

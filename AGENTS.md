@@ -73,15 +73,15 @@ Rust 测试：在 `src-tauri/` 下执行 `cargo test`。
 3. **实现 Store**
    创建 `storage/widget_store.rs`，编写 `load_widgets` 和 `save_widgets`。
    * 读取时使用 `stmt.query_map` 将 Row 映射为模型。
-   * 写入时使用 `INSERT OR REPLACE INTO` 或者配合 `DELETE` 处理全量更新。
+   * 写入时使用差异删除 + `INSERT ... ON CONFLICT(id) DO UPDATE SET ...`（UPSERT），禁止先全量 `DELETE` 再 `INSERT`（参见健壮性规范）。
 4. **导出接口**
    如果需要在前端访问，通过 Tauri `#[tauri::command]` 暴露出去。
 
 ### 数据模型映射约定
 
 - **基础数据类型**：对应 SQL 的 `TEXT`, `REAL`, `INTEGER`。
-- **枚举 (Enum)**：序列化为字符串存入 `TEXT` 字段，读取时通过 `serde_json::from_str(&format!("\"{}\"", val))` 解析恢复。
-- **灵活的深层对象配置 (Styles/Config)**：对非核心检索字段，例如复杂的样式配置，允许将其序列化为 JSON 字符串存入 `TEXT` 字段，以规避建立过多关联表和提高扩展性。
+- **枚举 (Enum)**：序列化为字符串存入 `TEXT` 字段，读取时通过 `serde_json::from_str(&format!("\"{}\"", val))` 解析恢复。枚举必须包含 `Other(String)` 变体（参见健壮性规范）。
+- **灵活的深层对象配置 (Styles/Config)**：对非核心检索字段，例如复杂的样式配置，允许将其序列化为 JSON 字符串存入 `TEXT` 字段，以规避建立过多关联表和提高扩展性。JSON 序列化的结构体必须包含 `#[serde(flatten)] extra: HashMap<String, serde_json::Value>` 字段（参见健壮性规范）。
 
 ## 约定
 
@@ -91,3 +91,109 @@ Rust 测试：在 `src-tauri/` 下执行 `cargo test`。
 - 前端无测试
 - Rust 调试日志用 `eprintln!`（终端可见，应用内不显示）
 - 提交信息应使用中文
+
+## 代码健壮性规范
+
+此规范确保数据在跨版本升级、功能增减时保持安全，不丢失、不损坏。适用于任何未来负责本项目的 AI 或开发者。
+
+### 1. 前后兼容的序列化
+
+#### 枚举必须包含 `Other(String)` 变体
+
+所有用于持久化或 IPC 的枚举（如 `ContainerType`、`ItemType`）**禁止**使用 serde 自动派生的 `Serialize`/`Deserialize`，必须手动实现并包含 `Other(String)` 变体。
+
+**原因**：未来版本可能新增枚举值（如 `Widget`），老版本如果遇到不认识的值会通过 `unwrap_or(Normal)` 强制回退，重新保存后数据被永久篡改。
+
+```rust
+// ✅ 正确做法
+pub enum ContainerType {
+    Normal, Mapping, Folder, Game,
+    Other(String),  // 保留未知类型原始字符串
+}
+// 手动实现 Serialize/Deserialize，未知值 -> Other(s)
+
+// ❌ 错误做法
+#[derive(Serialize, Deserialize)]
+pub enum ContainerType { Normal, Mapping, Folder, Game }
+// 遇到 "widget" 会反序列化失败 -> unwrap_or(Normal) -> 数据损坏
+```
+
+#### JSON 序列化的结构体必须包含 `extra` 字段
+
+所有序列化为 JSON 存储的结构体（如 `ContainerStyle`、`Settings`、`Container`）必须包含：
+
+```rust
+#[serde(flatten)]
+pub extra: HashMap<String, serde_json::Value>,
+```
+
+**原因**：新版本可能在 JSON 中新增字段，老版本反序列化时会忽略这些字段，重新序列化保存后新字段数据丢失。`extra` 字段会自动收集并保留所有未知属性。
+
+### 2. 数据库安全更新策略
+
+#### 禁止全量 DELETE + INSERT
+
+**禁止**在 `save_*` 方法中先 `DELETE FROM table` 再 `INSERT` 全量数据。必须使用以下策略：
+
+1. **差异删除**：查出现存 ID，只 `DELETE` 那些真正被移除的条目。
+2. **UPSERT**：使用 `INSERT INTO ... ON CONFLICT(id) DO UPDATE SET col1=excluded.col1, ...` 更新现有数据。
+3. **只更新已知列**：UPSERT 的 `DO UPDATE SET` 只列出当前版本认识的列，不影响未来版本新增的列。
+
+```sql
+-- ✅ 正确做法
+INSERT INTO containers (id, name, type, ...) VALUES (?1, ?2, ?3, ...)
+ON CONFLICT(id) DO UPDATE SET name=excluded.name, type=excluded.type, ...
+
+-- ❌ 错误做法
+DELETE FROM containers;
+INSERT INTO containers (id, name, type, ...) VALUES (?1, ?2, ?3, ...);
+-- 如果未来版本在 containers 表新增了 is_pinned 列，全量 DELETE 后新列数据全部丢失
+```
+
+#### 数据库初始化失败必须阻止启动
+
+`storage::init()` 失败时必须返回错误阻止应用继续运行，禁止仅打日志后继续（否则后续所有存储操作都会失败）。
+
+### 3. 并发安全
+
+#### 后端命令必须加互斥锁
+
+所有对同一数据存储执行 `load → modify → save` 操作的 Tauri 命令，必须共用一个 `Mutex` 锁，防止前端并发调用导致竞态覆盖。
+
+```rust
+static CONTAINER_LOCK: Mutex<()> = Mutex::new(());
+
+#[tauri::command]
+pub fn update_container_full(container: Container) -> Result<(), String> {
+    let _lock = CONTAINER_LOCK.lock().map_err(|e| ...)?;
+    // load -> modify -> save 在锁保护下执行
+}
+```
+
+### 4. 前端防抖持久化
+
+#### 高频操作必须防抖
+
+拖拽、调整大小等高频操作触发的持久化调用（`invoke`）必须使用防抖（debounce），避免每帧都触发数据库写入。
+
+- 容器持久化：每个容器独立 300ms 防抖定时器
+- 桌面布局保存：全局 500ms 防抖定时器
+
+```typescript
+// ✅ 正确做法：防抖持久化
+const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>()
+const persistContainer = (container: Container) => {
+  const existing = debounceTimers.get(container.id)
+  if (existing) clearTimeout(existing)
+  const timer = setTimeout(async () => {
+    await invoke('update_container_full', { container })
+  }, 300)
+  debounceTimers.set(container.id, timer)
+}
+
+// ❌ 错误做法：每次修改立即写入
+const persistContainer = async (container: Container) => {
+  await invoke('update_container_full', { container })
+}
+```
+

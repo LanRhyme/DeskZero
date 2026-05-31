@@ -2,6 +2,7 @@
 mod tests {
     use crate::models::*;
     use crate::storage::container_store::*;
+    use std::collections::HashMap;
 
     #[test]
     fn test_load_empty_containers() {
@@ -25,6 +26,7 @@ mod tests {
             folder_path: None,
             created_at: 1234567890,
             updated_at: 1234567890,
+            extra: HashMap::new(),
         }];
 
         save_containers(&containers).unwrap();
@@ -34,3 +36,4 @@ mod tests {
         assert_eq!(loaded[0].position.x, 10.0);
     }
 }
+

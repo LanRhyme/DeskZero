@@ -250,6 +250,7 @@ pub fn run() {
         .setup(|app| {
             if let Err(e) = crate::storage::init() {
                 eprintln!("[DeskZero] Storage initialization failed: {}", e);
+                return Err(format!("数据库初始化失败: {}", e).into());
             }
 
             use tauri::Emitter;

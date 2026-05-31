@@ -1,8 +1,16 @@
 use crate::models::{Container, ContainerType, Position, Size};
 use crate::storage::container_store;
+use std::collections::HashMap;
+use std::sync::Mutex;
+
+/// 全局互斥锁，防止并发读写容器数据导致竞态条件。
+/// 前端的多个 persistContainer 调用可能同时触发 load+save，
+/// 没有锁的话后到的操作会覆盖先到的操作的修改。
+static CONTAINER_LOCK: Mutex<()> = Mutex::new(());
 
 #[tauri::command]
 pub fn get_all_containers() -> Result<Vec<Container>, String> {
+    let _lock = CONTAINER_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
     container_store::load_containers()
 }
 
@@ -12,6 +20,7 @@ pub fn create_container(
     container_type: ContainerType,
     position: Position,
 ) -> Result<Container, String> {
+    let _lock = CONTAINER_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
     let now = chrono::Utc::now().timestamp_millis() as u64;
     let container = Container {
         id: uuid::Uuid::new_v4().to_string(),
@@ -27,6 +36,7 @@ pub fn create_container(
         folder_path: None,
         created_at: now,
         updated_at: now,
+        extra: HashMap::new(),
     };
 
     let mut containers = container_store::load_containers()?;
@@ -42,6 +52,7 @@ pub fn update_container(
     position: Option<Position>,
     size: Option<Size>,
 ) -> Result<Container, String> {
+    let _lock = CONTAINER_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
     let mut containers = container_store::load_containers()?;
     let container = containers
         .iter_mut()
@@ -66,6 +77,7 @@ pub fn update_container(
 
 #[tauri::command]
 pub fn update_container_full(container: Container) -> Result<(), String> {
+    let _lock = CONTAINER_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
     let mut containers = container_store::load_containers()?;
     if let Some(pos) = containers.iter().position(|c| c.id == container.id) {
         let mut updated = container.clone();
@@ -78,6 +90,7 @@ pub fn update_container_full(container: Container) -> Result<(), String> {
 
 #[tauri::command]
 pub fn delete_container(id: String) -> Result<(), String> {
+    let _lock = CONTAINER_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
     let mut containers = container_store::load_containers()?;
     containers.retain(|c| c.id != id);
     container_store::save_containers(&containers)

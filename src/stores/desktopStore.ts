@@ -39,13 +39,23 @@ interface DesktopState {
 import { useSettingsStore } from './settingsStore'
 import { useContainerStore } from './containerStore'
 
+// 桌面布局保存防抖定时器
+let layoutDebounceTimer: ReturnType<typeof setTimeout> | null = null
+
 async function saveLayout(layout: Record<string, {x: number, y: number}>) {
-  try {
-    await invoke('save_desktop_layout', { layout })
-  } catch (e) {
-    console.error('Failed to save layout', e)
-  }
-  localStorage.setItem('deskzero_layout', JSON.stringify(layout))
+  // 清除之前的定时器
+  if (layoutDebounceTimer) clearTimeout(layoutDebounceTimer)
+  
+  // 500ms 防抖：只有最后一次调用才真正写入
+  layoutDebounceTimer = setTimeout(async () => {
+    layoutDebounceTimer = null
+    try {
+      await invoke('save_desktop_layout', { layout })
+    } catch (e) {
+      console.error('Failed to save layout', e)
+    }
+    localStorage.setItem('deskzero_layout', JSON.stringify(layout))
+  }, 500)
 }
 
 function getGridSize() {

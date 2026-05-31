@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -31,6 +32,8 @@ pub enum SelectedItemBackground {
     Black,
 }
 
+/// 全局设置 — 使用 `extra` 字段（`#[serde(flatten)]`）保留当前版本不认识的设置属性，
+/// 确保新版本写入的设置配置不会在老版本读写后丢失。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(default)]
@@ -63,6 +66,9 @@ pub struct Settings {
     pub icon_glow_radius: f64,
     pub icon_glow_intensity: f64,
     pub double_click_hide: bool,
+    /// 保留当前版本未定义的设置属性，防止跨版本丢失
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 impl Default for Settings {
@@ -92,6 +98,7 @@ impl Default for Settings {
             icon_glow_radius: 12.0,
             icon_glow_intensity: 0.6,
             double_click_hide: true,
+            extra: HashMap::new(),
         }
     }
 }

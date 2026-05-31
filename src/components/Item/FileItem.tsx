@@ -38,6 +38,9 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
     cGapX = containerStyle.gridGapX ?? settings.gridGapX ?? 20
     cGapY = containerStyle.gridGapY ?? settings.gridGapY ?? 20
     isListView = containerStyle.layout === 'list'
+    if (isListView) {
+      cHeight = containerStyle.listHeight ?? 30
+    }
     showDetails = containerStyle.showDetails ?? false
     hideAppNames = containerStyle.hideAppNames ?? false
   }
@@ -97,6 +100,25 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
         )
         
         if (targetContainer) {
+          if (targetContainer.type === 'folder') {
+            const pathsToMove = Array.from(useDesktopStore.getState().selectedIds).map(id => {
+              const i = useDesktopStore.getState().items.find(item => item.id === id);
+              return i ? i.path : null;
+            }).filter(Boolean) as string[];
+            
+            if (!pathsToMove.includes(item.path)) {
+              pathsToMove.push(item.path);
+            }
+            
+            useDesktopStore.getState().setDropPrompt({
+              sourcePaths: pathsToMove,
+              targetDir: targetContainer.folderPath!,
+              targetType: 'folderContainer',
+              x: clientX,
+              y: clientY
+            });
+            return;
+          }
           if (targetContainer.type === 'game') {
             if (item.type !== 'url' && item.type !== 'shortcut') {
               window.alert('只能放置快捷方式')
@@ -177,6 +199,40 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
             clientX < container.position.x - 50 || clientX > container.position.x + container.size.width + 50 ||
             clientY < container.position.y - 50 || clientY > container.position.y + container.size.height + 50
           ) {
+            // Check if dropped into another folder container first
+            const containers = useContainerStore.getState().containers
+            const targetContainer = containers.find(c =>
+              clientX >= c.position.x &&
+              clientX <= c.position.x + c.size.width &&
+              clientY >= c.position.y &&
+              clientY <= c.position.y + c.size.height
+            )
+            
+            if (targetContainer && targetContainer.type === 'folder' && targetContainer.id !== container.id) {
+               useDesktopStore.getState().setDropPrompt({
+                 sourcePaths: [item.path],
+                 targetDir: targetContainer.folderPath!,
+                 targetType: 'folderContainer',
+                 x: clientX,
+                 y: clientY
+               })
+               return
+            }
+
+            if (container.type === 'folder') {
+              import('@tauri-apps/api/core').then(({ invoke }) => {
+                invoke<string>('get_desktop_dir').then(desktopDir => {
+                  useDesktopStore.getState().setDropPrompt({
+                    sourcePaths: [item.path],
+                    targetDir: desktopDir,
+                    targetType: 'desktop',
+                    x: clientX,
+                    y: clientY
+                  })
+                })
+              })
+              return
+            }
             useContainerStore.getState().removeItemFromContainer(container.id, item.id)
             useDesktopStore.getState().moveItemToDesktop(item, clientX, clientY)
             return

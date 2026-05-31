@@ -31,6 +31,9 @@ interface DesktopState {
   
   isIconsHidden: boolean
   setIsIconsHidden: (hidden: boolean) => void
+
+  dropPrompt: { sourcePaths: string[], targetDir: string, targetType: 'folderContainer' | 'desktop', x: number, y: number } | null
+  setDropPrompt: (prompt: DesktopState['dropPrompt']) => void
 }
 
 import { useSettingsStore } from './settingsStore'
@@ -136,12 +139,14 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
   selectedIds: new Set(),
   wallpaper: null,
   isIconsHidden: localStorage.getItem('deskzero_icons_hidden') === 'true',
+  dropPrompt: null,
   
   setWallpaper: (wallpaper) => set({ wallpaper }),
   setIsIconsHidden: (hidden) => {
     localStorage.setItem('deskzero_icons_hidden', hidden ? 'true' : 'false')
     set({ isIconsHidden: hidden })
   },
+  setDropPrompt: (prompt) => set({ dropPrompt: prompt }),
 
   fetchDesktopItems: async () => {
     set({ isLoading: true, error: null })

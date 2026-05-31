@@ -17,6 +17,8 @@
     "core:webview:allow-create-webview-window",
     "core:webview:allow-webview-close",
     "drag:default",
-    "http:default"
+    "http:default",
+    "dialog:default",
+    "dialog:allow-open"
   ]
 }

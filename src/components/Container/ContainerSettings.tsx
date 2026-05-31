@@ -22,6 +22,7 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
   const [layout, setLayout] = useState(container.style.layout || 'grid')
   const [gridWidth, setGridWidth] = useState(container.style.gridWidth ?? 80)
   const [gridHeight, setGridHeight] = useState(container.style.gridHeight ?? 104)
+  const [listHeight, setListHeight] = useState(container.style.listHeight ?? 30)
   const [showDetails, setShowDetails] = useState(container.style.showDetails ?? false)
   const [hideAppNames, setHideAppNames] = useState(container.style.hideAppNames ?? false)
   const [cornerRadius, setCornerRadius] = useState(container.style.cornerRadius ?? 10)
@@ -36,6 +37,7 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
       layout: layout as 'grid' | 'list',
       gridWidth,
       gridHeight,
+      listHeight,
       showDetails,
       hideAppNames,
       cornerRadius,
@@ -230,8 +232,8 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
             <div className="space-y-2">
               <label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">列表项高度</label>
               <NumberInput 
-                value={gridHeight}
-                onChange={setGridHeight}
+                value={listHeight}
+                onChange={setListHeight}
                 prefix="H"
                 min={20}
               />

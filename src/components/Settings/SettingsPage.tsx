@@ -93,7 +93,7 @@ export function SettingsPage() {
   ]
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-gray-50 dark:bg-zinc-900 text-gray-900 dark:text-gray-100 select-none overflow-hidden font-sans">
+    <div className="w-screen h-screen flex flex-col bg-white dark:bg-[#121212] text-gray-900 dark:text-gray-100 select-none overflow-hidden font-sans">
       
       {loading && (
         <div className="fixed top-0 left-0 right-0 h-1 bg-blue-500/20 z-50 overflow-hidden">
@@ -110,7 +110,7 @@ export function SettingsPage() {
 
       <Tab.Group vertical as="div" className="flex flex-1 overflow-hidden min-h-0 w-full">
           {/* Sidebar */}
-          <Tab.List className="w-56 p-4 border-r border-black/5 dark:border-white/5 bg-white/50 dark:bg-[#1a1a1a]/50 backdrop-blur-xl flex flex-col gap-1.5 shadow-[2px_0_10px_rgba(0,0,0,0.02)] z-10">
+          <Tab.List className="w-56 p-4 border-r border-black/5 dark:border-white/5 bg-transparent flex flex-col gap-1.5 z-10">
             <div className="mb-6 px-3 pt-2">
               <div className="text-xl font-bold bg-gradient-to-br from-blue-500 to-indigo-500 bg-clip-text text-transparent inline-flex items-center gap-2 tracking-tight">
                 <Icon icon="iconamoon:category" className="text-blue-500" />
@@ -146,7 +146,7 @@ export function SettingsPage() {
             >
               <Tab.Panel className="p-8 max-w-3xl mx-auto min-h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h2 className="text-2xl font-bold mb-8 text-[var(--color-text)] tracking-tight">通用设置</h2>
-              <div className="bg-white dark:bg-[#202020] rounded-2xl shadow-sm border border-black/5 dark:border-white/5 px-6 py-2">
+              <div className="bg-black/[0.02] dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2">
                 
                 <SettingRow title="开机启动" desc="登录 Windows 时自动运行 DeskZero（功能开发中）">
                   <CustomSwitch checked={false} onChange={() => {}} />
@@ -197,7 +197,7 @@ export function SettingsPage() {
 
             <Tab.Panel className="p-8 max-w-3xl mx-auto min-h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h2 className="text-2xl font-bold mb-8 text-[var(--color-text)] tracking-tight">外观个性化</h2>
-              <div className="bg-white dark:bg-[#202020] rounded-2xl shadow-sm border border-black/5 dark:border-white/5 px-6 py-2">
+              <div className="bg-black/[0.02] dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2">
                 
                 <SettingRow title="主题" desc="选择应用的主题外观风格">
                   <div className="flex bg-black/5 dark:bg-white/5 rounded-lg p-1 gap-1">
@@ -347,7 +347,7 @@ export function SettingsPage() {
             <div 
               ref={thumbRef}
               className={cn(
-                "absolute top-0 right-1 w-1.5 bg-black/30 dark:bg-white/30 rounded-full pointer-events-none",
+                "absolute top-0 right-1 w-1.5 bg-black/20 dark:bg-white/20 rounded-full pointer-events-none",
                 "transition-opacity duration-300 ease-in-out",
                 isScrolling ? "opacity-100" : "opacity-0"
               )}

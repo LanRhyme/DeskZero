@@ -1,5 +1,6 @@
-   1.773127900s  INFO prepare_target{force=false package_id=deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint: fingerprint error for deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: false }/TargetInner { ..: lib_target("deskzero_lib", ["staticlib", "cdylib", "rlib"], "D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\lib.rs", Edition2021) }
-   1.773213800s  INFO prepare_target{force=false package_id=deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\AndroidStudioProjects\DeskZero\src-tauri\target\debug\.fingerprint\deskzero-e1dc7adcdf91e96a\lib-deskzero_lib`
+    Blocking waiting for file lock on build directory
+  33.018739100s  INFO prepare_target{force=false package_id=deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint: fingerprint error for deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: true }/TargetInner { ..: lib_target("deskzero_lib", ["staticlib", "cdylib", "rlib"], "D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\lib.rs", Edition2021) }
+  33.018855400s  INFO prepare_target{force=false package_id=deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\AndroidStudioProjects\DeskZero\src-tauri\target\debug\.fingerprint\deskzero-a401c30a692e4115\test-lib-deskzero_lib`
 
 Caused by:
     系统找不到指定的文件。 (os error 2)
@@ -26,64 +27,8 @@ Stack backtrace:
   18: git_midx_writer_dump
   19: BaseThreadInitThunk
   20: RtlUserThreadStart
-   2.427328600s  INFO prepare_target{force=false package_id=deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint: fingerprint error for deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: true }/TargetInner { ..: lib_target("deskzero_lib", ["staticlib", "cdylib", "rlib"], "D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\lib.rs", Edition2021) }
-   2.427418500s  INFO prepare_target{force=false package_id=deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\AndroidStudioProjects\DeskZero\src-tauri\target\debug\.fingerprint\deskzero-81dba00cedb15a8a\test-lib-deskzero_lib`
-
-Caused by:
-    系统找不到指定的文件。 (os error 2)
-
-Stack backtrace:
-   0: git_midx_writer_dump
-   1: git_midx_writer_dump
-   2: git_midx_writer_dump
-   3: git_midx_writer_dump
-   4: git_filter_source_repo
-   5: git_filter_source_repo
-   6: git_filter_source_repo
-   7: git_filter_source_repo
-   8: git_filter_source_repo
-   9: git_filter_source_repo
-  10: git_filter_source_repo
-  11: git_libgit2_prerelease
-  12: <unknown>
-  13: <unknown>
-  14: <unknown>
-  15: <unknown>
-  16: git_midx_writer_dump
-  17: git_filter_source_repo
-  18: git_midx_writer_dump
-  19: BaseThreadInitThunk
-  20: RtlUserThreadStart
-   2.433994100s  INFO prepare_target{force=false package_id=deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero"}: cargo::core::compiler::fingerprint: fingerprint error for deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: false }/TargetInner { name: "deskzero", doc: true, ..: with_path("D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\main.rs", Edition2021) }
-   2.434067400s  INFO prepare_target{force=false package_id=deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\AndroidStudioProjects\DeskZero\src-tauri\target\debug\.fingerprint\deskzero-cecd5cfe62511901\bin-deskzero`
-
-Caused by:
-    系统找不到指定的文件。 (os error 2)
-
-Stack backtrace:
-   0: git_midx_writer_dump
-   1: git_midx_writer_dump
-   2: git_midx_writer_dump
-   3: git_midx_writer_dump
-   4: git_filter_source_repo
-   5: git_filter_source_repo
-   6: git_filter_source_repo
-   7: git_filter_source_repo
-   8: git_filter_source_repo
-   9: git_filter_source_repo
-  10: git_filter_source_repo
-  11: git_libgit2_prerelease
-  12: <unknown>
-  13: <unknown>
-  14: <unknown>
-  15: <unknown>
-  16: git_midx_writer_dump
-  17: git_filter_source_repo
-  18: git_midx_writer_dump
-  19: BaseThreadInitThunk
-  20: RtlUserThreadStart
-   2.439766300s  INFO prepare_target{force=false package_id=deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero"}: cargo::core::compiler::fingerprint: fingerprint error for deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: true }/TargetInner { name: "deskzero", doc: true, ..: with_path("D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\main.rs", Edition2021) }
-   2.439828000s  INFO prepare_target{force=false package_id=deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\AndroidStudioProjects\DeskZero\src-tauri\target\debug\.fingerprint\deskzero-e90b870b0a67739d\test-bin-deskzero`
+  33.058302100s  INFO prepare_target{force=false package_id=deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero"}: cargo::core::compiler::fingerprint: fingerprint error for deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: true }/TargetInner { name: "deskzero", doc: true, ..: with_path("D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\main.rs", Edition2021) }
+  33.058365700s  INFO prepare_target{force=false package_id=deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\AndroidStudioProjects\DeskZero\src-tauri\target\debug\.fingerprint\deskzero-365d5b1fe90b6e26\test-bin-deskzero`
 
 Caused by:
     系统找不到指定的文件。 (os error 2)
@@ -111,4 +56,4 @@ Stack backtrace:
   19: BaseThreadInitThunk
   20: RtlUserThreadStart
     Checking deskzero v0.1.1 (D:\AndroidStudioProjects\DeskZero\src-tauri)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.37s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 36.00s

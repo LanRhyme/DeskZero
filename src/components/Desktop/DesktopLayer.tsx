@@ -14,7 +14,7 @@ export default function DesktopLayer() {
   const containers = useContainerStore(state => state.containers)
   const fetchContainers = useContainerStore(state => state.fetchContainers)
   const createContainer = useContainerStore(state => state.createContainer)
-  const { items, isLoading, fetchDesktopItems, clearSelection, setSelection, realignToGrid, sortDesktopItems, setWallpaper, isIconsHidden, setIsIconsHidden } = useDesktopStore()
+  const { items, isLoading, fetchDesktopItems, clearSelection, setSelection, realignToGrid, sortDesktopItems, setWallpaper, isIconsHidden, setIsIconsHidden, dropPrompt, setDropPrompt } = useDesktopStore()
   const { settings } = useSettingsStore()
   const [menuState, setMenuState] = useState<{visible: boolean, x: number, y: number}>({ visible: false, x: 0, y: 0 })
   const [itemMenuState, setItemMenuState] = useState<{visible: boolean, x: number, y: number, paths: string[]}>({ visible: false, x: 0, y: 0, paths: [] })
@@ -273,6 +273,9 @@ export default function DesktopLayer() {
 
   const desktopMenuItems: MenuItem[] = [
     { label: '刷新', icon: <Icon icon="iconamoon:refresh" />, onClick: () => fetchDesktopItems() },
+    { label: '查看', icon: <Icon icon="iconamoon:eye" />, onClick: () => {}, subItems: [
+      { label: isIconsHidden ? '显示桌面图标' : '隐藏桌面图标', icon: <Icon icon={isIconsHidden ? 'iconamoon:eye' : 'iconamoon:eye-off'} />, onClick: () => setIsIconsHidden(!isIconsHidden) }
+    ]},
     { label: '排序方式', icon: <Icon icon="iconamoon:sorting-left" />, onClick: () => {}, subItems: [
       { label: '名称 A-Z', icon: <Icon icon="iconamoon:text-align-left" />, onClick: () => sortDesktopItems('name') },
       { label: '大小', icon: <Icon icon="iconamoon:box" />, onClick: () => sortDesktopItems('size') },
@@ -320,6 +323,28 @@ export default function DesktopLayer() {
           fetchContainers()
         } catch(e: any) {
           window.alert('新建游戏容器失败: ' + String(e));
+        }
+      }},
+      { label: '新建目录索引容器', icon: <Icon icon="iconamoon:folder" />, onClick: async () => {
+        try {
+          const { open } = await import('@tauri-apps/plugin-dialog');
+          const selected = await open({
+            directory: true,
+            multiple: false,
+            title: '选择要在桌面显示的目录'
+          });
+          if (selected) {
+            const folderPath = Array.isArray(selected) ? selected[0] : selected;
+            // Get folder name
+            const folderName = folderPath.substring(Math.max(folderPath.lastIndexOf('\\'), folderPath.lastIndexOf('/')) + 1) || '新目录';
+            await createContainer(folderName, 'folder', { 
+              x: menuState.x, 
+              y: menuState.y 
+            }, folderPath);
+            fetchContainers();
+          }
+        } catch(e: any) {
+          window.alert('新建目录索引容器失败: ' + String(e));
         }
       }}
     ]},
@@ -545,8 +570,67 @@ export default function DesktopLayer() {
             />
           </div>
         )}
+
+        {/* Drop Prompt Popup */}
+        {dropPrompt && (
+          <div 
+            className="absolute z-50 bg-white/90 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 shadow-2xl rounded-xl p-2 flex flex-col min-w-[120px]"
+            style={{ left: dropPrompt.x, top: dropPrompt.y }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <button 
+              className="px-3 py-1.5 text-left text-sm text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors whitespace-nowrap"
+              onClick={async () => {
+                const prompt = dropPrompt;
+                setDropPrompt(null);
+                try {
+                  const { invoke } = await import('@tauri-apps/api/core');
+                  await invoke('paste_files_to_desktop', { paths: prompt.sourcePaths, targetDir: prompt.targetDir });
+                  if (prompt.targetType === 'desktop') {
+                    fetchDesktopItems();
+                  } else {
+                    window.dispatchEvent(new CustomEvent('folder-container-refresh', { detail: { dir: prompt.targetDir } }));
+                  }
+                } catch(e) {
+                  console.error(e);
+                  window.alert("复制失败: " + String(e));
+                }
+              }}
+            >
+              复制到当前位置
+            </button>
+            <button 
+              className="px-3 py-1.5 text-left text-sm text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors whitespace-nowrap"
+              onClick={async () => {
+                const prompt = dropPrompt;
+                setDropPrompt(null);
+                try {
+                  const { invoke } = await import('@tauri-apps/api/core');
+                  await invoke('move_files_to_dir', { paths: prompt.sourcePaths, targetDir: prompt.targetDir });
+                  // refresh both desktop and the target
+                  fetchDesktopItems();
+                  if (prompt.targetType === 'folderContainer') {
+                    window.dispatchEvent(new CustomEvent('folder-container-refresh', { detail: { dir: prompt.targetDir } }));
+                  }
+                } catch(e) {
+                  console.error(e);
+                  window.alert("移动失败: " + String(e));
+                }
+              }}
+            >
+              移动到当前位置
+            </button>
+            <div className="h-[1px] bg-black/10 dark:bg-white/10 my-1" />
+            <button 
+              className="px-3 py-1.5 text-left text-sm text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors whitespace-nowrap"
+              onClick={() => setDropPrompt(null)}
+            >
+              取消
+            </button>
+          </div>
+        )}
         
-        <div className={`w-full h-full transition-opacity duration-300 ${isIconsHidden && settings.doubleClickHide !== false ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div className={`w-full h-full transition-opacity duration-300 ${isIconsHidden && settings.doubleClickHide !== false ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} onClick={() => { if(dropPrompt) setDropPrompt(null); }}>
           <DesktopGrid>
             {/* Render Desktop Items */}
             {items.filter(i => !i.isInContainer).map(item => (

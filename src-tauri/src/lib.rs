@@ -206,8 +206,8 @@ mod win_layer {
             let sm_xvirtualscreen = 76;
             let sm_yvirtualscreen = 77;
             extern "system" { fn GetSystemMetrics(nIndex: i32) -> i32; }
-            let v_x = GetSystemMetrics(sm_xvirtualscreen);
-            let v_y = GetSystemMetrics(sm_yvirtualscreen);
+            let _v_x = GetSystemMetrics(sm_xvirtualscreen);
+            let _v_y = GetSystemMetrics(sm_yvirtualscreen);
             let v_width = GetSystemMetrics(sm_cxvirtualscreen);
             let v_height = GetSystemMetrics(sm_cyvirtualscreen);
 
@@ -246,6 +246,7 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_drag::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             if let Err(e) = crate::storage::init() {
                 eprintln!("[DeskZero] Storage initialization failed: {}", e);
@@ -323,6 +324,7 @@ pub fn run() {
             commands::container::update_container_full,
             commands::container::delete_container,
             commands::desktop::scan_desktop_icons,
+            commands::desktop::scan_directory_icons,
             commands::desktop::get_desktop_dir,
             commands::desktop::get_desktop_layout,
             commands::desktop::save_desktop_layout,
@@ -353,6 +355,7 @@ pub fn run() {
             clipboard::get_files_from_clipboard,
             clipboard::check_clipboard_has_files,
             clipboard::paste_files_to_desktop,
+            clipboard::move_files_to_dir,
             context_menu::show_context_menu,
         ])
         .run(tauri::generate_context!())

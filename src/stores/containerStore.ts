@@ -18,7 +18,7 @@ interface ContainerState {
 
   // Actions
   fetchContainers: () => Promise<void>
-  createContainer: (name: string, type: Container['type'], position: Position) => Promise<Container>
+  createContainer: (name: string, type: Container['type'], position: Position, folderPath?: string) => Promise<Container>
   updateContainerPosition: (id: string, position: Position) => void
   updateContainerSize: (id: string, size: Size) => void
   updateContainerStyle: (id: string, style: Partial<Container['style']>) => void
@@ -52,7 +52,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
     }
   },
 
-  createContainer: async (name, type, position) => {
+  createContainer: async (name, type, position, folderPath) => {
     try {
       let finalName = name;
       const existingNames = get().containers.map(c => c.name);
@@ -65,9 +65,16 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
       }
       
       const newContainer = await invoke<Container>('create_container', { name: finalName, containerType: type, position })
+      if (folderPath) {
+        newContainer.folderPath = folderPath;
+        if (type === 'folder') {
+          newContainer.style = { ...newContainer.style, layout: 'list', sortBy: 'name', sortDesc: false, showDetails: true };
+        }
+        await invoke('update_container_full', { container: newContainer });
+      }
       set((state) => ({ containers: [...state.containers, newContainer] }))
       const updated = get().containers.find(c => c.id === newContainer.id)
-      if (updated) persistContainer(updated)
+      if (updated && !folderPath) persistContainer(updated) // folderPath case already persisted
       return updated!
     } catch (err: any) {
       console.error(err)

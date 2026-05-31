@@ -21,12 +21,17 @@ export interface ContainerStyle {
   gridEnabled?: boolean
   gridWidth?: number
   gridHeight?: number
+  listHeight?: number
   gridGapX?: number
   gridGapY?: number
   iconSize?: string
+  blurAmount?: number
+  backgroundType?: 'default' | 'acrylic' | 'mica'
   showDetails?: boolean
   hideAppNames?: boolean
   coverImage?: string
+  sortBy?: string
+  sortDesc?: boolean
 }
 
 export interface Container {

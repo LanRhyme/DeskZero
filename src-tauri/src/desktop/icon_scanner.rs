@@ -83,11 +83,21 @@ struct PreparedEntry {
 }
 
 pub fn scan_desktop_icons() -> Result<Vec<Item>, String> {
-    let desktop_paths = get_desktop_paths();
+    scan_paths(&get_desktop_paths(), true)
+}
 
+pub fn scan_directory_icons(path: &str) -> Result<Vec<Item>, String> {
+    let p = PathBuf::from(path);
+    if !p.exists() || !p.is_dir() {
+        return Err(format!("目录不存在或不是目录: {}", path));
+    }
+    scan_paths(&[p], false)
+}
+
+fn scan_paths(paths: &[PathBuf], is_desktop: bool) -> Result<Vec<Item>, String> {
     let mut all_entries = Vec::new();
-    for desktop_path in &desktop_paths {
-        if let Ok(entries) = std::fs::read_dir(desktop_path) {
+    for path in paths {
+        if let Ok(entries) = std::fs::read_dir(path) {
             for entry in entries.flatten() {
                 all_entries.push(entry);
             }
@@ -234,75 +244,77 @@ pub fn scan_desktop_icons() -> Result<Vec<Item>, String> {
         })
         .collect();
 
-    // Add System Icons based on registry visibility
-    let is_hidden = |clsid: &str, default_hidden: bool| -> bool {
-        let hkcu = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER);
+    // Add System Icons based on registry visibility only for desktop
+    if is_desktop {
+        let is_hidden = |clsid: &str, default_hidden: bool| -> bool {
+            let hkcu = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER);
 
-        // 1. Check NewStartPanel
-        if let Ok(key) = hkcu.open_subkey(
-            r#"Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel"#,
-        ) {
-            if let Ok(val) = key.get_value::<u32, _>(clsid) {
-                return val == 1;
+            // 1. Check NewStartPanel
+            if let Ok(key) = hkcu.open_subkey(
+                r#"Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel"#,
+            ) {
+                if let Ok(val) = key.get_value::<u32, _>(clsid) {
+                    return val == 1;
+                }
             }
+
+            // 2. Check ClassicStartMenu
+            if let Ok(key) = hkcu.open_subkey(r#"Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu"#) {
+                if let Ok(val) = key.get_value::<u32, _>(clsid) {
+                    return val == 1;
+                }
+            }
+
+            default_hidden
+        };
+
+        let get_stock_icon_base64 = |stock_icon: win_icon_extractor::StockIcon| -> String {
+            if let Ok(icon_data) = win_icon_extractor::extract_stock_icon(stock_icon) {
+                if let Ok(webp_bytes) =
+                    win_icon_extractor::encode_webp(&icon_data.rgba, icon_data.width, icon_data.height)
+                {
+                    use base64::Engine;
+                    let b64 = base64::engine::general_purpose::STANDARD.encode(&webp_bytes);
+                    return format!("data:image/webp;base64,{}", b64);
+                }
+            }
+            String::new()
+        };
+
+        // This PC (hidden by default)
+        if !is_hidden("{20D04FE0-3AEA-1069-A2D8-08002B30309D}", true) {
+            items.push(Item {
+                id: "system-this-pc".to_string(),
+                name: "此电脑".to_string(),
+                path: "shell:::{20D04FE0-3AEA-1069-A2D8-08002B30309D}".to_string(),
+                icon_path: get_stock_icon_base64(win_icon_extractor::StockIcon::DesktopPc),
+                item_type: ItemType::System,
+                target_path: Some("{20D04FE0-3AEA-1069-A2D8-08002B30309D}".to_string()),
+                is_in_container: false,
+                container_id: None,
+                position: None,
+                size: None,
+                modified_at: None,
+            });
         }
 
-        // 2. Check ClassicStartMenu
-        if let Ok(key) = hkcu.open_subkey(r#"Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\ClassicStartMenu"#) {
-            if let Ok(val) = key.get_value::<u32, _>(clsid) {
-                return val == 1;
-            }
+        // Recycle Bin (shown by default)
+        if !is_hidden("{645FF040-5081-101B-9F08-00AA002F954E}", false) {
+            // We could check if it's full or not, but Recycler is fine.
+            items.push(Item {
+                id: "system-recycle-bin".to_string(),
+                name: "回收站".to_string(),
+                path: "shell:::{645FF040-5081-101B-9F08-00AA002F954E}".to_string(),
+                icon_path: get_stock_icon_base64(win_icon_extractor::StockIcon::Recycler),
+                item_type: ItemType::System,
+                target_path: Some("{645FF040-5081-101B-9F08-00AA002F954E}".to_string()),
+                is_in_container: false,
+                container_id: None,
+                position: None,
+                size: None,
+                modified_at: None,
+            });
         }
-
-        default_hidden
-    };
-
-    let get_stock_icon_base64 = |stock_icon: win_icon_extractor::StockIcon| -> String {
-        if let Ok(icon_data) = win_icon_extractor::extract_stock_icon(stock_icon) {
-            if let Ok(webp_bytes) =
-                win_icon_extractor::encode_webp(&icon_data.rgba, icon_data.width, icon_data.height)
-            {
-                use base64::Engine;
-                let b64 = base64::engine::general_purpose::STANDARD.encode(&webp_bytes);
-                return format!("data:image/webp;base64,{}", b64);
-            }
-        }
-        String::new()
-    };
-
-    // This PC (hidden by default)
-    if !is_hidden("{20D04FE0-3AEA-1069-A2D8-08002B30309D}", true) {
-        items.push(Item {
-            id: "system-this-pc".to_string(),
-            name: "此电脑".to_string(),
-            path: "shell:::{20D04FE0-3AEA-1069-A2D8-08002B30309D}".to_string(),
-            icon_path: get_stock_icon_base64(win_icon_extractor::StockIcon::DesktopPc),
-            item_type: ItemType::System,
-            target_path: Some("{20D04FE0-3AEA-1069-A2D8-08002B30309D}".to_string()),
-            is_in_container: false,
-            container_id: None,
-            position: None,
-            size: None,
-            modified_at: None,
-        });
-    }
-
-    // Recycle Bin (shown by default)
-    if !is_hidden("{645FF040-5081-101B-9F08-00AA002F954E}", false) {
-        // We could check if it's full or not, but Recycler is fine.
-        items.push(Item {
-            id: "system-recycle-bin".to_string(),
-            name: "回收站".to_string(),
-            path: "shell:::{645FF040-5081-101B-9F08-00AA002F954E}".to_string(),
-            icon_path: get_stock_icon_base64(win_icon_extractor::StockIcon::Recycler),
-            item_type: ItemType::System,
-            target_path: Some("{645FF040-5081-101B-9F08-00AA002F954E}".to_string()),
-            is_in_container: false,
-            container_id: None,
-            position: None,
-            size: None,
-            modified_at: None,
-        });
     }
 
     Ok(items)

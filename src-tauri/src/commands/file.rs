@@ -118,7 +118,6 @@ pub fn run_as_admin(path: String) -> Result<(), String> {
     use windows::Win32::UI::Shell::ShellExecuteW;
     use windows::Win32::UI::WindowsAndMessaging::SW_SHOW;
     use windows::core::PCWSTR;
-    use windows::Win32::Foundation::HWND;
 
     let path_wide: Vec<u16> = std::ffi::OsStr::new(&path).encode_wide().chain(std::iter::once(0)).collect();
     let verb_wide: Vec<u16> = std::ffi::OsStr::new("runas").encode_wide().chain(std::iter::once(0)).collect();

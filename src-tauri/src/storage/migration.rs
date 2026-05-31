@@ -1,6 +1,6 @@
 use std::fs;
 use std::collections::HashMap;
-use crate::models::{Settings, container::Container};
+use crate::models::container::Container;
 use super::db::{get_connection, get_data_dir};
 
 pub fn run_migrations() {

@@ -12,6 +12,7 @@ import { useDesktopStore } from '@/stores/desktopStore'
 import { ContainerSettings } from './ContainerSettings'
 
 import { GameContainer } from './GameContainer'
+import { FolderContainer } from './FolderContainer'
 
 interface ContainerProps {
   container: ContainerType
@@ -20,6 +21,9 @@ interface ContainerProps {
 export function Container({ container }: ContainerProps) {
   if (container.type === 'game') {
     return <GameContainer container={container} />
+  }
+  if (container.type === 'folder') {
+    return <FolderContainer container={container} />
   }
   const { updateContainerPosition, updateContainerSize } = useContainerStore()
   const { settings } = useSettingsStore()
@@ -332,7 +336,7 @@ export function Container({ container }: ContainerProps) {
           <div 
             ref={thumbRef}
             className={cn(
-              "absolute top-0 right-1 w-1.5 bg-black/40 dark:bg-white/40 rounded-full pointer-events-none",
+              "absolute top-0 right-1 w-1.5 bg-black/20 dark:bg-white/20 rounded-full pointer-events-none",
               "transition-opacity duration-300 ease-in-out",
               isScrolling ? "opacity-100" : "opacity-0"
             )}

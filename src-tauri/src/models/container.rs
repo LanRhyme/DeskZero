@@ -52,12 +52,15 @@ pub struct ContainerStyle {
     pub grid_enabled: Option<bool>,
     pub grid_width: Option<f64>,
     pub grid_height: Option<f64>,
+    pub list_height: Option<f64>,
     pub grid_gap_x: Option<f64>,
     pub grid_gap_y: Option<f64>,
     pub icon_size: Option<String>,
     pub show_details: Option<bool>,
     pub hide_app_names: Option<bool>,
     pub cover_image: Option<String>,
+    pub sort_by: Option<String>,
+    pub sort_desc: Option<bool>,
 }
 
 impl Default for ContainerStyle {
@@ -71,12 +74,15 @@ impl Default for ContainerStyle {
             grid_enabled: None,
             grid_width: None,
             grid_height: None,
+            list_height: None,
             grid_gap_x: None,
             grid_gap_y: None,
             icon_size: None,
             show_details: None,
             hide_app_names: None,
             cover_image: None,
+            sort_by: None,
+            sort_desc: None,
         }
     }
 }

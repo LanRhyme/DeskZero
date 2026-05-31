@@ -315,11 +315,9 @@ export function SettingsPage() {
             </Tab.Panel>
 
             <Tab.Panel className="p-8 max-w-3xl mx-auto min-h-full flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-500">
-              <div className="relative group cursor-pointer mb-8">
-                <div className="absolute inset-0 bg-blue-500 rounded-3xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
-                <div className="relative w-28 h-28 rounded-3xl bg-gradient-to-br from-blue-400 to-indigo-600 shadow-xl flex items-center justify-center text-white text-4xl font-bold tracking-tighter">
-                  DZ
-                </div>
+              <div className="relative group cursor-pointer mb-8 flex justify-center">
+                <div className="absolute inset-0 bg-blue-500 rounded-3xl blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
+                <img src="/icon.png" alt="DeskZero Logo" className="relative w-28 h-28 object-contain drop-shadow-xl hover:scale-105 transition-transform duration-500" />
               </div>
               
               <h2 className="text-3xl font-extrabold text-[var(--color-text)] tracking-tight">DeskZero</h2>

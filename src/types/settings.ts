@@ -21,6 +21,7 @@ export interface Settings {
   globalBlur: boolean
   fontSize: number
   hideShortcutBadge?: boolean
+  hideFileExtensions?: boolean
   iconOpacity?: number
   textOpacity?: number
   iconGlow?: boolean

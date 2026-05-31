@@ -101,12 +101,6 @@ pub fn scan_desktop_icons() -> Result<Vec<Item>, String> {
     let mut prepared = Vec::with_capacity(all_entries.len());
     for entry in all_entries {
         let path = entry.path();
-        let name = path
-            .file_stem()
-            .unwrap_or_default()
-            .to_string_lossy()
-            .to_string();
-
         let item_type = if path.extension().map_or(false, |ext| ext == "lnk") {
             ItemType::Shortcut
         } else if path.extension().map_or(false, |ext| ext == "url") {
@@ -115,6 +109,19 @@ pub fn scan_desktop_icons() -> Result<Vec<Item>, String> {
             ItemType::Folder
         } else {
             ItemType::File
+        };
+
+        let is_shortcut = item_type == ItemType::Shortcut || item_type == ItemType::Url;
+        let name = if is_shortcut {
+            path.file_stem()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string()
+        } else {
+            path.file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string()
         };
 
         let mtime = get_file_mtime(&path);

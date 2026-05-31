@@ -294,6 +294,14 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
   const textMaxHeight = cHeight + cGapY - currentIconSize - 16
   const lines = Math.max(2, Math.floor(textMaxHeight / (fontSize * 1.2)))
 
+  let displayName = item.name
+  if (item.type === 'file' && settings.hideFileExtensions !== false) {
+    const lastDot = displayName.lastIndexOf('.')
+    if (lastDot > 0) {
+      displayName = displayName.substring(0, lastDot)
+    }
+  }
+
   return (
     <motion.div
       ref={ref}
@@ -393,7 +401,7 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
             overflow: 'hidden'
           }}
         >
-          {item.name}
+          {displayName}
         </span>
         {isListView && showDetails && (
           <span 

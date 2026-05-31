@@ -152,6 +152,13 @@ export function SettingsPage() {
                   <CustomSwitch checked={false} onChange={() => {}} />
                 </SettingRow>
 
+                <SettingRow title="隐藏文件后缀名" desc="桌面非快捷方式文件是否隐藏后缀名">
+                  <CustomSwitch 
+                    checked={settings.hideFileExtensions !== false} 
+                    onChange={() => saveSettings({ hideFileExtensions: !(settings.hideFileExtensions !== false) })} 
+                  />
+                </SettingRow>
+
                 <SettingRow title="双击隐藏桌面图标" desc="在桌面空白处双击可快速隐藏或显示所有图标">
                   <CustomSwitch 
                     checked={settings.doubleClickHide !== false} 

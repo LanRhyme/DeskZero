@@ -27,7 +27,7 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
   const [cornerRadius, setCornerRadius] = useState(container.style.cornerRadius ?? 10)
 
   const handleSave = () => {
-    if (name.trim() && name !== container.name) {
+    if (name.trim() !== container.name) {
       updateContainerName(container.id, name.trim())
     }
     updateContainerStyle(container.id, {
@@ -55,7 +55,7 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
   return (
     <div className="w-full transform overflow-hidden rounded-xl bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-3xl p-3 text-left align-middle shadow-2xl transition-all border border-black/5 dark:border-white/10 ring-1 ring-black/5">
       <div className="text-sm font-medium leading-5 text-[var(--color-text)] flex justify-between items-center mb-3">
-        <span>收纳盒设置 <span className="text-[10px] font-normal text-[var(--color-text-secondary)] opacity-70">({container.name})</span></span>
+        <span>收纳盒设置 {container.name && <span className="text-[10px] font-normal text-[var(--color-text-secondary)] opacity-70">({container.name})</span>}</span>
         <button 
           onClick={onClose}
           className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-[var(--color-text-secondary)]"

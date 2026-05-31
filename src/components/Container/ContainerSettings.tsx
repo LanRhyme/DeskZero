@@ -18,7 +18,7 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
   
   const [name, setName] = useState(container.name)
   const [opacity, setOpacity] = useState(container.style.backgroundOpacity ?? 0.3)
-  const [bgColor, setBgColor] = useState(container.style.backgroundColor || '#000000')
+  const [bgColor, setBgColor] = useState(container.style.backgroundColor || 'theme')
   const [layout, setLayout] = useState(container.style.layout || 'grid')
   const [gridWidth, setGridWidth] = useState(container.style.gridWidth ?? 80)
   const [gridHeight, setGridHeight] = useState(container.style.gridHeight ?? 104)
@@ -79,16 +79,43 @@ export function ContainerSettings({ container, onClose }: ContainerSettingsProps
 
         {/* Colors */}
         <div className="space-y-2">
-          <label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">背景设计</label>
+          <label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">背景设置</label>
+          <div className="flex gap-1.5 mb-2">
+            <button
+              onClick={() => setBgColor('theme')}
+              className={cn(
+                "flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200",
+                bgColor === 'theme' || !bgColor
+                  ? "bg-blue-500 text-white shadow-sm shadow-blue-500/20" 
+                  : "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)] hover:bg-black/10 dark:hover:bg-white/10"
+              )}
+            >
+              跟随主题
+            </button>
+            <button
+              onClick={() => setBgColor(bgColor === 'theme' || !bgColor ? '#000000' : bgColor)}
+              className={cn(
+                "flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200",
+                bgColor !== 'theme' && bgColor
+                  ? "bg-blue-500 text-white shadow-sm shadow-blue-500/20" 
+                  : "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)] hover:bg-black/10 dark:hover:bg-white/10"
+              )}
+            >
+              自定义
+            </button>
+          </div>
+
           <div className="flex items-center gap-3">
-            <div className="relative w-8 h-8 rounded-full overflow-hidden shadow-inner ring-1 ring-black/10 dark:ring-white/10 cursor-pointer group">
-              <input 
-                type="color" 
-                value={bgColor.startsWith('#') ? bgColor : '#000000'}
-                onChange={(e) => setBgColor(e.target.value)}
-                className="absolute inset-[-10px] w-[200%] h-[200%] cursor-pointer"
-              />
-            </div>
+            {bgColor !== 'theme' && bgColor && (
+              <div className="relative w-8 h-8 rounded-full overflow-hidden shadow-inner ring-1 ring-black/10 dark:ring-white/10 cursor-pointer group shrink-0">
+                <input 
+                  type="color" 
+                  value={bgColor.startsWith('#') ? bgColor : '#000000'}
+                  onChange={(e) => setBgColor(e.target.value)}
+                  className="absolute inset-[-10px] w-[200%] h-[200%] cursor-pointer"
+                />
+              </div>
+            )}
             <div className="flex-1">
               <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-2">
                 <span>透明度</span>

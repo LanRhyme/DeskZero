@@ -165,13 +165,48 @@ export function Container({ container }: ContainerProps) {
   }
 
   const bgOpacity = container.style.backgroundOpacity ?? 0.3
-  const bgColor = container.style.backgroundColor || '#000000'
+  const bgColor = container.style.backgroundColor || 'theme'
   const layoutStyle = container.style.layout === 'list' ? 'flex-col' : 'flex-wrap content-start'
   
   // Custom background generation
-  const customBackground = bgColor.startsWith('#') || bgColor.startsWith('rgb') 
-    ? `rgba(${hexToRgb(bgColor)}, ${bgOpacity})` 
-    : bgColor
+  const customBackground = bgColor === 'theme'
+    ? `rgba(var(--color-container-bg-rgb), ${bgOpacity})`
+    : bgColor.startsWith('#') || bgColor.startsWith('rgb') 
+      ? `rgba(${hexToRgb(bgColor)}, ${bgOpacity})` 
+      : bgColor
+
+  // Calculate dynamic text colors based on background
+  const [isSystemDark, setIsSystemDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches)
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const handler = (e: MediaQueryListEvent) => setIsSystemDark(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
+  const isThemeDark = settings.theme === 'dark' || (settings.theme === 'system' && isSystemDark)
+
+  let isBaseLight = !isThemeDark
+  if (bgColor !== 'theme' && bgColor.startsWith('#')) {
+    const hex = bgColor
+    const r = parseInt(hex.slice(1, 3), 16) || 0
+    const g = parseInt(hex.slice(3, 5), 16) || 0
+    const b = parseInt(hex.slice(5, 7), 16) || 0
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    isBaseLight = luminance > 0.5
+  }
+
+  // If opacity is low, wallpaper dominates. Desktop wallpapers are usually best with white text.
+  const isVisualLight = bgOpacity >= 0.5 ? isBaseLight : false
+
+  const headerColor = isVisualLight ? 'rgba(0, 0, 0, 0.85)' : 'rgba(255, 255, 255, 0.95)'
+  const iconColor = isVisualLight ? 'rgba(0, 0, 0, 0.65)' : 'rgba(255, 255, 255, 0.8)'
+  const textShadow = isVisualLight 
+    ? '0 1px 2px rgba(255, 255, 255, 0.6)' 
+    : '0 1px 2px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0, 0, 0, 0.5)'
+  const iconFilter = isVisualLight 
+    ? 'drop-shadow(0 1px 1px rgba(255,255,255,0.6))' 
+    : 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))'
 
   return (
     <>
@@ -225,20 +260,25 @@ export function Container({ container }: ContainerProps) {
           <div 
             ref={dragHandleRef}
             {...listeners}
-            className="flex items-center justify-between px-2 py-1 transition-colors cursor-move touch-none"
+            className="flex items-center justify-between px-2 py-1 transition-colors cursor-move touch-none relative min-h-[24px]"
             style={{ backgroundColor: 'transparent' }} // Inherits inner color
           >
-            <span className="text-xs font-medium text-[var(--color-text)] opacity-80 pointer-events-none">
+            <div className="w-6 pointer-events-none" /> {/* Placeholder for layout balance */}
+            <span 
+              className="absolute left-1/2 -translate-x-1/2 text-xs font-medium pointer-events-none transition-colors"
+              style={{ color: headerColor, textShadow }}
+            >
               {container.name}
             </span>
-            <div className="flex gap-1 relative">
+            <div className="flex gap-1 relative z-10">
               <Popover>
                 {({ close }) => (
                   <>
                     <Popover.Button 
                       as="button"
                       onPointerDown={(e: React.PointerEvent) => e.stopPropagation()} 
-                      className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 text-[var(--color-text-secondary)] transition-colors cursor-pointer focus:outline-none"
+                      className="p-1 rounded transition-colors cursor-pointer focus:outline-none hover:bg-black/10 dark:hover:bg-white/10"
+                      style={{ color: iconColor, filter: iconFilter }}
                     >
                       <Settings size={12} />
                     </Popover.Button>

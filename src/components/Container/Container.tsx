@@ -205,8 +205,10 @@ export function Container({ container }: ContainerProps) {
         ref={ref}
         style={{
           position: 'absolute',
-          left: pos.x + resizePosOffset.x,
-          top: pos.y + resizePosOffset.y,
+          left: 0,
+          top: 0,
+          x: pos.x + resizePosOffset.x,
+          y: pos.y + resizePosOffset.y,
           width: size.width,
           height: size.height,
           borderRadius: container.style.cornerRadius ?? 10,

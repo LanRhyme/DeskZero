@@ -1,40 +1,41 @@
 {
-  "name": "deskzero",
-  "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "predev": "node scripts/sync-config.js",
-    "dev": "vite",
-    "prebuild": "node scripts/sync-config.js",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "tauri": "tauri"
-  },
-  "dependencies": {
-    "@crabnebula/tauri-plugin-drag": "^2.1.0",
-    "@headlessui/react": "^2.2.10",
-    "@heroicons/react": "^2.2.0",
-    "@iconify/react": "^6.0.2",
-    "@tauri-apps/api": "^2.11.0",
-    "@tauri-apps/cli": "^2.11.2",
-    "@tauri-apps/plugin-dialog": "^2.7.1",
-    "@tauri-apps/plugin-http": "^2.5.9",
-    "clsx": "^2.1.1",
-    "framer-motion": "^12.40.0",
-    "lucide-react": "^1.16.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "tailwind-merge": "^3.6.0",
-    "zustand": "^5.0.13"
-  },
-  "devDependencies": {
-    "@tailwindcss/vite": "^4.3.0",
-    "@types/react": "^19.1.2",
-    "@types/react-dom": "^19.1.2",
-    "@vitejs/plugin-react": "^4.4.1",
-    "tailwindcss": "^4.3.0",
-    "typescript": "~5.7.2",
-    "vite": "^6.3.5"
-  }
+	"name": "deskzero",
+	"private": true,
+	"version": "1.0.0",
+	"type": "module",
+	"scripts": {
+		"predev": "node scripts/sync-config.js",
+		"dev": "vite",
+		"prebuild": "node scripts/sync-config.js",
+		"build": "tsc -b && vite build",
+		"preview": "vite preview",
+		"tauri": "tauri"
+	},
+	"dependencies": {
+		"@crabnebula/tauri-plugin-drag": "^2.1.0",
+		"@headlessui/react": "^2.2.10",
+		"@heroicons/react": "^2.2.0",
+		"@iconify/react": "^6.0.2",
+		"@tauri-apps/api": "^2.11.0",
+		"@tauri-apps/cli": "^2.11.2",
+		"@tauri-apps/plugin-dialog": "^2.7.1",
+		"@tauri-apps/plugin-http": "^2.5.9",
+		"clsx": "^2.1.1",
+		"framer-motion": "^12.40.0",
+		"lucide-react": "^1.16.0",
+		"react": "^19.1.0",
+		"react-dom": "^19.1.0",
+		"tailwind-merge": "^3.6.0",
+		"zustand": "^5.0.13"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.16",
+		"@tailwindcss/vite": "^4.3.0",
+		"@types/react": "^19.1.2",
+		"@types/react-dom": "^19.1.2",
+		"@vitejs/plugin-react": "^4.4.1",
+		"tailwindcss": "^4.3.0",
+		"typescript": "~5.7.2",
+		"vite": "^6.3.5"
+	}
 }

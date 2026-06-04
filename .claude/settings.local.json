@@ -1,8 +1,5 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(cargo check:*)",
-      "Bash(npx tsc:*)"
-    ]
-  }
+	"permissions": {
+		"allow": ["Bash(cargo check:*)", "Bash(npx tsc:*)"]
+	}
 }

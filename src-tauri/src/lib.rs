@@ -260,16 +260,18 @@ pub fn run() {
             let quit_i = tauri::menu::MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
             let menu = tauri::menu::Menu::with_items(app, &[&refresh_i, &settings_i, &quit_i])?;
 
+            let tray_icon = app.default_window_icon().cloned()
+                .expect("应用图标未加载，无法创建托盘图标");
             let _tray = tauri::tray::TrayIconBuilder::new()
-                .icon(app.default_window_icon().cloned().unwrap())
+                .icon(tray_icon)
                 .menu(&menu)
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "refresh" => {
-                        app.emit("refresh-desktop", ()).unwrap();
+                        let _ = app.emit("refresh-desktop", ());
                     }
                     "settings" => {
-                        app.emit("open-settings", ()).unwrap();
+                        let _ = app.emit("open-settings", ());
                     }
                     "quit" => {
                         app.exit(0);
@@ -283,7 +285,7 @@ pub fn run() {
                         ..
                     } => {
                         let app = tray.app_handle();
-                        app.emit("refresh-desktop", ()).unwrap();
+                        let _ = app.emit("refresh-desktop", ());
                     }
                     _ => {}
                 })
@@ -292,17 +294,27 @@ pub fn run() {
             let app_handle = app.handle().clone();
             crate::desktop::watcher::start_desktop_watcher(app_handle);
 
-            let window = app.get_webview_window("main").unwrap();
+            let Some(window) = app.get_webview_window("main") else {
+                eprintln!("[DeskZero] ERROR: main window not found");
+                return Ok(());
+            };
 
             #[cfg(target_os = "windows")]
             {
                 let window_clone = window.clone();
-                
+
                 // 先隐藏窗口
                 let _ = window.hide();
                 eprintln!("[DeskZero] Window hidden before embedding");
-                
-                let hwnd = window.hwnd().unwrap().0 as isize;
+
+                let hwnd = match window.hwnd() {
+                    Ok(h) => h.0 as isize,
+                    Err(e) => {
+                        eprintln!("[DeskZero] ERROR: Failed to get HWND: {:?}", e);
+                        let _ = window.show();
+                        return Ok(());
+                    }
+                };
                 eprintln!("[DeskZero] Window HWND: {:?} (0x{:X})", hwnd, hwnd);
 
                 // 在新线程中执行嵌入操作

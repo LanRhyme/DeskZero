@@ -1,6 +1,26 @@
 use clipboard_win::formats::FileList;
 use clipboard_win::Clipboard;
 
+/// 递归复制目录及其所有内容
+fn copy_dir_recursive(src: &std::path::Path, dest: &std::path::Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(dest)?;
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let dest_path = dest.join(entry.file_name());
+        if entry.path().is_dir() {
+            copy_dir_recursive(&entry.path(), &dest_path)?;
+        } else {
+            std::fs::copy(entry.path(), dest_path)?;
+        }
+    }
+    Ok(())
+}
+
+/// 递归删除目录（用于跨盘移动后的源目录清理）
+fn remove_dir_recursive_safe(path: &std::path::Path) {
+    let _ = std::fs::remove_dir_all(path);
+}
+
 #[tauri::command]
 pub fn copy_files_to_clipboard(paths: Vec<String>) -> Result<(), String> {
     let _clipboard = Clipboard::new_attempts(10).map_err(|e| e.to_string())?;
@@ -77,7 +97,7 @@ pub async fn paste_files_to_desktop(
                     .to_string();
 
                 if src.is_dir() {
-                    if std::fs::create_dir_all(&dest).is_ok() {
+                    if copy_dir_recursive(src, &dest).is_ok() {
                         created_names.push(name_to_return);
                     }
                 } else {
@@ -139,9 +159,17 @@ pub async fn move_files_to_dir(
                 if std::fs::rename(src, &dest).is_ok() {
                     moved_names.push(name_to_return);
                 } else if src.is_dir() {
-                    // fallback to copy and delete for cross-drive move
-                    // For simplicity, we just use std::fs::rename. If it fails (e.g. cross drive), we can skip for now or implement full copy+delete.
-                    // This is a minimal fallback
+                    // 跨盘移动：先递归复制，再删除源目录
+                    if copy_dir_recursive(src, &dest).is_ok() {
+                        remove_dir_recursive_safe(src);
+                        moved_names.push(name_to_return);
+                    }
+                } else {
+                    // 跨盘移动单个文件：先复制，再删除源文件
+                    if std::fs::copy(src, &dest).is_ok() {
+                        let _ = std::fs::remove_file(src);
+                        moved_names.push(name_to_return);
+                    }
                 }
             }
         }

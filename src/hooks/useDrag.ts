@@ -116,7 +116,7 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
           const iconPath = options.nativeDragIconPath || ''
           startDrag({ item: options.nativeDragItemPaths!, icon: iconPath, mode: 'copy' })
             .catch(err => {
-               alert("Drag error: " + err)
+               console.error("[DeskZero] Native drag failed:", err)
             })
 
           return

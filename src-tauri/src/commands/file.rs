@@ -47,6 +47,8 @@ pub async fn rename_file(path: String, new_name: String) -> Result<String, Strin
     .map_err(|e| e.to_string())?
 }
 
+/// 永久删除文件/目录（不经回收站）。
+/// 前端仅在 Shift+Delete 时调用此命令，普通删除应使用 `trash_file`。
 #[tauri::command]
 pub async fn delete_file(path: String) -> Result<(), String> {
     tokio::task::spawn_blocking(move || {

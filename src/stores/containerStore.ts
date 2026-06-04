@@ -87,7 +87,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
       set((state) => ({ containers: [...state.containers, newContainer] }))
       const updated = get().containers.find(c => c.id === newContainer.id)
       if (updated && !folderPath) persistContainer(updated) // folderPath case already persisted
-      return updated!
+      return updated ?? newContainer
     } catch (err: any) {
       console.error(err)
       window.alert('创建收纳盒容器失败: ' + String(err))

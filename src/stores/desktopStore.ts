@@ -320,8 +320,8 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
         return { normalizedItems, newSelectedIds }
       }
 
-      const timeoutPromise = new Promise<{normalizedItems: DesktopItem[], newSelectedIds: Set<string>}>((_, reject) => 
-        setTimeout(() => reject(new Error("Timeout scanning desktop icons")), 10000)
+      const timeoutPromise = new Promise<{normalizedItems: DesktopItem[], newSelectedIds: Set<string>}>((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout scanning desktop icons")), 30000)
       )
 
       const { normalizedItems, newSelectedIds } = await Promise.race([fetchPromise(), timeoutPromise])

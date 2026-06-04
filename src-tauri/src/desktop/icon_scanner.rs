@@ -39,7 +39,25 @@ fn load_cache_from_disk() -> HashMap<String, CacheEntry> {
 fn save_cache_to_disk(cache: &HashMap<String, CacheEntry>) {
     let path = get_cache_path();
     if let Ok(data) = serde_json::to_string(cache) {
-        let _ = std::fs::write(&path, data);
+        if let Err(e) = std::fs::write(&path, data) {
+            eprintln!("[DeskZero] Failed to write icon cache: {:?}", e);
+        }
+    }
+}
+
+/// 清理缓存中源文件已不存在的过期条目，防止缓存无限膨胀。
+/// 仅在缓存条目数超过阈值时触发，避免每次扫描都做全量检查。
+fn prune_stale_entries(cache: &mut HashMap<String, CacheEntry>) {
+    const PRUNE_THRESHOLD: usize = 200;
+    if cache.len() < PRUNE_THRESHOLD {
+        return;
+    }
+
+    let before = cache.len();
+    cache.retain(|key, _| std::path::Path::new(key).exists());
+    let removed = before - cache.len();
+    if removed > 0 {
+        eprintln!("[DeskZero] Pruned {} stale icon cache entries ({} → {})", removed, before, cache.len());
     }
 }
 
@@ -104,86 +122,102 @@ fn scan_paths(paths: &[PathBuf], is_desktop: bool) -> Result<Vec<Item>, String> 
         }
     }
 
-    // Step 1: Collect metadata (sequential, fast)
-    let mut cache = ICON_CACHE.lock().map_err(|e| e.to_string())?;
-    let mut cache_dirty = false;
+    // Step 1: Collect metadata and check cache (hold lock briefly)
+    let mut prepared: Vec<PreparedEntry>;
+    {
+        let mut cache = ICON_CACHE.lock().map_err(|e| e.to_string())?;
+        let mut cache_dirty = false;
 
-    let mut prepared = Vec::with_capacity(all_entries.len());
-    for entry in all_entries {
-        let path = entry.path();
-        let item_type = if path.extension().map_or(false, |ext| ext == "lnk") {
-            ItemType::Shortcut
-        } else if path.extension().map_or(false, |ext| ext == "url") {
-            ItemType::Url
-        } else if path.is_dir() {
-            ItemType::Folder
-        } else {
-            ItemType::File
-        };
+        prepared = Vec::with_capacity(all_entries.len());
+        let mut tp_updates: Vec<(String, Option<String>)> = Vec::new();
 
-        let is_shortcut = item_type == ItemType::Shortcut || item_type == ItemType::Url;
-        let name = if is_shortcut {
-            path.file_stem()
-                .unwrap_or_default()
-                .to_string_lossy()
-                .to_string()
-        } else {
-            path.file_name()
-                .unwrap_or_default()
-                .to_string_lossy()
-                .to_string()
-        };
-
-        let mtime = get_file_mtime(&path);
-        let size = get_file_size(&path);
-        let cache_key = path.to_string_lossy().to_string();
-
-        let mut target_path = None;
-        let mut cached_icon = None;
-        let mut has_cached_target = false;
-
-        if let Some(entry) = cache.get(&cache_key) {
-            if entry.mtime == mtime && !entry.icon_data.is_empty() {
-                cached_icon = Some(entry.icon_data.clone());
-                target_path = entry.target_path.clone();
-                has_cached_target = true;
-            }
-        }
-
-        let needs_target = (item_type == ItemType::Shortcut || item_type == ItemType::Url) && (!has_cached_target || target_path.is_none());
-
-        if needs_target {
-            target_path = if item_type == ItemType::Shortcut {
-                crate::desktop::shortcut::resolve_shortcut_icon(&path)
-                    .or_else(|| crate::desktop::shortcut::resolve_shortcut(&path).ok())
-            } else if item_type == ItemType::Url {
-                crate::desktop::shortcut::resolve_url_icon(&path)
+        for entry in all_entries {
+            let path = entry.path();
+            let item_type = if path.extension().map_or(false, |ext| ext == "lnk") {
+                ItemType::Shortcut
+            } else if path.extension().map_or(false, |ext| ext == "url") {
+                ItemType::Url
+            } else if path.is_dir() {
+                ItemType::Folder
             } else {
-                None
+                ItemType::File
             };
-            
-            // Update cache entry if we just resolved an old cache's target path
-            if cached_icon.is_some() {
-                if let Some(entry) = cache.get_mut(&cache_key) {
-                    entry.target_path = target_path.clone();
+
+            let is_shortcut = item_type == ItemType::Shortcut || item_type == ItemType::Url;
+            let name = if is_shortcut {
+                path.file_stem()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .to_string()
+            } else {
+                path.file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .to_string()
+            };
+
+            let mtime = get_file_mtime(&path);
+            let size = get_file_size(&path);
+            let cache_key = path.to_string_lossy().to_string();
+
+            let mut target_path = None;
+            let mut cached_icon = None;
+            let mut has_cached_target = false;
+
+            if let Some(entry) = cache.get(&cache_key) {
+                if entry.mtime == mtime && !entry.icon_data.is_empty() {
+                    cached_icon = Some(entry.icon_data.clone());
+                    target_path = entry.target_path.clone();
+                    has_cached_target = true;
                 }
-                cache_dirty = true;
+            }
+
+            let needs_target = (item_type == ItemType::Shortcut || item_type == ItemType::Url) && (!has_cached_target || target_path.is_none());
+
+            if needs_target {
+                target_path = if item_type == ItemType::Shortcut {
+                    crate::desktop::shortcut::resolve_shortcut_icon(&path)
+                        .or_else(|| crate::desktop::shortcut::resolve_shortcut(&path).ok())
+                } else if item_type == ItemType::Url {
+                    crate::desktop::shortcut::resolve_url_icon(&path)
+                } else {
+                    None
+                };
+
+                // 记录需要更新的 target_path，稍后批量写入缓存
+                if cached_icon.is_some() {
+                    tp_updates.push((cache_key.clone(), target_path.clone()));
+                    cache_dirty = true;
+                }
+            }
+
+            prepared.push(PreparedEntry {
+                path,
+                name,
+                item_type,
+                target_path,
+                mtime,
+                size,
+                cache_key,
+                cached_icon,
+            });
+        }
+
+        // 批量更新 target_path
+        for (key, tp) in &tp_updates {
+            if let Some(entry) = cache.get_mut(key) {
+                entry.target_path = tp.clone();
             }
         }
 
-        prepared.push(PreparedEntry {
-            path,
-            name,
-            item_type,
-            target_path,
-            mtime,
-            size,
-            cache_key,
-            cached_icon,
-        });
+        if cache_dirty {
+            prune_stale_entries(&mut cache);
+            save_cache_to_disk(&cache);
+        }
     }
+    // 锁已释放，可以安全地进行并行图标提取
 
-    // Step 2: Extract icons for cache misses in parallel
+    // Step 2: Extract icons for cache misses in parallel (no lock held)
     use rayon::prelude::*;
 
     let icon_results: Vec<(usize, String)> = prepared
@@ -198,26 +232,29 @@ fn scan_paths(paths: &[PathBuf], is_desktop: bool) -> Result<Vec<Item>, String> 
         })
         .collect();
 
-    // Step 3: Merge results and update cache (sequential)
-    for (idx, icon) in icon_results {
-        cache.insert(
-            prepared[idx].cache_key.clone(),
-            CacheEntry {
-                icon_data: icon.clone(),
-                mtime: prepared[idx].mtime,
-                target_path: prepared[idx].target_path.clone(),
-            },
-        );
-        prepared[idx].cached_icon = Some(icon);
-        cache_dirty = true;
-    }
+    // Step 3: Re-acquire lock to merge results
+    {
+        let mut cache = ICON_CACHE.lock().map_err(|e| e.to_string())?;
+        let mut cache_dirty = false;
 
-    if cache_dirty {
-        save_cache_to_disk(&cache);
-    }
+        for (idx, icon) in icon_results {
+            cache.insert(
+                prepared[idx].cache_key.clone(),
+                CacheEntry {
+                    icon_data: icon.clone(),
+                    mtime: prepared[idx].mtime,
+                    target_path: prepared[idx].target_path.clone(),
+                },
+            );
+            prepared[idx].cached_icon = Some(icon);
+            cache_dirty = true;
+        }
 
-    // Release lock before building items
-    drop(cache);
+        if cache_dirty {
+            prune_stale_entries(&mut cache);
+            save_cache_to_disk(&cache);
+        }
+    }
 
     // Step 4: Build final items
     let mut items: Vec<Item> = prepared

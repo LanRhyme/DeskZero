@@ -67,38 +67,45 @@ export default function DesktopLayer() {
     }
     
     let isCancelled = false;
-    let unlistenDirChanged: (() => void) | undefined;
-    let unlistenDrop: (() => void) | undefined;
-    
-    let unlistenOpenSettings: (() => void) | undefined;
-    let unlistenRefreshDesktop: (() => void) | undefined;
-    
+    const unlistenFns: (() => void)[] = [];
+
+    const openSettingsWindow = () => {
+      import('@tauri-apps/api/webviewWindow').then(({ WebviewWindow }) => {
+        const existing = WebviewWindow.getByLabel('settings')
+        if (existing) {
+          existing.setFocus().catch(() => {})
+        } else {
+          new WebviewWindow('settings', {
+            url: '/settings',
+            title: 'DeskZero 设置',
+            width: 800,
+            height: 600,
+            resizable: true
+          })
+        }
+      })
+    }
+
     import('@tauri-apps/api/event').then(({ listen }) => {
       listen('desktop-dir-changed', () => {
         fetchDesktopItems()
       }).then(u => {
-        if (isCancelled) u(); else unlistenDirChanged = u;
+        if (isCancelled) u(); else unlistenFns.push(u);
       })
 
       listen('refresh-desktop', () => {
         fetchDesktopItems()
       }).then(u => {
-        if (isCancelled) u(); else unlistenRefreshDesktop = u;
+        if (isCancelled) u(); else unlistenFns.push(u);
       })
 
       listen('open-settings', () => {
-        new WebviewWindow('settings', {
-          url: '/settings',
-          title: 'DeskZero 设置',
-          width: 800,
-          height: 600,
-          resizable: true
-        })
+        openSettingsWindow()
       }).then(u => {
-        if (isCancelled) u(); else unlistenOpenSettings = u;
+        if (isCancelled) u(); else unlistenFns.push(u);
       })
     })
-    
+
     import('@tauri-apps/api/webview').then(({ getCurrentWebview }) => {
       getCurrentWebview().onDragDropEvent(async (event) => {
         if (event.payload.type === 'drop') {
@@ -112,7 +119,7 @@ export default function DesktopLayer() {
               useDesktopStore.getState().moveSelectedItems(draggedItem.id, position.x, position.y)
               handledInternal = true;
             }
-            
+
             if (!handledInternal) {
               // It's an external drop! Copy files to desktop in background so we don't freeze the OS drag pointer
               setTimeout(async () => {
@@ -131,7 +138,7 @@ export default function DesktopLayer() {
           }
         }
       }).then(u => {
-        if (isCancelled) u(); else unlistenDrop = u;
+        if (isCancelled) u(); else unlistenFns.push(u);
       })
     })
 
@@ -190,10 +197,7 @@ export default function DesktopLayer() {
 
     return () => {
       isCancelled = true;
-      if (unlistenDirChanged) unlistenDirChanged()
-      if (unlistenDrop) unlistenDrop()
-      if (unlistenOpenSettings) unlistenOpenSettings()
-      if (unlistenRefreshDesktop) unlistenRefreshDesktop()
+      unlistenFns.forEach(fn => fn())
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('show-item-context-menu', handleShowItemMenu)
     }
@@ -394,14 +398,19 @@ export default function DesktopLayer() {
     { label: '粘贴', icon: <ClipboardPaste size={14} />, disabled: !canPaste, onClick: () => handlePaste(menuState.x, menuState.y) },
     { divider: true, onClick: () => {} },
     { label: 'DeskZero 设置', icon: <Settings size={14} />, onClick: () => {
-        new WebviewWindow('settings', {
-          url: '/settings',
-          title: 'DeskZero 设置',
-          width: 800,
-          height: 600,
-          resizable: true
-        })
-      } 
+        const existing = WebviewWindow.getByLabel('settings')
+        if (existing) {
+          existing.setFocus().catch(() => {})
+        } else {
+          new WebviewWindow('settings', {
+            url: '/settings',
+            title: 'DeskZero 设置',
+            width: 800,
+            height: 600,
+            resizable: true
+          })
+        }
+      }
     },
   ]
 

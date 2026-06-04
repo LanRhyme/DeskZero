@@ -14,7 +14,12 @@ fn get_db_path() -> PathBuf {
 }
 
 pub fn get_connection() -> Result<Connection> {
-    Connection::open(get_db_path())
+    let conn = Connection::open(get_db_path())?;
+    // 启用 WAL 模式：允许并发读写，减少 SQLITE_BUSY 错误
+    conn.pragma_update(None, "journal_mode", "wal")?;
+    // 设置忙等待超时为 5 秒，避免立即返回 SQLITE_BUSY
+    conn.pragma_update(None, "busy_timeout", 5000)?;
+    Ok(conn)
 }
 
 pub fn init_db() -> Result<()> {

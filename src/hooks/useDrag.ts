@@ -1,5 +1,5 @@
 import { startDrag } from "@crabnebula/tauri-plugin-drag";
-import { type RefObject, useEffect, useRef, useState } from "react";
+import { type RefObject, useRef, useState } from "react";
 
 interface Position {
 	x: number;

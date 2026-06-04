@@ -68,6 +68,8 @@ const applyGlobalBlur = (enabled: boolean) => {
   document.documentElement.setAttribute('data-global-blur', String(enabled))
 }
 
+let settingsDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: defaultSettings,
   loading: false,
@@ -92,29 +94,35 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   saveSettings: async (changes) => {
     const newSettings = { ...get().settings, ...changes }
     set({ settings: newSettings, error: null })
-    try {
-      await invoke('save_settings', { settings: newSettings })
-      
-      if (changes.theme) {
-        applyTheme(newSettings.theme)
-      }
-      if (changes.accentColor) {
-        applyAccentColor(newSettings.accentColor)
-      }
-      if (changes.selectedItemBackground) {
-        applySelectedBackground(newSettings.selectedItemBackground)
-      }
-      if (changes.globalBlur !== undefined) {
-        applyGlobalBlur(newSettings.globalBlur)
-      }
-      
-      // 发送设置更新事件，通知其他窗口
-      await emit('settings-updated', newSettings)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '保存设置失败'
-      set({ error: message })
-      console.error('保存设置失败:', err)
+    
+    if (changes.theme) {
+      applyTheme(newSettings.theme)
     }
+    if (changes.accentColor) {
+      applyAccentColor(newSettings.accentColor)
+    }
+    if (changes.selectedItemBackground) {
+      applySelectedBackground(newSettings.selectedItemBackground)
+    }
+    if (changes.globalBlur !== undefined) {
+      applyGlobalBlur(newSettings.globalBlur)
+    }
+    
+    if (settingsDebounceTimer) clearTimeout(settingsDebounceTimer)
+    
+    settingsDebounceTimer = setTimeout(async () => {
+      settingsDebounceTimer = null
+      try {
+        const latestSettings = get().settings
+        await invoke('save_settings', { settings: latestSettings })
+        // 发送设置更新事件，通知其他窗口
+        await emit('settings-updated', latestSettings)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : '保存设置失败'
+        set({ error: message })
+        console.error('保存设置失败:', err)
+      }
+    }, 300)
   },
 
   applyTheme: (theme: Theme) => {

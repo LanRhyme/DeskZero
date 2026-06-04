@@ -6,53 +6,59 @@ pub fn open_file(path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn rename_file(path: String, new_name: String) -> Result<String, String> {
-    use std::os::windows::ffi::OsStrExt;
-    use windows::Win32::UI::Shell::{SHFileOperationW, SHFILEOPSTRUCTW, FO_RENAME, FOF_ALLOWUNDO};
-    use windows::core::PCWSTR;
-    use windows::Win32::Foundation::HWND;
+pub async fn rename_file(path: String, new_name: String) -> Result<String, String> {
+    tokio::task::spawn_blocking(move || {
+        use std::os::windows::ffi::OsStrExt;
+        use windows::Win32::UI::Shell::{SHFileOperationW, SHFILEOPSTRUCTW, FO_RENAME, FOF_ALLOWUNDO};
+        use windows::core::PCWSTR;
+        use windows::Win32::Foundation::HWND;
 
-    let old_path = Path::new(&path);
-    let parent = old_path.parent().ok_or("无法获取父目录")?;
-    let new_path = parent.join(&new_name);
+        let old_path = std::path::Path::new(&path);
+        let parent = old_path.parent().ok_or("无法获取父目录")?;
+        let new_path = parent.join(&new_name);
 
-    let mut p_from: Vec<u16> = std::ffi::OsStr::new(&path).encode_wide().collect();
-    p_from.push(0);
-    p_from.push(0);
+        let mut p_from: Vec<u16> = std::ffi::OsStr::new(&path).encode_wide().collect();
+        p_from.push(0);
+        p_from.push(0);
 
-    let mut p_to: Vec<u16> = std::ffi::OsStr::new(new_path.as_os_str()).encode_wide().collect();
-    p_to.push(0);
-    p_to.push(0);
+        let mut p_to: Vec<u16> = std::ffi::OsStr::new(new_path.as_os_str()).encode_wide().collect();
+        p_to.push(0);
+        p_to.push(0);
 
-    let mut op = SHFILEOPSTRUCTW {
-        hwnd: HWND(std::ptr::null_mut()),
-        wFunc: FO_RENAME,
-        pFrom: PCWSTR(p_from.as_ptr()),
-        pTo: PCWSTR(p_to.as_ptr()),
-        fFlags: FOF_ALLOWUNDO.0 as u16,
-        fAnyOperationsAborted: Default::default(),
-        hNameMappings: std::ptr::null_mut(),
-        lpszProgressTitle: PCWSTR(std::ptr::null()),
-    };
+        let mut op = SHFILEOPSTRUCTW {
+            hwnd: HWND(std::ptr::null_mut()),
+            wFunc: FO_RENAME,
+            pFrom: PCWSTR(p_from.as_ptr()),
+            pTo: PCWSTR(p_to.as_ptr()),
+            fFlags: FOF_ALLOWUNDO.0 as u16,
+            fAnyOperationsAborted: Default::default(),
+            hNameMappings: std::ptr::null_mut(),
+            lpszProgressTitle: PCWSTR(std::ptr::null()),
+        };
 
-    let res = unsafe { SHFileOperationW(&mut op) };
-    if res != 0 {
-        // Typical Windows Error Codes can be returned here
-        // If the user cancelled the UAC prompt, it might return an error code like 1223 (ERROR_CANCELLED)
-        return Err(format!("重命名失败，系统返回代码: {}", res));
-    }
+        let res = unsafe { SHFileOperationW(&mut op) };
+        if res != 0 {
+            return Err(format!("重命名失败，系统返回代码: {}", res));
+        }
 
-    Ok(new_path.to_string_lossy().to_string())
+        Ok(new_path.to_string_lossy().to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn delete_file(path: String) -> Result<(), String> {
-    let p = Path::new(&path);
-    if p.is_dir() {
-        std::fs::remove_dir_all(p).map_err(|e| e.to_string())
-    } else {
-        std::fs::remove_file(p).map_err(|e| e.to_string())
-    }
+pub async fn delete_file(path: String) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || {
+        let p = std::path::Path::new(&path);
+        if p.is_dir() {
+            std::fs::remove_dir_all(p).map_err(|e| e.to_string())
+        } else {
+            std::fs::remove_file(p).map_err(|e| e.to_string())
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -65,20 +71,32 @@ pub async fn trash_file(path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn move_file(from: String, to: String) -> Result<(), String> {
-    std::fs::rename(&from, &to).map_err(|e| e.to_string())
+pub async fn move_file(from: String, to: String) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || {
+        std::fs::rename(&from, &to).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn create_folder(path: String) -> Result<(), String> {
-    std::fs::create_dir_all(path).map_err(|e| e.to_string())
+pub async fn create_folder(path: String) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || {
+        std::fs::create_dir_all(path).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn create_empty_file(path: String) -> Result<(), String> {
-    std::fs::File::create(path)
-        .map(|_| ())
-        .map_err(|e| e.to_string())
+pub async fn create_empty_file(path: String) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || {
+        std::fs::File::create(path)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]

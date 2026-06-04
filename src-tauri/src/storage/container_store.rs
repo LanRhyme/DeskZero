@@ -101,50 +101,28 @@ pub fn save_containers(containers: &[Container]) -> Result<(), String> {
     let mut conn = get_connection().map_err(|e| e.to_string())?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     
-    // 收集当前要保存的容器 ID 和项目 ID
-    let new_container_ids: Vec<&str> = containers.iter().map(|c| c.id.as_str()).collect();
-    let new_item_ids: Vec<&str> = containers.iter()
-        .flat_map(|c| c.items.iter().map(|i| i.id.as_str()))
-        .collect();
-    
-    // 差异删除：只删除不再存在的容器及其关联项目
-    {
-        let mut existing_ids_stmt = tx.prepare("SELECT id FROM containers").map_err(|e| e.to_string())?;
-        let existing_ids: Vec<String> = existing_ids_stmt.query_map([], |row| {
-            row.get::<_, String>(0)
-        }).map_err(|e| e.to_string())?
-          .filter_map(|r| r.ok())
-          .collect();
-        
-        for eid in &existing_ids {
-            if !new_container_ids.contains(&eid.as_str()) {
-                // 容器被删除，同时清除其所有项目
-                tx.execute("DELETE FROM container_items WHERE container_id = ?1", [eid]).map_err(|e| e.to_string())?;
-                tx.execute("DELETE FROM containers WHERE id = ?1", [eid]).map_err(|e| e.to_string())?;
-            }
-        }
-    }
-    
-    // 差异删除：只删除不再存在的项目
-    {
-        let mut existing_item_ids_stmt = tx.prepare("SELECT id FROM container_items").map_err(|e| e.to_string())?;
-        let existing_item_ids: Vec<String> = existing_item_ids_stmt.query_map([], |row| {
-            row.get::<_, String>(0)
-        }).map_err(|e| e.to_string())?
-          .filter_map(|r| r.ok())
-          .collect();
-        
-        for eid in &existing_item_ids {
-            if !new_item_ids.contains(&eid.as_str()) {
-                tx.execute("DELETE FROM container_items WHERE id = ?1", [eid]).map_err(|e| e.to_string())?;
-            }
-        }
-    }
+    // 危险的全量差异删除已移除：
+    // 我们不再扫描现有容器并删除不在传入列表中的容器。
+    // 这防止了由于 load_containers 意外跳过某个损坏的容器导致它被永久删除。
+    // 容器的删除必须通过显式的 delete_container_by_id 来完成。
     
     // UPSERT 容器：只更新自己认识的列，不影响未来版本新增的列
     for container in containers {
         let type_str = serde_json::to_string(&container.container_type).unwrap_or_else(|_| "\"normal\"".to_string()).replace("\"", "");
         let style_str = serde_json::to_string(&container.style).unwrap_or_else(|_| "{}".to_string());
+        
+        // 只针对当前这个容器执行项目差异删除，避免误删其他容器的项目
+        let new_item_ids: Vec<&str> = container.items.iter().map(|i| i.id.as_str()).collect();
+        let mut existing_items_stmt = tx.prepare("SELECT id FROM container_items WHERE container_id = ?1").map_err(|e| e.to_string())?;
+        let existing_items: Vec<String> = existing_items_stmt.query_map([&container.id], |row| row.get(0)).map_err(|e| e.to_string())?
+            .filter_map(|r| r.ok())
+            .collect();
+            
+        for eid in &existing_items {
+            if !new_item_ids.contains(&eid.as_str()) {
+                tx.execute("DELETE FROM container_items WHERE id = ?1", [eid]).map_err(|e| e.to_string())?;
+            }
+        }
         
         tx.execute(
             "INSERT INTO containers (id, name, type, x, y, width, height, style, folder_path, created_at, updated_at)
@@ -213,6 +191,15 @@ pub fn save_containers(containers: &[Container]) -> Result<(), String> {
         }
     }
     
+    tx.commit().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub fn delete_container_by_id(id: &str) -> Result<(), String> {
+    let mut conn = get_connection().map_err(|e| e.to_string())?;
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM container_items WHERE container_id = ?1", [id]).map_err(|e| e.to_string())?;
+    tx.execute("DELETE FROM containers WHERE id = ?1", [id]).map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())?;
     Ok(())
 }

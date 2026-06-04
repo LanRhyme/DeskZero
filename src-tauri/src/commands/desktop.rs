@@ -1,6 +1,9 @@
 use crate::desktop::icon_scanner;
 use crate::models::Item;
 use std::collections::HashMap;
+use std::sync::Mutex;
+
+static DESKTOP_LOCK: Mutex<()> = Mutex::new(());
 
 #[tauri::command]
 pub async fn scan_desktop_icons() -> Result<Vec<Item>, String> {
@@ -25,10 +28,12 @@ pub fn get_desktop_dir() -> Result<String, String> {
 
 #[tauri::command]
 pub fn get_desktop_layout() -> Result<HashMap<String, crate::models::container::Position>, String> {
+    let _lock = DESKTOP_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
     crate::storage::desktop_store::load_layout()
 }
 
 #[tauri::command]
 pub fn save_desktop_layout(layout: HashMap<String, crate::models::container::Position>) -> Result<(), String> {
+    let _lock = DESKTOP_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
     crate::storage::desktop_store::save_layout(&layout)
 }

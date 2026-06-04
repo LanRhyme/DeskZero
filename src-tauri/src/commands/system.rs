@@ -1,14 +1,19 @@
 use crate::models::Settings;
 use crate::storage::settings_store;
 use tauri::Manager;
+use std::sync::Mutex;
+
+static SETTINGS_LOCK: Mutex<()> = Mutex::new(());
 
 #[tauri::command]
 pub fn get_settings() -> Result<Settings, String> {
+    let _lock = SETTINGS_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
     settings_store::load_settings()
 }
 
 #[tauri::command]
 pub fn save_settings(settings: Settings) -> Result<(), String> {
+    let _lock = SETTINGS_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
     settings_store::save_settings(&settings)
 }
 

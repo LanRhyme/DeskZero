@@ -28,24 +28,10 @@ pub fn save_layout(layout: &HashMap<String, crate::models::container::Position>)
     let mut conn = get_connection().map_err(|e| e.to_string())?;
     let tx = conn.transaction().map_err(|e| e.to_string())?;
     
-    // 收集当前要保存的 item_id
-    let new_ids: Vec<&str> = layout.keys().map(|k| k.as_str()).collect();
-    
-    // 差异删除：只删除不再存在的布局条目
-    {
-        let mut existing_stmt = tx.prepare("SELECT item_id FROM desktop_layout").map_err(|e| e.to_string())?;
-        let existing_ids: Vec<String> = existing_stmt.query_map([], |row| {
-            row.get::<_, String>(0)
-        }).map_err(|e| e.to_string())?
-          .filter_map(|r| r.ok())
-          .collect();
-        
-        for eid in &existing_ids {
-            if !new_ids.contains(&eid.as_str()) {
-                tx.execute("DELETE FROM desktop_layout WHERE item_id = ?1", [eid]).map_err(|e| e.to_string())?;
-            }
-        }
-    }
+
+    // 移除差异删除逻辑：桌面布局更像是一个缓存，
+    // 如果某个文件暂时被移动或扫描失败，保留其布局可以防止重启后布局丢失。
+    // 这也更符合 Windows 桌面的行为（记住曾经出现过的图标位置）。
     
     // UPSERT：只更新已知列
     for (id, pos) in layout {

@@ -43,8 +43,7 @@ pub fn start_desktop_watcher(app_handle: AppHandle) {
             // Block until first event arrives
             match rx.recv() {
                 Ok(Ok(event)) => {
-                    if !event.kind.is_modify() && !event.kind.is_create() && !event.kind.is_remove()
-                    {
+                    if event.kind.is_access() {
                         continue;
                     }
                 }

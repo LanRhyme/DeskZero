@@ -1,35 +1,145 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Theme {
     Light,
     Dark,
     System,
+    Other(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+impl Serialize for Theme {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let s = match self {
+            Theme::Light => "light",
+            Theme::Dark => "dark",
+            Theme::System => "system",
+            Theme::Other(raw) => raw.as_str(),
+        };
+        serializer.serialize_str(s)
+    }
+}
+
+impl<'de> Deserialize<'de> for Theme {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "light" => Theme::Light,
+            "dark" => Theme::Dark,
+            "system" => Theme::System,
+            _ => Theme::Other(s),
+        })
+    }
+}
+
+impl Default for Theme {
+    fn default() -> Self { Theme::System }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum IconSize {
     Small,
     Medium,
     Large,
+    Other(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+impl Serialize for IconSize {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let s = match self {
+            IconSize::Small => "small",
+            IconSize::Medium => "medium",
+            IconSize::Large => "large",
+            IconSize::Other(raw) => raw.as_str(),
+        };
+        serializer.serialize_str(s)
+    }
+}
+
+impl<'de> Deserialize<'de> for IconSize {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "small" => IconSize::Small,
+            "medium" => IconSize::Medium,
+            "large" => IconSize::Large,
+            _ => IconSize::Other(s),
+        })
+    }
+}
+
+impl Default for IconSize {
+    fn default() -> Self { IconSize::Medium }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum ItemBackground {
     Transparent,
     Subtle,
     Visible,
+    Other(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+impl Serialize for ItemBackground {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let s = match self {
+            ItemBackground::Transparent => "transparent",
+            ItemBackground::Subtle => "subtle",
+            ItemBackground::Visible => "visible",
+            ItemBackground::Other(raw) => raw.as_str(),
+        };
+        serializer.serialize_str(s)
+    }
+}
+
+impl<'de> Deserialize<'de> for ItemBackground {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "transparent" => ItemBackground::Transparent,
+            "subtle" => ItemBackground::Subtle,
+            "visible" => ItemBackground::Visible,
+            _ => ItemBackground::Other(s),
+        })
+    }
+}
+
+impl Default for ItemBackground {
+    fn default() -> Self { ItemBackground::Transparent }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum SelectedItemBackground {
     White,
     Black,
+    Other(String),
+}
+
+impl Serialize for SelectedItemBackground {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let s = match self {
+            SelectedItemBackground::White => "white",
+            SelectedItemBackground::Black => "black",
+            SelectedItemBackground::Other(raw) => raw.as_str(),
+        };
+        serializer.serialize_str(s)
+    }
+}
+
+impl<'de> Deserialize<'de> for SelectedItemBackground {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "white" => SelectedItemBackground::White,
+            "black" => SelectedItemBackground::Black,
+            _ => SelectedItemBackground::Other(s),
+        })
+    }
+}
+
+impl Default for SelectedItemBackground {
+    fn default() -> Self { SelectedItemBackground::White }
 }
 
 /// 全局设置 — 使用 `extra` 字段（`#[serde(flatten)]`）保留当前版本不认识的设置属性，

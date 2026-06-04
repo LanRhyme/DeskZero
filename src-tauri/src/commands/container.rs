@@ -91,7 +91,5 @@ pub fn update_container_full(container: Container) -> Result<(), String> {
 #[tauri::command]
 pub fn delete_container(id: String) -> Result<(), String> {
     let _lock = CONTAINER_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
-    let mut containers = container_store::load_containers()?;
-    containers.retain(|c| c.id != id);
-    container_store::save_containers(&containers)
+    container_store::delete_container_by_id(&id)
 }

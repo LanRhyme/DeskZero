@@ -205,6 +205,12 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
           return nameA.localeCompare(nameB)
         })
         
+        let needsSave = false
+        const currentItems = get().items
+
+        const itemsWithLayout: {item: any, preferredSlot: {x: number, y: number}}[] = []
+        const itemsWithoutLayout: any[] = []
+
         for (const item of items) {
           if (containerItemIds.has(item.id)) {
             // Skip calculating layout for items in container, they won't be rendered here anyway
@@ -223,20 +229,30 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
             continue
           }
 
-          let slot: {x: number, y: number}
-          if (savedLayout[item.id]) {
-            slot = savedLayout[item.id]
+          let preferredSlot: {x: number, y: number} | undefined
+          const currentItem = currentItems.find(i => i.id === item.id)
+
+          if (currentItem && currentItem.position) {
+            preferredSlot = currentItem.position
+          } else if (savedLayout[item.id]) {
+            preferredSlot = savedLayout[item.id]
           } else if (savedLayout[item.name]) {
-            slot = savedLayout[item.name]
-          } else {
-            slot = findEmptySlot(currentX, currentY, normalizedItems)
-            currentY += stepY
-            if (currentY + grid.h > screenH) {
-              currentY = 10
-              currentX += stepX
-            }
+            preferredSlot = savedLayout[item.name]
           }
-          
+
+          if (preferredSlot) {
+            itemsWithLayout.push({ item, preferredSlot })
+          } else {
+            itemsWithoutLayout.push(item)
+          }
+        }
+
+        // Pass 1: Place items that have a preferred layout
+        for (const { item, preferredSlot } of itemsWithLayout) {
+          const slot = findEmptySlot(preferredSlot.x, preferredSlot.y, normalizedItems)
+          if (slot.x !== preferredSlot.x || slot.y !== preferredSlot.y) {
+             needsSave = true
+          }
           normalizedItems.push({
             id: item.id,
             name: item.name,
@@ -251,14 +267,52 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
           })
         }
 
-        // Save the updated layout to persist newly added items
-        const newLayout = normalizedItems.reduce((acc, i) => {
-          if (!i.isInContainer && i.position) {
-            acc[i.id] = i.position
+        // Pass 2: Place new items in the first available slots
+        for (const item of itemsWithoutLayout) {
+          const slot = findEmptySlot(currentX, currentY, normalizedItems)
+          needsSave = true
+          currentY = slot.y + stepY
+          if (currentY + grid.h > screenH) {
+            currentY = 10
+            currentX += stepX
           }
-          return acc
-        }, {} as Record<string, {x: number, y: number}>)
-        saveLayout(newLayout)
+          normalizedItems.push({
+            id: item.id,
+            name: item.name,
+            path: item.path,
+            iconPath: item.iconPath || item.icon_path || '',
+            type: (item.type || item.item_type)?.toLowerCase() || 'file',
+            targetPath: item.targetPath || item.target_path,
+            isInContainer: false,
+            position: slot,
+            size: item.size,
+            modifiedAt: item.modifiedAt || item.modified_at
+          })
+        }
+
+        // Re-sort normalizedItems alphabetically for consistent DOM render order
+        normalizedItems.sort((a, b) => {
+          if (a.isInContainer && !b.isInContainer) return 1;
+          if (!a.isInContainer && b.isInContainer) return -1;
+          const nameA = (a.name || '').toLowerCase()
+          const nameB = (b.name || '').toLowerCase()
+          const isSystemA = a.type === 'system'
+          const isSystemB = b.type === 'system'
+          if (isSystemA && !isSystemB) return -1
+          if (!isSystemA && isSystemB) return 1
+          return nameA.localeCompare(nameB)
+        })
+
+        // Save the updated layout to persist newly added items
+        if (needsSave) {
+          const newLayout = normalizedItems.reduce((acc, i) => {
+            if (!i.isInContainer && i.position) {
+              acc[i.id] = i.position
+            }
+            return acc
+          }, {} as Record<string, {x: number, y: number}>)
+          saveLayout(newLayout)
+        }
 
         // Clean up selectedIds to remove deleted items
         const newSelectedIds = new Set(Array.from(get().selectedIds).filter(id => normalizedItems.some(i => i.id === id)))
@@ -283,8 +337,15 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 
   moveItemToDesktop: (item, x, y) => {
     set((state) => {
+      const existingIdx = state.items.findIndex(i => i.id === item.id)
       const slot = findEmptySlot(x, y, state.items)
-      const newItems = [...state.items, { ...item, isInContainer: false, containerId: undefined, position: slot }]
+      const newItems = [...state.items]
+      
+      if (existingIdx >= 0) {
+        newItems[existingIdx] = { ...newItems[existingIdx], isInContainer: false, containerId: undefined, position: slot }
+      } else {
+        newItems.push({ ...item, isInContainer: false, containerId: undefined, position: slot })
+      }
       
       const newLayout = newItems.reduce((acc, i) => {
         if (!i.isInContainer && i.position) acc[i.id] = i.position;

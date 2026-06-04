@@ -25,6 +25,7 @@ export function FolderContainer({ container }: ContainerProps) {
   const dragHandleRef = useRef<HTMLDivElement>(null)
   
   const [resizePosOffset, setResizePosOffset] = useState({ x: 0, y: 0 })
+  const resizeOffsetRef = useRef({ x: 0, y: 0 })
   const [menuState, setMenuState] = useState<{visible: boolean, x: number, y: number}>({ visible: false, x: 0, y: 0 })
   const [settingsPos, setSettingsPos] = useState({ x: 0, y: 0 })
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -120,17 +121,7 @@ export function FolderContainer({ container }: ContainerProps) {
   const sizeRef = useRef(size)
   sizeRef.current = size
   const commitResize = () => {
-    const gw = settings.gridWidth || 80
-    const gh = settings.gridHeight || 104
-    const gx = settings.gridGapX ?? 20
-    const gy = settings.gridGapY ?? 20
-    const stepX = gw + gx
-    const stepY = gh + gy
-
-    const snapW = Math.max(1, Math.round((sizeRef.current.width + gx) / stepX)) * stepX - gx
-    const snapH = Math.max(1, Math.round((sizeRef.current.height + gy) / stepY)) * stepY - gy
-    
-    updateContainerSize(container.id, { width: snapW, height: snapH })
+    updateContainerSize(container.id, { width: sizeRef.current.width, height: sizeRef.current.height })
   }
 
   const handleResizePointerDown = (e: React.PointerEvent, direction: 'br' | 'bl' | 'tl' | 'tr' | 't' | 'b' | 'l' | 'r') => {
@@ -164,39 +155,30 @@ export function FolderContainer({ container }: ContainerProps) {
 
       setSize({ width: newWidth, height: newHeight })
       setResizePosOffset({ x: offsetX, y: offsetY })
+      resizeOffsetRef.current = { x: offsetX, y: offsetY }
     }
 
     const handlePointerUp = () => {
       setIsResizing(false)
       commitResize()
       
-      let finalOffsetX = 0
-      let finalOffsetY = 0
-      setResizePosOffset(prev => {
-        finalOffsetX = prev.x
-        finalOffsetY = prev.y
-        return { x: 0, y: 0 }
-      })
+      const finalOffsetX = resizeOffsetRef.current.x
+      const finalOffsetY = resizeOffsetRef.current.y
+      setResizePosOffset({ x: 0, y: 0 })
+      resizeOffsetRef.current = { x: 0, y: 0 }
       
       if (finalOffsetX !== 0 || finalOffsetY !== 0) {
-        const gw = settings.gridWidth || 80
-        const gh = settings.gridHeight || 104
-        const gx = settings.gridGapX ?? 20
-        const gy = settings.gridGapY ?? 20
-        const stepX = gw + gx
-        const stepY = gh + gy
-        
-        let snapX = pos.x
-        let snapY = pos.y
+        let safeX = pos.x
+        let safeY = pos.y
         
         if (finalOffsetX !== 0) {
-          snapX = Math.round(Math.max(0, (pos.x + finalOffsetX) - 10) / stepX) * stepX + 10
+          safeX = Math.max(0, pos.x + finalOffsetX)
         }
         if (finalOffsetY !== 0) {
-          snapY = Math.round(Math.max(0, (pos.y + finalOffsetY) - 10) / stepY) * stepY + 10
+          safeY = Math.max(0, pos.y + finalOffsetY)
         }
         
-        updateContainerPosition(container.id, { x: snapX, y: snapY })
+        updateContainerPosition(container.id, { x: safeX, y: safeY })
       }
 
       window.removeEventListener('pointermove', handlePointerMove)
@@ -377,7 +359,8 @@ export function FolderContainer({ container }: ContainerProps) {
 
         {/* Content area */}
         <div className="relative flex-1 z-10 overflow-hidden">
-          <div 
+          <motion.div 
+            layoutScroll
             ref={scrollContainerRef}
             onScroll={handleScroll}
             className="absolute inset-0 overflow-y-auto overflow-x-hidden p-2 hidden-native-scrollbar"
@@ -399,7 +382,7 @@ export function FolderContainer({ container }: ContainerProps) {
                 ))}
               </div>
             )}
-          </div>
+          </motion.div>
           {/* Custom Animated Scrollbar Thumb */}
           <div 
             ref={thumbRef}

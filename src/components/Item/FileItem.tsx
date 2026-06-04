@@ -233,8 +233,15 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
               })
               return
             }
+            let actualX = clientX
+            let actualY = clientY
+            if (ref.current) {
+              const rect = ref.current.getBoundingClientRect()
+              actualX = rect.left
+              actualY = rect.top
+            }
             useContainerStore.getState().removeItemFromContainer(container.id, item.id)
-            useDesktopStore.getState().moveItemToDesktop(item, clientX, clientY)
+            useDesktopStore.getState().moveItemToDesktop(item, actualX, actualY)
             return
           }
 
@@ -363,6 +370,8 @@ export function FileItem({ item, className, containerStyle, onClick, onDoubleCli
       ref={ref}
       data-item-id={item.id}
       style={layoutStyle}
+      initial={item.isInContainer ? { x: 0, y: 0 } : { left: pos.x, top: pos.y }}
+      layoutId={String(item.id)}
       animate={item.isInContainer ? { x: isDragging ? pos.x : 0, y: isDragging ? pos.y : 0 } : { left: pos.x, top: pos.y }}
       transition={isDragging ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 30 }}
       {...listeners}

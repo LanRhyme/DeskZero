@@ -17,12 +17,9 @@ interface DragOptions {
 }
 
 export function useDrag(initialPos: Position, options?: DragOptions) {
-  const [pos, setPos] = useState<Position>(initialPos)
+  const [dragPos, setDragPos] = useState<Position | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  
-  // Use a ref for current position so onPointerUp always has latest value
-  const currentPos = useRef<Position>(initialPos)
 
   const dragInfo = useRef({
     startX: 0,
@@ -33,13 +30,11 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
     hasMoved: false
   })
 
-  // Synchronize initialPos if it changes from parent (e.g. after grid snap)
-  useEffect(() => {
-    if (!dragInfo.current.dragging) {
-      setPos(initialPos)
-      currentPos.current = initialPos
-    }
-  }, [initialPos.x, initialPos.y, isDragging])
+  const pos = (dragInfo.current.dragging || isDragging) && dragPos ? dragPos : initialPos;
+  
+  // Use a ref for current position so onPointerUp always has latest value
+  const currentPos = useRef<Position>(pos)
+  currentPos.current = pos
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (options?.disabled) return
@@ -93,8 +88,7 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
         x: nextX,
         y: nextY,
       }
-      setPos(newPos)
-      currentPos.current = newPos
+      setDragPos(newPos)
       
       if (options?.nativeDragItemPaths && options.nativeDragItemPaths.length > 0) {
         const threshold = 10;
@@ -140,6 +134,7 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
       // Use ref for latest position, not stale React state
       options?.onDragEnd?.(currentPos.current, e.clientX, e.clientY)
     }
+    setDragPos(null)
   }
 
   const onClickCapture = (e: React.MouseEvent) => {

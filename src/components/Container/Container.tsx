@@ -31,6 +31,7 @@ export function Container({ container }: ContainerProps) {
   const dragHandleRef = useRef<HTMLDivElement>(null)
   
   const [resizePosOffset, setResizePosOffset] = useState({ x: 0, y: 0 })
+  const resizeOffsetRef = useRef({ x: 0, y: 0 })
   const [settingsPos, setSettingsPos] = useState({ x: 0, y: 0 })
 
   const { ref, pos, isDragging, listeners } = useDrag(container.position, {
@@ -95,17 +96,7 @@ export function Container({ container }: ContainerProps) {
   const sizeRef = useRef(size)
   sizeRef.current = size
   const commitResize = () => {
-    const gw = settings.gridWidth || 80
-    const gh = settings.gridHeight || 104
-    const gx = settings.gridGapX ?? 20
-    const gy = settings.gridGapY ?? 20
-    const stepX = gw + gx
-    const stepY = gh + gy
-
-    const snapW = Math.max(1, Math.round((sizeRef.current.width + gx) / stepX)) * stepX - gx
-    const snapH = Math.max(1, Math.round((sizeRef.current.height + gy) / stepY)) * stepY - gy
-
-    updateContainerSize(container.id, { width: snapW, height: snapH })
+    updateContainerSize(container.id, { width: sizeRef.current.width, height: sizeRef.current.height })
   }
 
   const handleResizePointerDown = (e: React.PointerEvent, direction: 'br' | 'bl') => {
@@ -139,6 +130,7 @@ export function Container({ container }: ContainerProps) {
       
       if (direction === 'bl') {
         setResizePosOffset({ x: offsetX, y: 0 })
+        resizeOffsetRef.current = { x: offsetX, y: 0 }
       }
     }
 
@@ -146,18 +138,13 @@ export function Container({ container }: ContainerProps) {
       setIsResizing(false)
       commitResize()
       
-      let finalOffsetX = 0
-      setResizePosOffset(prev => {
-        finalOffsetX = prev.x
-        return { x: 0, y: 0 }
-      })
+      const finalOffsetX = resizeOffsetRef.current.x
+      setResizePosOffset({ x: 0, y: 0 })
+      resizeOffsetRef.current = { x: 0, y: 0 }
       
       if (finalOffsetX !== 0) {
-        const gw = settings.gridWidth || 80
-        const gx = settings.gridGapX ?? 20
-        const stepX = gw + gx
-        const snapX = Math.round(Math.max(0, (pos.x + finalOffsetX) - 10) / stepX) * stepX + 10
-        updateContainerPosition(container.id, { x: snapX, y: pos.y })
+        const safeX = Math.max(0, pos.x + finalOffsetX)
+        updateContainerPosition(container.id, { x: safeX, y: pos.y })
       }
 
       window.removeEventListener('pointermove', handlePointerMove)
@@ -314,7 +301,8 @@ export function Container({ container }: ContainerProps) {
 
         {/* Body - Relative for free layout */}
         <div className="relative flex-1 overflow-hidden">
-          <div 
+          <motion.div 
+            layoutScroll
             ref={scrollContainerRef}
             onScroll={handleScroll}
             className={cn(
@@ -330,7 +318,7 @@ export function Container({ container }: ContainerProps) {
                 Drag items here
               </div>
             )}
-          </div>
+          </motion.div>
           
           {/* Custom Animated Scrollbar Thumb */}
           <div 

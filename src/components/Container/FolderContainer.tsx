@@ -311,8 +311,7 @@ export function FolderContainer({ container }: ContainerProps) {
               className="absolute inset-0"
               style={{
                 backgroundImage: `url(${wallpaper})`,
-                backgroundAttachment: 'fixed',
-                backgroundPosition: 'top left',
+                backgroundPosition: `calc(0px - ${pos.x + resizePosOffset.x}px) calc(0px - ${pos.y + resizePosOffset.y}px)`,
                 backgroundSize: '100vw 100vh',
                 filter: 'blur(20px)',
               }}

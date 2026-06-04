@@ -70,8 +70,8 @@ export default function DesktopLayer() {
     const unlistenFns: (() => void)[] = [];
 
     const openSettingsWindow = () => {
-      import('@tauri-apps/api/webviewWindow').then(({ WebviewWindow }) => {
-        const existing = WebviewWindow.getByLabel('settings')
+      import('@tauri-apps/api/webviewWindow').then(async ({ WebviewWindow }) => {
+        const existing = await WebviewWindow.getByLabel('settings')
         if (existing) {
           existing.setFocus().catch(() => {})
         } else {
@@ -397,8 +397,8 @@ export default function DesktopLayer() {
     { divider: true, onClick: () => {} },
     { label: '粘贴', icon: <ClipboardPaste size={14} />, disabled: !canPaste, onClick: () => handlePaste(menuState.x, menuState.y) },
     { divider: true, onClick: () => {} },
-    { label: 'DeskZero 设置', icon: <Settings size={14} />, onClick: () => {
-        const existing = WebviewWindow.getByLabel('settings')
+    { label: 'DeskZero 设置', icon: <Settings size={14} />, onClick: async () => {
+        const existing = await WebviewWindow.getByLabel('settings')
         if (existing) {
           existing.setFocus().catch(() => {})
         } else {

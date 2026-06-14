@@ -44,6 +44,9 @@ interface DesktopState {
 		y: number;
 	} | null;
 	setDropPrompt: (prompt: DesktopState["dropPrompt"]) => void;
+
+	dragOffset: { dx: number; dy: number } | null;
+	setDragOffset: (offset: { dx: number; dy: number } | null) => void;
 }
 
 import { useContainerStore } from "./containerStore";
@@ -104,8 +107,6 @@ function findEmptySlot(
 	targetX = Math.min(targetX, screenW - grid.w);
 	targetY = Math.min(targetY, screenH - grid.h);
 
-	const containers = useContainerStore.getState().containers;
-
 	const isOccupied = (checkX: number, checkY: number) => {
 		// Check intersection with other items (bounding box overlap)
 		const hitItem = items.some((i) => {
@@ -117,18 +118,7 @@ function findEmptySlot(
 				checkY + grid.h > i.position.y
 			);
 		});
-		if (hitItem) return true;
-
-		// Check intersection with containers
-		const hitContainer = containers.some((c) => {
-			return (
-				checkX < c.position.x + c.size.width &&
-				checkX + grid.w > c.position.x &&
-				checkY < c.position.y + c.size.height &&
-				checkY + grid.h > c.position.y
-			);
-		});
-		return hitContainer;
+		return hitItem;
 	};
 
 	let layer = 0;
@@ -177,6 +167,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 	wallpaper: null,
 	isIconsHidden: localStorage.getItem("deskzero_icons_hidden") === "true",
 	dropPrompt: null,
+	dragOffset: null,
 
 	setWallpaper: (wallpaper) => set({ wallpaper }),
 	setIsIconsHidden: (hidden) => {
@@ -184,6 +175,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 		set({ isIconsHidden: hidden });
 	},
 	setDropPrompt: (prompt) => set({ dropPrompt: prompt }),
+	setDragOffset: (offset) => set({ dragOffset: offset }),
 
 	fetchDesktopItems: async (forceFromStorage?: boolean) => {
 		set({ isLoading: true, error: null });

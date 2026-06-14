@@ -42,6 +42,7 @@ export function FileItem({
 		setSelection,
 		moveSelectedItems,
 		wallpaper,
+		dragOffset,
 	} = useDesktopStore();
 	const { settings } = useSettingsStore();
 
@@ -111,7 +112,17 @@ export function FileItem({
 				setSelection([item.id]);
 			}
 		},
+		onDrag: (dx, dy) => {
+			if (useDesktopStore.getState().selectedIds.has(item.id)) {
+				if (dx === 0 && dy === 0) {
+					useDesktopStore.getState().setDragOffset(null);
+				} else {
+					useDesktopStore.getState().setDragOffset({ dx, dy });
+				}
+			}
+		},
 		onDragEnd: (newPos, clientX, clientY) => {
+			useDesktopStore.getState().setDragOffset(null);
 			// Use clientX/clientY for accurate absolute screen position hit testing
 			if (!item.isInContainer) {
 				// Desktop -> Container check
@@ -216,14 +227,28 @@ export function FileItem({
 							})
 							.catch((e) => console.error("Failed to read shortcut url", e));
 					} else {
-						useContainerStore
+						const selectedItems = useDesktopStore
 							.getState()
-							.addItemToContainer(targetContainer.id, {
-								...item,
-								isInContainer: true,
-								containerId: targetContainer.id,
-							});
-						useDesktopStore.getState().removeItem(item.id);
+							.items.filter(
+								(i) =>
+									useDesktopStore.getState().selectedIds.has(i.id) &&
+									!i.isInContainer,
+							);
+
+						if (!selectedItems.some((i) => i.id === item.id)) {
+							selectedItems.push(item);
+						}
+
+						for (const sItem of selectedItems) {
+							useContainerStore
+								.getState()
+								.addItemToContainer(targetContainer.id, {
+									...sItem,
+									isInContainer: true,
+									containerId: targetContainer.id,
+								});
+							useDesktopStore.getState().removeItem(sItem.id);
+						}
 					}
 				} else {
 					// Check for desktop item swap
@@ -508,10 +533,12 @@ export function FileItem({
 			animate={
 				item.isInContainer
 					? { x: isDragging ? pos.x : 0, y: isDragging ? pos.y : 0 }
-					: { left: pos.x, top: pos.y }
+					: isSelected && dragOffset
+						? { left: initialPos.x + dragOffset.dx, top: initialPos.y + dragOffset.dy }
+						: { left: pos.x, top: pos.y }
 			}
 			transition={
-				isDragging
+				isDragging || (isSelected && dragOffset)
 					? { duration: 0 }
 					: { type: "spring", stiffness: 400, damping: 30 }
 			}

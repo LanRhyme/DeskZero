@@ -9,6 +9,7 @@ interface Position {
 interface DragOptions {
 	onDragEnd?: (pos: Position, clientX: number, clientY: number) => void;
 	onDragStart?: () => void;
+	onDrag?: (dx: number, dy: number) => void;
 	disabled?: boolean;
 	dragHandleRef?: RefObject<HTMLElement | null>;
 	clampToBounds?: boolean;
@@ -29,6 +30,9 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 		dragging: false,
 		hasMoved: false,
 	});
+
+	const rafId = useRef<number | null>(null);
+	const latestOffset = useRef<Position | null>(null);
 
 	const pos =
 		(dragInfo.current.dragging || isDragging) && dragPos ? dragPos : initialPos;
@@ -91,6 +95,16 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 			};
 			setDragPos(newPos);
 
+			latestOffset.current = { x: dx, y: dy };
+			if (rafId.current === null) {
+				rafId.current = requestAnimationFrame(() => {
+					rafId.current = null;
+					if (latestOffset.current) {
+						options?.onDrag?.(latestOffset.current.x, latestOffset.current.y);
+					}
+				});
+			}
+
 			if (
 				options?.nativeDragItemPaths &&
 				options.nativeDragItemPaths.length > 0
@@ -104,6 +118,12 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 				) {
 					dragInfo.current.dragging = false;
 					setIsDragging(false);
+					if (rafId.current !== null) {
+						cancelAnimationFrame(rafId.current);
+						rafId.current = null;
+					}
+					latestOffset.current = null;
+					options?.onDrag?.(0, 0);
 
 					const target = e.currentTarget as HTMLElement;
 					try {
@@ -137,12 +157,20 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 			target.releasePointerCapture(e.pointerId);
 		}
 
+		const hasMoved = dragInfo.current.hasMoved;
 		dragInfo.current.dragging = false;
 		setIsDragging(false);
 
-		if (dragInfo.current.hasMoved) {
+		if (rafId.current !== null) {
+			cancelAnimationFrame(rafId.current);
+			rafId.current = null;
+		}
+		latestOffset.current = null;
+
+		if (hasMoved) {
 			// Use ref for latest position, not stale React state
 			options?.onDragEnd?.(currentPos.current, e.clientX, e.clientY);
+			options?.onDrag?.(0, 0);
 		}
 		setDragPos(null);
 	};

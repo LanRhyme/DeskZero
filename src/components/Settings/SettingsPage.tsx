@@ -11,6 +11,8 @@ import {
 import { Fragment, useRef, useState } from "react";
 import { Slider } from "@/components/UI/Slider";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useToastStore } from "@/stores/toastStore";
+import { syncWindowsLayout } from "@/services/desktopService";
 import { cn } from "@/utils/cn";
 import appConfig from "../../../deskzero.config.json";
 
@@ -107,6 +109,30 @@ function SettingSliderRow({
 
 export function SettingsPage() {
 	const { settings, saveSettings, loading, error } = useSettingsStore();
+	const [syncing, setSyncing] = useState(false);
+	const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+	const [syncMultiplier, setSyncMultiplier] = useState(1.0);
+
+	const handleSyncWindowsLayout = async (multiplier: number) => {
+		try {
+			setSyncing(true);
+			await syncWindowsLayout(multiplier);
+			await useSettingsStore.getState().loadSettings();
+			
+			// 后端 Rust 会自动广播 settings-updated 和 sync-desktop-layout 事件到所有窗口
+			useToastStore.getState().addToast(
+				"已成功同步 Windows 桌面布局（缩放: " + multiplier.toFixed(2) + "x）",
+				"success"
+			);
+		} catch (err: any) {
+			useToastStore.getState().addToast(
+				err.toString(),
+				"error"
+			);
+		} finally {
+			setSyncing(false);
+		}
+	};
 
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 	const thumbRef = useRef<HTMLDivElement>(null);
@@ -282,10 +308,22 @@ export function SettingsPage() {
 									</div>
 
 									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
+										<SettingRow
+											title="同步 Windows 桌面布局"
+											desc="获取当前 Windows 桌面的图标位置和网格参数"
+										>
+											<button
+												onClick={() => setIsSyncModalOpen(true)}
+												disabled={syncing}
+												className="px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg text-sm font-medium hover:bg-opacity-90 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+											>
+												{syncing ? "同步中..." : "立即同步"}
+											</button>
+										</SettingRow>
 										<SettingSliderRow
 											title="桌面网格宽度"
 											desc="调整桌面图标的水平对齐间距"
-											value={settings.gridWidth || 80}
+											value={settings.gridWidth ?? 80}
 											onChange={(v: number) => saveSettings({ gridWidth: v })}
 											min={60}
 											max={150}
@@ -295,7 +333,7 @@ export function SettingsPage() {
 										<SettingSliderRow
 											title="桌面网格高度"
 											desc="调整桌面图标的垂直对齐间距"
-											value={settings.gridHeight || 104}
+											value={settings.gridHeight ?? 104}
 											onChange={(v: number) => saveSettings({ gridHeight: v })}
 											min={60}
 											max={150}
@@ -305,7 +343,7 @@ export function SettingsPage() {
 										<SettingSliderRow
 											title="水平网格间隙"
 											desc="调整网格之间的水平不可放置区域"
-											value={settings.gridGapX || 20}
+											value={settings.gridGapX ?? 20}
 											onChange={(v: number) => saveSettings({ gridGapX: v })}
 											min={0}
 											max={100}
@@ -315,7 +353,7 @@ export function SettingsPage() {
 										<SettingSliderRow
 											title="垂直网格间隙"
 											desc="调整网格之间的垂直不可放置区域"
-											value={settings.gridGapY || 20}
+											value={settings.gridGapY ?? 20}
 											onChange={(v: number) => saveSettings({ gridGapY: v })}
 											min={0}
 											max={100}
@@ -801,6 +839,77 @@ export function SettingsPage() {
 										</p>
 									</div>
 								))}
+							</div>
+						</motion.div>
+					</div>
+				)}
+			</AnimatePresence>
+			
+			<AnimatePresence>
+				{isSyncModalOpen && (
+					<div className="fixed inset-0 z-[100] flex items-center justify-center">
+						{/* Backdrop */}
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+							onClick={() => setIsSyncModalOpen(false)}
+							className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
+						/>
+						{/* Dialog Card */}
+						<motion.div
+							initial={{ opacity: 0, scale: 0.95, y: 10 }}
+							animate={{ opacity: 1, scale: 1, y: 0 }}
+							exit={{ opacity: 0, scale: 0.95, y: 10 }}
+							className="relative bg-white/95 dark:bg-[#121212]/95 border border-black/10 dark:border-white/10 backdrop-blur-2xl rounded-2xl p-6 shadow-2xl w-[400px] max-w-[90vw] z-10 text-gray-900 dark:text-gray-100"
+						>
+							<h3 className="text-lg font-bold text-[var(--color-text)] mb-2 flex items-center gap-2">
+								<LayoutGrid className="text-[var(--color-accent)] w-5 h-5" />
+								同步 Windows 桌面布局
+							</h3>
+							<p className="text-xs text-[var(--color-text-secondary)] leading-relaxed mb-5">
+								将根据当前 Windows 系统的图标位置和尺寸一键同步到 DeskZero。如果同步后您的图标显示偏大、偏小或产生了偏移，您可以在下方调节缩放倍数。
+							</p>
+							
+							<div className="mb-6 bg-black/5 dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-xl p-4">
+								<div className="flex justify-between items-center mb-2">
+									<span className="text-xs font-semibold text-[var(--color-text)]">
+										图标网格同步倍数
+									</span>
+									<span className="text-xs font-bold text-[var(--color-accent)] font-mono">
+										{syncMultiplier.toFixed(2)}x
+									</span>
+								</div>
+								<Slider
+									value={syncMultiplier}
+									onChange={setSyncMultiplier}
+									min={0.5}
+									max={2.0}
+									step={0.05}
+								/>
+								<div className="flex justify-between text-[9px] text-[var(--color-text-secondary)] mt-1 font-mono">
+									<span>0.50x (更小)</span>
+									<span>1.00x (默认)</span>
+									<span>2.00x (更大)</span>
+								</div>
+							</div>
+
+							<div className="flex justify-end gap-3">
+								<button
+									onClick={() => setIsSyncModalOpen(false)}
+									className="px-4 py-2 border border-black/10 dark:border-white/10 text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/5 rounded-lg text-xs font-medium transition-all"
+								>
+									取消
+								</button>
+								<button
+									onClick={() => {
+										setIsSyncModalOpen(false);
+										handleSyncWindowsLayout(syncMultiplier);
+									}}
+									className="px-4 py-2 bg-[var(--color-accent)] text-white hover:bg-opacity-95 rounded-lg text-xs font-medium transition-all shadow-sm shadow-[var(--color-accent)]/20 active:scale-95"
+								>
+									确认同步
+								</button>
 							</div>
 						</motion.div>
 					</div>

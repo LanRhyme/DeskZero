@@ -14,7 +14,7 @@ interface DesktopState {
 	selectedIds: Set<string>;
 
 	// Actions
-	fetchDesktopItems: () => Promise<void>;
+	fetchDesktopItems: (forceFromStorage?: boolean) => Promise<void>;
 	moveItemToDesktop: (item: Item, x: number, y: number) => void;
 	removeItem: (id: string) => void;
 	updateItemPosition: (id: string, x: number, y: number) => void;
@@ -185,7 +185,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 	},
 	setDropPrompt: (prompt) => set({ dropPrompt: prompt }),
 
-	fetchDesktopItems: async () => {
+	fetchDesktopItems: async (forceFromStorage?: boolean) => {
 		set({ isLoading: true, error: null });
 		try {
 			const fetchPromise = async () => {
@@ -265,7 +265,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 					}
 
 					let preferredSlot: { x: number; y: number } | undefined;
-					const currentItem = currentItems.find((i) => i.id === item.id);
+					const currentItem = forceFromStorage ? undefined : currentItems.find((i) => i.id === item.id);
 
 					if (currentItem && currentItem.position) {
 						preferredSlot = currentItem.position;

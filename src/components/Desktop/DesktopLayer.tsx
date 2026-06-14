@@ -99,11 +99,13 @@ export default function DesktopLayer() {
 			settings.gridGapX !== prevGridGapX.current ||
 			settings.gridGapY !== prevGridGapY.current
 		) {
-			prevGridWidth.current = settings.gridWidth;
-			prevGridHeight.current = settings.gridHeight;
-			prevGridGapX.current = settings.gridGapX;
-			prevGridGapY.current = settings.gridGapY;
-			if (!isLoading) realignToGrid();
+			if (!isLoading) {
+				prevGridWidth.current = settings.gridWidth;
+				prevGridHeight.current = settings.gridHeight;
+				prevGridGapX.current = settings.gridGapX;
+				prevGridGapY.current = settings.gridGapY;
+				realignToGrid();
+			}
 		}
 	}, [
 		settings.gridWidth,
@@ -163,6 +165,13 @@ export default function DesktopLayer() {
 
 			listen("refresh-desktop", () => {
 				fetchDesktopItems();
+			}).then((u) => {
+				if (isCancelled) u();
+				else unlistenFns.push(u);
+			});
+
+			listen("sync-desktop-layout", () => {
+				fetchDesktopItems(true);
 			}).then((u) => {
 				if (isCancelled) u();
 				else unlistenFns.push(u);

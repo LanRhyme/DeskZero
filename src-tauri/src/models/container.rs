@@ -39,7 +39,7 @@ impl<'de> Deserialize<'de> for ContainerType {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(default)]
 pub struct Position {

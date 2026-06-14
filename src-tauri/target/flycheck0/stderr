@@ -1,1 +1,74 @@
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.89s
+   1.575469600s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint: stale: changed "D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\lib.rs"
+   1.575542600s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint:           (vs) "D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\target\\debug\\.fingerprint\\deskzero-36aef92318bcb97f\\dep-lib-deskzero_lib"
+   1.575551200s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13425920439, nanos: 295532300 } < FileTime { seconds: 13425920802, nanos: 372653300 }
+   1.576543100s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint: fingerprint dirty for deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: false }/TargetInner { ..: lib_target("deskzero_lib", ["staticlib", "cdylib", "rlib"], "D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\lib.rs", Edition2021) }
+   1.576607100s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\target\\debug\\.fingerprint\\deskzero-36aef92318bcb97f\\dep-lib-deskzero_lib", reference_mtime: FileTime { seconds: 13425920439, nanos: 295532300 }, stale: "D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\lib.rs", stale_mtime: FileTime { seconds: 13425920802, nanos: 372653300 } }))
+   2.120638700s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint: stale: changed "D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\commands\\desktop.rs"
+   2.120685700s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint:           (vs) "D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\target\\debug\\.fingerprint\\deskzero-ca1731ce40730519\\dep-test-lib-deskzero_lib"
+   2.120691900s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13425920446, nanos: 682563000 } < FileTime { seconds: 13425920646, nanos: 979487000 }
+   2.121325000s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint: fingerprint dirty for deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: true }/TargetInner { ..: lib_target("deskzero_lib", ["staticlib", "cdylib", "rlib"], "D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\lib.rs", Edition2021) }
+   2.121373300s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero_lib"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\target\\debug\\.fingerprint\\deskzero-ca1731ce40730519\\dep-test-lib-deskzero_lib", reference_mtime: FileTime { seconds: 13425920446, nanos: 682563000 }, stale: "D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\commands\\desktop.rs", stale_mtime: FileTime { seconds: 13425920646, nanos: 979487000 } }))
+   2.132352900s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero"}: cargo::core::compiler::fingerprint: fingerprint dirty for deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: false }/TargetInner { name: "deskzero", doc: true, ..: with_path("D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\main.rs", Edition2021) }
+   2.132446500s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { unit: UnitIndex(100) })
+   2.140757600s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero"}: cargo::core::compiler::fingerprint: fingerprint dirty for deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: true }/TargetInner { name: "deskzero", doc: true, ..: with_path("D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\main.rs", Edition2021) }
+   2.140819800s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="deskzero"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { unit: UnitIndex(100) })
+   2.150185400s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="test_layout"}: cargo::core::compiler::fingerprint: fingerprint error for deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: false }/TargetInner { name: "test_layout", doc: true, ..: with_path("D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\bin\\test_layout.rs", Edition2021) }
+   2.150240200s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="test_layout"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\AndroidStudioProjects\DeskZero\src-tauri\target\debug\.fingerprint\deskzero-ce779401975b525f\bin-test_layout`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+   2.219743700s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="test_layout"}: cargo::core::compiler::fingerprint: fingerprint error for deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri)/Check { test: true }/TargetInner { name: "test_layout", doc: true, ..: with_path("D:\\AndroidStudioProjects\\DeskZero\\src-tauri\\src\\bin\\test_layout.rs", Edition2021) }
+   2.219795800s  INFO prepare_target{force=false package_id=deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri) target="test_layout"}: cargo::core::compiler::fingerprint:     err: failed to read `D:\AndroidStudioProjects\DeskZero\src-tauri\target\debug\.fingerprint\deskzero-ca20360788a16d9c\test-bin-test_layout`
+
+Caused by:
+    系统找不到指定的文件。 (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+    Checking deskzero v1.0.0 (D:\AndroidStudioProjects\DeskZero\src-tauri)
+error: could not compile `deskzero` (bin "test_layout" test) due to 1 previous error; 1 warning emitted
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deskzero` (bin "test_layout") due to 1 previous error; 1 warning emitted

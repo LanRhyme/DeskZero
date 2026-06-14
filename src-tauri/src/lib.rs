@@ -1,7 +1,7 @@
 mod clipboard;
 mod commands;
 mod context_menu;
-mod desktop;
+pub mod desktop;
 mod models;
 mod storage;
 
@@ -377,6 +377,7 @@ pub fn run() {
             commands::desktop::get_desktop_dir,
             commands::desktop::get_desktop_layout,
             commands::desktop::save_desktop_layout,
+            commands::desktop::sync_windows_layout,
             commands::file::open_file,
             commands::file::rename_file,
             commands::file::delete_file,

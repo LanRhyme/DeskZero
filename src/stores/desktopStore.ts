@@ -1,8 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import type { Item } from "@/types/item";
+import { useHistoryStore } from "./historyStore";
 
-interface DesktopItem extends Item {
+export interface DesktopItem extends Item {
 	position?: { x: number; y: number };
 }
 
@@ -178,6 +179,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 	setDragOffset: (offset) => set({ dragOffset: offset }),
 
 	fetchDesktopItems: async (forceFromStorage?: boolean) => {
+		useHistoryStore.getState().clearHistory();
 		set({ isLoading: true, error: null });
 		try {
 			const fetchPromise = async () => {
@@ -383,6 +385,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 	},
 
 	moveItemToDesktop: (item, x, y) => {
+		useHistoryStore.getState().pushState();
 		set((state) => {
 			const existingIdx = state.items.findIndex((i) => i.id === item.id);
 			const slot = findEmptySlot(x, y, state.items);
@@ -452,6 +455,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 	},
 
 	moveSelectedItems: (draggedId, newX, newY) => {
+		useHistoryStore.getState().pushState();
 		set((state) => {
 			const draggedItem = state.items.find((i) => i.id === draggedId);
 			if (!draggedItem || !draggedItem.position) return state;
@@ -504,6 +508,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 	},
 
 	swapItemsPosition: (id1: string, id2: string) => {
+		useHistoryStore.getState().pushState();
 		set((state) => {
 			const idx1 = state.items.findIndex((i) => i.id === id1);
 			const idx2 = state.items.findIndex((i) => i.id === id2);
@@ -549,6 +554,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 	},
 
 	realignToGrid: () => {
+		useHistoryStore.getState().pushState();
 		set((state) => {
 			const newItems = state.items.map((item) => ({ ...item }));
 			const placedItems: DesktopItem[] = [];
@@ -579,6 +585,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 	},
 
 	sortDesktopItems: (by) => {
+		useHistoryStore.getState().pushState();
 		set((state) => {
 			const itemsToMap = state.items.filter((i) => !i.isInContainer);
 			const inContainerItems = state.items.filter((i) => i.isInContainer);

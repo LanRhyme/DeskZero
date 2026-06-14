@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import type { Container, Position, Size } from "@/types/container";
 import type { Item } from "@/types/item";
+import { useHistoryStore } from "./historyStore";
 
 // 每个容器独立的防抖定时器，避免拖拽/调整大小时每帧都触发数据库写入
 const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -64,6 +65,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 	error: null,
 
 	fetchContainers: async () => {
+		useHistoryStore.getState().clearHistory();
 		set({ isLoading: true, error: null });
 		try {
 			const fetchPromise = invoke<Container[]>("get_all_containers");
@@ -81,6 +83,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 	},
 
 	createContainer: async (name, type, position, folderPath) => {
+		useHistoryStore.getState().pushState();
 		try {
 			let finalName = name;
 			const existingNames = get().containers.map((c) => c.name);
@@ -122,6 +125,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 	},
 
 	updateContainerPosition: (id, position) => {
+		useHistoryStore.getState().pushState();
 		set((state) => ({
 			containers: state.containers.map((c) =>
 				c.id === id ? { ...c, position } : c,
@@ -132,6 +136,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 	},
 
 	updateContainerSize: (id, size) => {
+		useHistoryStore.getState().pushState();
 		set((state) => ({
 			containers: state.containers.map((c) =>
 				c.id === id ? { ...c, size } : c,
@@ -142,6 +147,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 	},
 
 	updateContainerStyle: (id, style) => {
+		useHistoryStore.getState().pushState();
 		set((state) => ({
 			containers: state.containers.map((c) =>
 				c.id === id ? { ...c, style: { ...c.style, ...style } } : c,
@@ -152,6 +158,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 	},
 
 	updateContainerName: (id, name) => {
+		useHistoryStore.getState().pushState();
 		set((state) => ({
 			containers: state.containers.map((c) =>
 				c.id === id ? { ...c, name } : c,
@@ -162,6 +169,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 	},
 
 	deleteContainer: async (id) => {
+		useHistoryStore.getState().pushState();
 		try {
 			await invoke("delete_container", { id });
 			set((state) => ({
@@ -176,6 +184,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 	},
 
 	addItemToContainer: (containerId, item) => {
+		useHistoryStore.getState().pushState();
 		set((state) => ({
 			containers: state.containers.map((c) => {
 				if (c.id === containerId) {
@@ -195,6 +204,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 	},
 
 	removeItemFromContainer: (containerId, itemId) => {
+		useHistoryStore.getState().pushState();
 		set((state) => ({
 			containers: state.containers.map((c) => {
 				if (c.id === containerId) {
@@ -208,6 +218,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 	},
 
 	updateItemPositionInContainer: (containerId, itemId, position) => {
+		useHistoryStore.getState().pushState();
 		set((state) => ({
 			containers: state.containers.map((c) => {
 				if (c.id === containerId) {
@@ -226,6 +237,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 	},
 
 	reorderItemsInContainer: (containerId, index1, index2) => {
+		useHistoryStore.getState().pushState();
 		set((state) => ({
 			containers: state.containers.map((c) => {
 				if (c.id === containerId) {

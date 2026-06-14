@@ -32,6 +32,7 @@ import { useDesktopStore } from "@/stores/desktopStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useToastStore } from "@/stores/toastStore";
 import { DesktopGrid } from "./DesktopGrid";
+import { useHistoryStore } from "@/stores/historyStore";
 
 export default function DesktopLayer() {
 	const containers = useContainerStore((state) => state.containers);
@@ -115,6 +116,35 @@ export default function DesktopLayer() {
 		realignToGrid,
 		isLoading,
 	]);
+
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			const isCtrl = e.ctrlKey || e.metaKey;
+			const activeEl = document.activeElement;
+			if (
+				activeEl &&
+				(activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.getAttribute("contenteditable") === "true")
+			) {
+				return;
+			}
+
+			if (isCtrl && e.key.toLowerCase() === "z") {
+				e.preventDefault();
+				useHistoryStore.getState().undo();
+			} else if (
+				isCtrl &&
+				(e.key.toLowerCase() === "y" || (e.shiftKey && e.key.toLowerCase() === "z"))
+			) {
+				e.preventDefault();
+				useHistoryStore.getState().redo();
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, []);
 
 	useEffect(() => {
 		const initData = async () => {

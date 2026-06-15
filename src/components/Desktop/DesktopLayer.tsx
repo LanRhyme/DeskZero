@@ -63,6 +63,7 @@ export default function DesktopLayer() {
 		x: number;
 		y: number;
 		paths: string[];
+		customHeaderItems?: any[];
 	}>({ visible: false, x: 0, y: 0, paths: [] });
 	const [canPaste, setCanPaste] = useState(false);
 	const [createPrompt, setCreatePrompt] = useState<{
@@ -331,6 +332,7 @@ export default function DesktopLayer() {
 				x: e.detail.x,
 				y: e.detail.y,
 				paths: e.detail.paths,
+				customHeaderItems: e.detail.customHeaderItems,
 			});
 		};
 		window.addEventListener("show-item-context-menu", handleShowItemMenu);
@@ -613,6 +615,24 @@ export default function DesktopLayer() {
 							useToastStore
 								.getState()
 								.addToast("新建游戏容器失败: " + String(e), "error");
+						}
+					},
+				},
+				{
+					label: "新建图标展示容器",
+					icon: <Wand2 size={14} />,
+					onClick: async () => {
+						try {
+							await createContainer("新建图标展示容器", "iconShow", {
+								x: menuState.x,
+								y: menuState.y,
+							});
+							fetchContainers();
+							useToastStore.getState().addToast("已创建图标展示容器", "success");
+						} catch (e: any) {
+							useToastStore
+								.getState()
+								.addToast("新建图标展示容器失败: " + String(e), "error");
 						}
 					},
 				},
@@ -1048,6 +1068,7 @@ export default function DesktopLayer() {
 					x={itemMenuState.x}
 					y={itemMenuState.y}
 					paths={itemMenuState.paths}
+					customHeaderItems={itemMenuState.customHeaderItems}
 					onClose={() =>
 						setItemMenuState((prev) => ({ ...prev, visible: false }))
 					}

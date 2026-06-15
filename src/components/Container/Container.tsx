@@ -14,6 +14,7 @@ import { FileItem } from "../Item/FileItem";
 import { ContainerSettings } from "./ContainerSettings";
 import { FolderContainer } from "./FolderContainer";
 import { GameContainer } from "./GameContainer";
+import { IconShowContainer } from "./IconShowContainer";
 
 interface ContainerProps {
 	container: ContainerType;
@@ -25,6 +26,9 @@ export function Container({ container }: ContainerProps) {
 	}
 	if (container.type === "folder") {
 		return <FolderContainer container={container} />;
+	}
+	if (container.type === "iconShow") {
+		return <IconShowContainer container={container} />;
 	}
 	return <NormalContainer container={container} />;
 }

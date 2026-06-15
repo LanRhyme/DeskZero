@@ -8,6 +8,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { useToastStore } from "@/stores/toastStore";
 import { cn } from "@/utils/cn";
 import { SubMenu } from "./SubMenu";
+import type { MenuItem } from "./ContextMenu";
 
 export interface ItemContextMenuProps {
 	x: number;
@@ -15,6 +16,7 @@ export interface ItemContextMenuProps {
 	paths: string[];
 	onClose: () => void;
 	onRename?: () => void;
+	customHeaderItems?: MenuItem[];
 }
 
 export function ItemContextMenu({
@@ -23,6 +25,7 @@ export function ItemContextMenu({
 	paths,
 	onClose,
 	onRename,
+	customHeaderItems,
 }: ItemContextMenuProps) {
 	const menuRef = useRef<HTMLDivElement>(null);
 	const [activeSubMenu, setActiveSubMenu] = useState<number | null>(null);
@@ -277,6 +280,26 @@ export function ItemContextMenu({
 							<div className="absolute inset-0 bg-white/60 dark:bg-[#1a1a1a]/70" />
 						</div>
 					)}
+
+				{/* Render Custom Header Items */}
+				{customHeaderItems && customHeaderItems.length > 0 && (
+					<>
+						{customHeaderItems.map((item, index) => (
+							<button
+								key={`custom-header-${index}`}
+								onClick={() => {
+									if (item.onClick) item.onClick();
+									onClose();
+								}}
+								className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left transition-colors hover:bg-black/5 dark:hover:bg-white/10 text-gray-800 dark:text-gray-200"
+							>
+								{item.icon && <span className="w-3.5 h-3.5 flex items-center justify-center">{item.icon}</span>}
+								<span>{item.label}</span>
+							</button>
+						))}
+						<div className="h-px bg-black/5 dark:bg-white/10 mx-2 my-1" />
+					</>
+				)}
 
 				{/* Top 4 Icons */}
 				<div className="flex items-center justify-around px-2 py-1 mb-1">

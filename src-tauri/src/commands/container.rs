@@ -23,8 +23,31 @@ pub fn create_container(
     let _lock = CONTAINER_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
     let now = chrono::Utc::now().timestamp_millis() as u64;
     let mut style = ContainerStyle::default();
+    let mut size = Size {
+        width: 200.0,
+        height: 300.0,
+    };
+
     if container_type == ContainerType::Game {
         style.background_opacity = 1.0;
+    } else if container_type == ContainerType::IconShow {
+        style.background_opacity = 0.3;
+        style.feather_x = Some(0.0);
+        style.feather_y = Some(0.0);
+        style.icon_opacity_inside = Some(1.0);
+        style.icon_size_inside = Some(64.0);
+        style.hover_animation = Some("scale".to_string());
+        style.show_names_inside = Some(false);
+        style.icon_gap_ratio = Some(1.0);
+
+        // 加载当前数据库中的网格设置以精确计算 2x2 像素大小
+        let settings = crate::storage::settings_store::load_settings().unwrap_or_default();
+        let step_x = (settings.grid_width + settings.grid_gap_x) as f64;
+        let step_y = (settings.grid_height + settings.grid_gap_y) as f64;
+        size = Size {
+            width: 2.0 * step_x - settings.grid_gap_x as f64,
+            height: 2.0 * step_y - settings.grid_gap_y as f64,
+        };
     }
 
     let container = Container {
@@ -32,10 +55,7 @@ pub fn create_container(
         name,
         container_type,
         position,
-        size: Size {
-            width: 200.0,
-            height: 300.0,
-        },
+        size,
         items: Vec::new(),
         style,
         folder_path: None,

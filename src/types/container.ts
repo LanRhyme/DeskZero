@@ -1,6 +1,6 @@
 import type { Item } from "./item";
 
-export type ContainerType = "normal" | "mapping" | "folder" | "game";
+export type ContainerType = "normal" | "mapping" | "folder" | "game" | "iconShow";
 
 export interface Position {
 	x: number;
@@ -32,6 +32,13 @@ export interface ContainerStyle {
 	coverImage?: string;
 	sortBy?: string;
 	sortDesc?: boolean;
+	featherX?: number;
+	featherY?: number;
+	iconOpacityInside?: number;
+	iconSizeInside?: number;
+	hoverAnimation?: string;
+	showNamesInside?: boolean;
+	iconGapRatio?: number;
 }
 
 export interface Container {

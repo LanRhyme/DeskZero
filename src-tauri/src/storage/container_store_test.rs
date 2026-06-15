@@ -31,9 +31,12 @@ mod tests {
 
         save_containers(&containers).unwrap();
         let loaded = load_containers().unwrap();
-        assert_eq!(loaded.len(), 1);
-        assert_eq!(loaded[0].name, "测试");
-        assert_eq!(loaded[0].position.x, 10.0);
+        let loaded_container = loaded.iter().find(|c| c.id == "test-1").expect("未找到测试写入的容器");
+        assert_eq!(loaded_container.name, "测试");
+        assert_eq!(loaded_container.position.x, 10.0);
+        
+        // 清理测试数据
+        delete_container_by_id("test-1").unwrap();
     }
 }
 

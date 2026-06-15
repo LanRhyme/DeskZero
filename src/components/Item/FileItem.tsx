@@ -26,7 +26,39 @@ interface FileItemProps {
 	onClick?: (e: React.MouseEvent) => void;
 	onDoubleClick?: (e: React.MouseEvent) => void;
 	onContextMenu?: (e: React.MouseEvent) => void;
+	isIconShow?: boolean;
+	hoverAnimation?: string;
 }
+
+const getHoverAnimationProps = (animType?: string) => {
+	switch (animType) {
+		case "scale":
+			return {
+				whileHover: { scale: 1.15 },
+				transition: { type: "spring" as const, stiffness: 300, damping: 15 },
+			};
+		case "lift":
+			return {
+				whileHover: { y: -8 },
+				transition: { type: "spring" as const, stiffness: 300, damping: 15 },
+			};
+		case "glow":
+			return {
+				whileHover: {
+					filter: "drop-shadow(0 0 8px rgba(var(--color-primary-rgb), 0.9)) drop-shadow(0 0 20px rgba(var(--color-primary-rgb), 0.4))",
+					scale: 1.05,
+				},
+				transition: { type: "spring" as const, stiffness: 300, damping: 20 },
+			};
+		case "rotate":
+			return {
+				whileHover: { rotate: 5, scale: 1.05 },
+				transition: { type: "spring" as const, stiffness: 300, damping: 15 },
+			};
+		default:
+			return {};
+	}
+};
 
 export function FileItem({
 	item,
@@ -35,6 +67,8 @@ export function FileItem({
 	onClick,
 	onDoubleClick,
 	onContextMenu,
+	isIconShow = false,
+	hoverAnimation,
 }: FileItemProps) {
 	const {
 		selectedIds,
@@ -455,14 +489,30 @@ export function FileItem({
 	};
 
 	const layoutStyle = item.isInContainer
-		? {
-				width: isListView ? "100%" : cWidth,
-				height: cHeight,
-				flexDirection: isListView ? ("row" as const) : ("column" as const), // Forced column for grid!
-				alignItems: "center",
-				justifyContent: !isListView && hideAppNames ? "center" : undefined,
-				gap: isListView ? "8px" : "0px",
-			}
+		? (isIconShow
+			? {
+					position: "absolute" as const,
+					left: 0,
+					right: 0,
+					top: 0,
+					bottom: 0,
+					margin: "auto",
+					width: cWidth,
+					height: cHeight,
+					flexDirection: "column" as const,
+					alignItems: "center",
+					justifyContent: "center",
+					gap: "4px",
+					transformOrigin: "center center",
+				}
+			: {
+					width: isListView ? "100%" : cWidth,
+					height: cHeight,
+					flexDirection: isListView ? ("row" as const) : ("column" as const),
+					alignItems: "center",
+					justifyContent: !isListView && hideAppNames ? "center" : undefined,
+					gap: isListView ? "8px" : "0px",
+				})
 		: {
 				position: "absolute" as const,
 				zIndex: isDragging ? 50 : isSelected ? 20 : "auto",
@@ -522,6 +572,8 @@ export function FileItem({
 		}
 	}
 
+	const motionProps = isIconShow ? getHoverAnimationProps(hoverAnimation) : {};
+
 	return (
 		<motion.div
 			ref={ref}
@@ -541,26 +593,29 @@ export function FileItem({
 			transition={
 				isDragging || (isSelected && dragOffset)
 					? { duration: 0 }
-					: { type: "spring", stiffness: 400, damping: 30 }
+					: isIconShow && motionProps.transition
+						? motionProps.transition
+						: { type: "spring", stiffness: 400, damping: 30 }
 			}
 			{...listeners}
-			whileHover={{ scale: 1.05 }}
-			whileTap={{ scale: 0.95 }}
+			whileHover={isIconShow ? (motionProps.whileHover || {}) : { scale: 1.05 }}
+			whileTap={isIconShow ? {} : { scale: 0.95 }}
 			onClick={handleClick}
 			onDoubleClick={handleDoubleClick}
 			onContextMenu={handleContextMenu}
 			className={cn(
-				"flex p-2 rounded-md select-none touch-none relative overflow-visible",
+				"flex select-none touch-none relative overflow-visible",
+				isIconShow ? "p-0" : "p-2 rounded-md",
 				isListView ? "text-left justify-start" : "justify-start",
 				isDragging && item.isInContainer
 					? "z-50 shadow-2xl opacity-80 bg-[var(--item-hover-bg)]"
 					: "",
 				isDragging && !item.isInContainer
 					? "opacity-50 cursor-grabbing"
-					: "cursor-default hover:bg-[var(--item-hover-bg)]",
-				isSelected &&
+					: (isIconShow ? "cursor-default" : "cursor-default hover:bg-[var(--item-hover-bg)]"),
+				(isSelected && !isIconShow) &&
 					"bg-[var(--item-selected-bg)] ring-1 ring-[var(--item-selected-ring)]",
-				isSelected &&
+				(isSelected && !isIconShow) &&
 					settings.selectedItemBlur &&
 					!settings.wallpaperCompatible &&
 					"selected-blur",
@@ -568,6 +623,7 @@ export function FileItem({
 			)}
 		>
 			{isSelected &&
+				!isIconShow &&
 				settings.selectedItemBlur &&
 				settings.wallpaperCompatible &&
 				wallpaper && (

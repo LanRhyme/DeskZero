@@ -9,6 +9,7 @@ pub enum ContainerType {
     Mapping,
     Folder,
     Game,
+    IconShow,
     /// 保留未知类型的原始字符串，防止跨版本数据丢失
     Other(String),
 }
@@ -20,6 +21,7 @@ impl Serialize for ContainerType {
             ContainerType::Mapping => "mapping",
             ContainerType::Folder => "folder",
             ContainerType::Game => "game",
+            ContainerType::IconShow => "iconShow",
             ContainerType::Other(raw) => raw.as_str(),
         };
         serializer.serialize_str(s)
@@ -34,6 +36,7 @@ impl<'de> Deserialize<'de> for ContainerType {
             "mapping" => ContainerType::Mapping,
             "folder" => ContainerType::Folder,
             "game" => ContainerType::Game,
+            "iconShow" => ContainerType::IconShow,
             _ => ContainerType::Other(s),
         })
     }
@@ -93,6 +96,13 @@ pub struct ContainerStyle {
     pub cover_image: Option<String>,
     pub sort_by: Option<String>,
     pub sort_desc: Option<bool>,
+    pub feather_x: Option<f64>,
+    pub feather_y: Option<f64>,
+    pub icon_opacity_inside: Option<f64>,
+    pub icon_size_inside: Option<f64>,
+    pub hover_animation: Option<String>,
+    pub show_names_inside: Option<bool>,
+    pub icon_gap_ratio: Option<f64>,
     /// 保留当前版本未定义的样式属性，防止跨版本丢失
     #[serde(flatten)]
     pub extra: HashMap<String, serde_json::Value>,
@@ -118,6 +128,13 @@ impl Default for ContainerStyle {
             cover_image: None,
             sort_by: None,
             sort_desc: None,
+            feather_x: None,
+            feather_y: None,
+            icon_opacity_inside: None,
+            icon_size_inside: None,
+            hover_animation: None,
+            show_names_inside: None,
+            icon_gap_ratio: None,
             extra: HashMap::new(),
         }
     }

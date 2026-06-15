@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import type { Item } from "@/types/item";
 import { useHistoryStore } from "./historyStore";
+import { useToastStore } from "./toastStore";
 
 export interface DesktopItem extends Item {
 	position?: { x: number; y: number };
@@ -17,7 +18,12 @@ interface DesktopState {
 	// Actions
 	fetchDesktopItems: (forceFromStorage?: boolean) => Promise<void>;
 	moveItemToDesktop: (item: Item, x: number, y: number) => void;
-	moveItemsToDesktop: (items: Item[], x: number, y: number) => Promise<void>;
+	moveItemsToDesktop: (
+		items: Item[],
+		x: number,
+		y: number,
+		silent?: boolean,
+	) => Promise<void>;
 	removeItem: (id: string) => void;
 	updateItemPosition: (id: string, x: number, y: number) => void;
 	moveSelectedItems: (
@@ -182,6 +188,13 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 	fetchDesktopItems: async (forceFromStorage?: boolean) => {
 		useHistoryStore.getState().clearHistory();
 		set({ isLoading: true, error: null });
+
+		const isInitialOrForce = forceFromStorage || get().items.length === 0;
+		let loadingToastId: string | undefined;
+		if (isInitialOrForce) {
+			loadingToastId = useToastStore.getState().addToast("正在载入桌面图标...", "loading", 0);
+		}
+
 		try {
 			const fetchPromise = async () => {
 				const items = await invoke<any[]>("scan_desktop_icons");
@@ -377,9 +390,25 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 			]);
 
 			set({ items: normalizedItems, selectedIds: newSelectedIds });
+
+			if (loadingToastId) {
+				useToastStore.getState().updateToast(loadingToastId, {
+					message: "桌面图标载入成功",
+					type: "success",
+					duration: 1500,
+				});
+			}
 		} catch (err: any) {
 			console.error("fetchDesktopItems error:", err);
 			set({ error: err.toString() });
+
+			if (loadingToastId) {
+				useToastStore.getState().updateToast(loadingToastId, {
+					message: `载入失败: ${err.toString()}`,
+					type: "error",
+					duration: 3000,
+				});
+			}
 		} finally {
 			set({ isLoading: false });
 		}
@@ -417,11 +446,13 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 			);
 			saveLayout(newLayout);
 
+			useToastStore.getState().addToast(`"${item.name}" 已移至桌面`, "success");
+
 			return { items: newItems };
 		});
 	},
 
-	moveItemsToDesktop: async (items, x, y) => {
+	moveItemsToDesktop: async (items, x, y, silent = false) => {
 		useHistoryStore.getState().pushState();
 		let updatedItems = [...get().items];
 
@@ -465,6 +496,11 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 			console.error("Failed to save layout immediately", e);
 		}
 		localStorage.setItem("deskzero_layout", JSON.stringify(newLayout));
+
+		if (!silent && items.length > 0) {
+			const msg = items.length === 1 ? `"${items[0].name}" 已移至桌面` : `已释放 ${items.length} 个图标至桌面`;
+			useToastStore.getState().addToast(msg, "success");
+		}
 
 		set({ items: updatedItems });
 	},

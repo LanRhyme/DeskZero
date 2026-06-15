@@ -239,16 +239,17 @@ export function FileItem({
 							selectedItems.push(item);
 						}
 
-						for (const sItem of selectedItems) {
-							useContainerStore
-								.getState()
-								.addItemToContainer(targetContainer.id, {
-									...sItem,
-									isInContainer: true,
-									containerId: targetContainer.id,
-								});
+						const itemsToMove = selectedItems.map((sItem) => ({
+							...sItem,
+							isInContainer: true,
+							containerId: targetContainer.id,
+						}));
+						useContainerStore
+							.getState()
+							.addItemsToContainer(targetContainer.id, itemsToMove);
+						selectedItems.forEach((sItem) => {
 							useDesktopStore.getState().removeItem(sItem.id);
-						}
+						});
 					}
 				} else {
 					// Check for desktop item swap

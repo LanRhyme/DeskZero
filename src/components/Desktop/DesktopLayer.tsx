@@ -796,18 +796,6 @@ export default function DesktopLayer() {
 				/>
 			)}
 
-			{/* Loading Overlay */}
-			{isLoading && (
-				<div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/40 backdrop-blur-md transition-opacity duration-300 pointer-events-none">
-					<div className="flex flex-col items-center gap-4 bg-white/90 dark:bg-[#1a1a1a]/90 px-8 py-6 rounded-2xl shadow-2xl border border-white/20 pointer-events-auto">
-						<div className="w-10 h-10 border-4 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin"></div>
-						<div className="text-[var(--color-text)] font-medium tracking-widest text-sm">
-							正在加载桌面 / LOADING...
-						</div>
-					</div>
-				</div>
-			)}
-
 			{/* Create Prompt Popup */}
 			{createPrompt && createPrompt.visible && (
 				<div

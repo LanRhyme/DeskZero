@@ -212,7 +212,7 @@ export function GameContainer({ container }: GameContainerProps) {
 			icon: <Trash2 size={14} />,
 			onClick: async () => {
 				const { moveItemsToDesktop } = useDesktopStore.getState();
-				await moveItemsToDesktop(container.items, pos.x, pos.y);
+				await moveItemsToDesktop(container.items, pos.x, pos.y, true);
 				await deleteContainer(container.id);
 			},
 		},

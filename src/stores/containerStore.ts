@@ -3,6 +3,7 @@ import { create } from "zustand";
 import type { Container, Position, Size } from "@/types/container";
 import type { Item } from "@/types/item";
 import { useHistoryStore } from "./historyStore";
+import { useToastStore } from "./toastStore";
 
 // 每个容器独立的防抖定时器，避免拖拽/调整大小时每帧都触发数据库写入
 const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -45,7 +46,12 @@ interface ContainerState {
 	) => void;
 	updateContainerName: (id: string, name: string) => void;
 	deleteContainer: (id: string) => Promise<void>;
-	addItemToContainer: (containerId: string, item: Item) => void;
+	addItemToContainer: (containerId: string, item: Item, silent?: boolean) => void;
+	addItemsToContainer: (
+		containerId: string,
+		items: Item[],
+		silent?: boolean,
+	) => void;
 	removeItemFromContainer: (containerId: string, itemId: string) => void;
 	updateItemPositionInContainer: (
 		containerId: string,
@@ -165,42 +171,62 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 			),
 		}));
 		const updated = get().containers.find((c) => c.id === id);
-		if (updated) persistContainer(updated);
+		if (updated) {
+			persistContainer(updated);
+			useToastStore.getState().addToast(`已重命名为 "${name}"`, "success");
+		}
 	},
 
 	deleteContainer: async (id) => {
 		useHistoryStore.getState().pushState();
 		try {
+			const container = get().containers.find((c) => c.id === id);
+			const containerName = container ? container.name : "";
+			const containerType = container ? container.type : "normal";
+
 			await invoke("delete_container", { id });
 			set((state) => ({
 				containers: state.containers.filter((c) => c.id !== id),
 			}));
-			// Release items back to desktop
+
+			const typeText = containerType === "game" ? "游戏容器" : "收纳盒";
+			useToastStore.getState().addToast(`已移除${typeText} ${containerName}`, "success");
+
 			const { useDesktopStore } = await import("./desktopStore");
-			useDesktopStore.getState().fetchDesktopItems();
+			await useDesktopStore.getState().fetchDesktopItems();
 		} catch (err: any) {
 			console.error(err);
 		}
 	},
 
-	addItemToContainer: (containerId, item) => {
+	addItemToContainer: (containerId, item, silent = false) => {
+		get().addItemsToContainer(containerId, [item], silent);
+	},
+
+	addItemsToContainer: (containerId, items, silent = false) => {
 		useHistoryStore.getState().pushState();
 		set((state) => ({
 			containers: state.containers.map((c) => {
 				if (c.id === containerId) {
-					const newItem = {
+					const newItems = items.map((item) => ({
 						...item,
 						isInContainer: true,
 						containerId,
 						position: undefined,
-					};
-					return { ...c, items: [...c.items, newItem] };
+					}));
+					return { ...c, items: [...c.items, ...newItems] };
 				}
 				return c;
 			}),
 		}));
 		const updated = get().containers.find((c) => c.id === containerId);
-		if (updated) persistContainer(updated);
+		if (updated) {
+			persistContainer(updated);
+			if (!silent && items.length > 0) {
+				const msg = items.length === 1 ? `已收纳至 "${updated.name}"` : `已收纳 ${items.length} 个项目至 "${updated.name}"`;
+				useToastStore.getState().addToast(msg, "success");
+			}
+		}
 	},
 
 	removeItemFromContainer: (containerId, itemId) => {

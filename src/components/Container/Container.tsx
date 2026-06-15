@@ -118,7 +118,7 @@ function NormalContainer({ container }: ContainerProps) {
 
 	const handleDelete = async () => {
 		const { moveItemsToDesktop } = useDesktopStore.getState();
-		await moveItemsToDesktop(container.items, container.position.x, container.position.y);
+		await moveItemsToDesktop(container.items, container.position.x, container.position.y, true);
 		await deleteContainer(container.id);
 	};
 

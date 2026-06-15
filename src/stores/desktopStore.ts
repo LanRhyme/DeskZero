@@ -17,6 +17,7 @@ interface DesktopState {
 	// Actions
 	fetchDesktopItems: (forceFromStorage?: boolean) => Promise<void>;
 	moveItemToDesktop: (item: Item, x: number, y: number) => void;
+	moveItemsToDesktop: (items: Item[], x: number, y: number) => Promise<void>;
 	removeItem: (id: string) => void;
 	updateItemPosition: (id: string, x: number, y: number) => void;
 	moveSelectedItems: (
@@ -418,6 +419,54 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 
 			return { items: newItems };
 		});
+	},
+
+	moveItemsToDesktop: async (items, x, y) => {
+		useHistoryStore.getState().pushState();
+		let updatedItems = [...get().items];
+
+		for (const item of items) {
+			const existingIdx = updatedItems.findIndex((i) => i.id === item.id);
+			const slot = findEmptySlot(x, y, updatedItems);
+
+			if (existingIdx >= 0) {
+				updatedItems[existingIdx] = {
+					...updatedItems[existingIdx],
+					isInContainer: false,
+					containerId: undefined,
+					position: slot,
+				};
+			} else {
+				updatedItems.push({
+					...item,
+					isInContainer: false,
+					containerId: undefined,
+					position: slot,
+				});
+			}
+		}
+
+		const newLayout = updatedItems.reduce(
+			(acc, i) => {
+				if (!i.isInContainer && i.position) acc[i.id] = i.position;
+				return acc;
+			},
+			{} as Record<string, { x: number; y: number }>,
+		);
+
+		// 立即保存布局，不进行防抖，因为接下来会调用 fetchDesktopItems
+		if (layoutDebounceTimer) {
+			clearTimeout(layoutDebounceTimer);
+			layoutDebounceTimer = null;
+		}
+		try {
+			await invoke("save_desktop_layout", { layout: newLayout });
+		} catch (e) {
+			console.error("Failed to save layout immediately", e);
+		}
+		localStorage.setItem("deskzero_layout", JSON.stringify(newLayout));
+
+		set({ items: updatedItems });
 	},
 
 	removeItem: (id) => {

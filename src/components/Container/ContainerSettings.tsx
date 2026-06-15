@@ -94,12 +94,10 @@ export function ContainerSettings({
 		onClose();
 	};
 
-	const handleDelete = () => {
-		const { moveItemToDesktop } = useDesktopStore.getState();
-		container.items.forEach((item) => {
-			moveItemToDesktop(item, container.position.x, container.position.y);
-		});
-		deleteContainer(container.id);
+	const handleDelete = async () => {
+		const { moveItemsToDesktop } = useDesktopStore.getState();
+		await moveItemsToDesktop(container.items, container.position.x, container.position.y);
+		await deleteContainer(container.id);
 		onClose();
 	};
 

@@ -1,4 +1,4 @@
-use crate::models::{Container, ContainerType, Position, Size};
+use crate::models::{Container, ContainerStyle, ContainerType, Position, Size};
 use crate::storage::container_store;
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -22,6 +22,11 @@ pub fn create_container(
 ) -> Result<Container, String> {
     let _lock = CONTAINER_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
     let now = chrono::Utc::now().timestamp_millis() as u64;
+    let mut style = ContainerStyle::default();
+    if container_type == ContainerType::Game {
+        style.background_opacity = 1.0;
+    }
+
     let container = Container {
         id: uuid::Uuid::new_v4().to_string(),
         name,
@@ -32,7 +37,7 @@ pub fn create_container(
             height: 300.0,
         },
         items: Vec::new(),
-        style: Default::default(),
+        style,
         folder_path: None,
         created_at: now,
         updated_at: now,

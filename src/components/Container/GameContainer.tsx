@@ -22,7 +22,7 @@ interface GameContainerProps {
 export function GameContainer({ container }: GameContainerProps) {
 	const { updateContainerPosition, updateContainerSize, deleteContainer } =
 		useContainerStore();
-	const { moveItemToDesktop } = useDesktopStore();
+
 	const { settings } = useSettingsStore();
 
 	const [resizePosOffset, setResizePosOffset] = useState({ x: 0, y: 0 });
@@ -210,15 +210,10 @@ export function GameContainer({ container }: GameContainerProps) {
 		{
 			label: "移除",
 			icon: <Trash2 size={14} />,
-			onClick: () => {
-				// 先将容器内的项目移回桌面，再删除容器。
-				// 注意：不能用 forEach + removeItemFromContainer，因为每次 remove 都会触发
-				// 300ms 防抖的 persistContainer，只有最后一次防抖生效，导致中间的移除丢失。
-				container.items.forEach((item) => {
-					moveItemToDesktop(item, pos.x, pos.y);
-				});
-				// deleteContainer 后端会级联删除 container_items，无需逐个 removeItemFromContainer
-				deleteContainer(container.id);
+			onClick: async () => {
+				const { moveItemsToDesktop } = useDesktopStore.getState();
+				await moveItemsToDesktop(container.items, pos.x, pos.y);
+				await deleteContainer(container.id);
 			},
 		},
 		{
@@ -241,7 +236,7 @@ export function GameContainer({ container }: GameContainerProps) {
 		},
 	];
 
-	const bgOpacity = container.style.backgroundOpacity ?? 1;
+	const bgOpacity = container.style.backgroundOpacity === 0.3 ? 1 : (container.style.backgroundOpacity ?? 1);
 	const cornerRadius = container.style.cornerRadius ?? 16;
 	const glow = settings.iconGlow !== false;
 

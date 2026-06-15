@@ -26,6 +26,10 @@ export function Container({ container }: ContainerProps) {
 	if (container.type === "folder") {
 		return <FolderContainer container={container} />;
 	}
+	return <NormalContainer container={container} />;
+}
+
+function NormalContainer({ container }: ContainerProps) {
 	const { updateContainerPosition, updateContainerSize, deleteContainer, updateContainerName } = useContainerStore();
 	const { settings } = useSettingsStore();
 	const { wallpaper } = useDesktopStore();
@@ -106,18 +110,16 @@ export function Container({ container }: ContainerProps) {
 			}
 			setSettingsPos({ x, y });
 		}
-	}, [isSettingsOpen, pos.x, pos.y, size.width]);
+	}, [isSettingsOpen, pos.x, pos.y, size.width, size.height]);
 
 	useEffect(() => {
 		setEditNameValue(container.name);
 	}, [container.name]);
 
-	const handleDelete = () => {
-		const { moveItemToDesktop } = useDesktopStore.getState();
-		container.items.forEach((item) => {
-			moveItemToDesktop(item, container.position.x, container.position.y);
-		});
-		deleteContainer(container.id);
+	const handleDelete = async () => {
+		const { moveItemsToDesktop } = useDesktopStore.getState();
+		await moveItemsToDesktop(container.items, container.position.x, container.position.y);
+		await deleteContainer(container.id);
 	};
 
 	const handleContextMenu = (e: React.MouseEvent) => {
@@ -197,27 +199,25 @@ export function Container({ container }: ContainerProps) {
 				resizeOffsetRef.current = { x: 0, y: 0 };
 			}
 			commitResize();
-			document.removeEventListener("pointermove", handlePointerMove);
-			document.removeEventListener("pointerup", handlePointerUp);
+			window.removeEventListener("pointermove", handlePointerMove);
+			window.removeEventListener("pointerup", handlePointerUp);
 		};
 
-		document.addEventListener("pointermove", handlePointerMove);
-		document.addEventListener("pointerup", handlePointerUp);
+		window.addEventListener("pointermove", handlePointerMove);
+		window.addEventListener("pointerup", handlePointerUp);
 	};
 
 	// Determine text and icon colors based on container background for accessibility
 	const isDarkBg =
 		settings.theme === "dark" || (settings.theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
+	const bgOpacity = container.style.backgroundOpacity ?? 0.3;
 	const customBackground =
 		container.style.backgroundColor === "theme" ||
 		!container.style.backgroundColor
-			? settings.theme === "dark" ||
-				(settings.theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)
-				? `rgba(26, 26, 26, ${container.style.backgroundOpacity ?? 0.3})`
-				: `rgba(255, 255, 255, ${container.style.backgroundOpacity ?? 0.3})`
+			? `rgba(var(--color-container-bg-rgb), ${bgOpacity})`
 			: container.style.backgroundColor.startsWith("#")
-				? `rgba(${hexToRgb(container.style.backgroundColor)}, ${container.style.backgroundOpacity ?? 0.3})`
+				? `rgba(${hexToRgb(container.style.backgroundColor)}, ${bgOpacity})`
 				: container.style.backgroundColor;
 
 	// Simple contrast check for header
@@ -316,14 +316,12 @@ export function Container({ container }: ContainerProps) {
 								onChange={(e) => setEditNameValue(e.target.value)}
 								onBlur={() => {
 									setIsEditingName(false);
-									if (editNameValue.trim())
-										updateContainerName(container.id, editNameValue.trim());
+									updateContainerName(container.id, editNameValue.trim());
 								}}
 								onKeyDown={(e) => {
 									if (e.key === "Enter") {
 										setIsEditingName(false);
-										if (editNameValue.trim())
-											updateContainerName(container.id, editNameValue.trim());
+										updateContainerName(container.id, editNameValue.trim());
 									} else if (e.key === "Escape") {
 										setIsEditingName(false);
 										setEditNameValue(container.name);

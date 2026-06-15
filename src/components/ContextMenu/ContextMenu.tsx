@@ -1,9 +1,10 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useDesktopStore } from "@/stores/desktopStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { cn } from "@/utils/cn";
+import { SubMenu } from "./SubMenu";
 
 export interface MenuItem {
 	label?: string;
@@ -26,6 +27,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
 	const [activeSubMenu, setActiveSubMenu] = useState<number | null>(null);
 	const { settings } = useSettingsStore();
 	const { wallpaper } = useDesktopStore();
+	const [coords, setCoords] = useState<{ x: number; y: number } | null>(null);
 
 	useEffect(() => {
 		const handleClickOutside = (e: MouseEvent) => {
@@ -46,16 +48,21 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
 		};
 	}, [onClose]);
 
-	// Simple boundary collision detection
-	let adjustedX = x;
-	let adjustedY = y;
-	if (menuRef.current) {
-		const rect = menuRef.current.getBoundingClientRect();
-		if (x + rect.width > window.innerWidth)
-			adjustedX = window.innerWidth - rect.width;
-		if (y + rect.height > window.innerHeight)
-			adjustedY = window.innerHeight - rect.height;
-	}
+	useLayoutEffect(() => {
+		if (menuRef.current) {
+			const rect = menuRef.current.getBoundingClientRect();
+			const padding = 10;
+			let newX = x;
+			let newY = y;
+			if (x + rect.width > window.innerWidth) {
+				newX = Math.max(padding, window.innerWidth - rect.width - padding);
+			}
+			if (y + rect.height > window.innerHeight) {
+				newY = Math.max(padding, window.innerHeight - rect.height - padding);
+			}
+			setCoords({ x: newX, y: newY });
+		}
+	}, [x, y, items]);
 
 	return (
 		<AnimatePresence>
@@ -66,7 +73,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
 					e.stopPropagation();
 				}}
 				initial={{ opacity: 0, scale: 0.95 }}
-				animate={{ opacity: 1, scale: 1 }}
+				animate={coords ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
 				exit={{ opacity: 0, scale: 0.95 }}
 				transition={{ duration: 0.1 }}
 				className={cn(
@@ -77,7 +84,11 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
 							? "border-white/20 dark:border-white/10"
 							: "bg-white/60 dark:bg-[#1a1a1a]/70 backdrop-blur-3xl border-white/20 dark:border-white/10",
 				)}
-				style={{ left: adjustedX, top: adjustedY }}
+				style={{
+					left: coords ? coords.x : x,
+					top: coords ? coords.y : y,
+					visibility: coords ? "visible" : "hidden",
+				}}
 			>
 				{settings.wallpaperCompatible &&
 					settings.globalBlur !== false &&
@@ -101,10 +112,12 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
 					)}
 
 				{items.map((item, index) => {
+					const key = item.divider ? `divider-${index}` : (item.label || `item-${index}`);
+
 					if (item.divider) {
 						return (
 							<div
-								key={index}
+								key={key}
 								className="h-px bg-black/5 dark:bg-white/10 my-1 mx-2"
 							/>
 						);
@@ -112,11 +125,12 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
 
 					const hasSub = item.subItems && item.subItems.length > 0;
 					const isActive = activeSubMenu === index;
-					const showOnLeft = x > window.innerWidth / 2;
+					const finalX = coords ? coords.x : x;
+					const showOnLeft = finalX > window.innerWidth / 2;
 
 					return (
 						<div
-							key={index}
+							key={key}
 							className="relative"
 							onPointerEnter={() => setActiveSubMenu(index)}
 							onPointerLeave={() => {}}
@@ -153,87 +167,14 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
 
 							{/* Submenu rendering */}
 							{hasSub && isActive && (
-								<div
-									className={cn(
-										"absolute top-0 z-50",
-										showOnLeft
-											? "right-[calc(100%-4px)] pr-1"
-											: "left-[calc(100%-4px)] pl-1",
-									)}
-								>
-									<motion.div
-										initial={{ opacity: 0, x: showOnLeft ? 5 : -5 }}
-										animate={{ opacity: 1, x: 0 }}
-										className={cn(
-											"min-w-[160px] py-1 border shadow-2xl rounded-lg",
-											settings.globalBlur === false
-												? "bg-white dark:bg-[#1a1a1a] border-black/5 dark:border-white/10"
-												: settings.wallpaperCompatible && wallpaper
-													? "border-white/20 dark:border-white/10"
-													: "bg-white/60 dark:bg-[#1a1a1a]/70 backdrop-blur-3xl border-white/20 dark:border-white/10",
-										)}
-									>
-										{settings.wallpaperCompatible &&
-											settings.globalBlur !== false &&
-											wallpaper && (
-												<div
-													className="absolute inset-0 pointer-events-none overflow-hidden"
-													style={{ zIndex: -1, borderRadius: "inherit" }}
-												>
-													<div
-														className="absolute inset-0"
-														style={{
-															backgroundImage: `url(${wallpaper})`,
-															backgroundAttachment: "fixed",
-															backgroundPosition: "top left",
-															backgroundSize: "100vw 100vh",
-															filter: "blur(20px)",
-														}}
-													/>
-													<div className="absolute inset-0 bg-white/60 dark:bg-[#1a1a1a]/70" />
-												</div>
-											)}
-
-										{item.subItems!.map((subItem, subIndex) => {
-											if (subItem.divider) {
-												return (
-													<div
-														key={subIndex}
-														className="h-px bg-black/5 dark:bg-white/10 my-1 mx-2"
-													/>
-												);
-											}
-											return (
-												<button
-													key={subIndex}
-													onClick={(e) => {
-														if (!subItem.disabled && subItem.onClick) {
-															subItem.onClick(e);
-															onClose();
-														}
-													}}
-													disabled={subItem.disabled}
-													className={cn(
-														"w-full flex items-center gap-2 px-3 py-1 text-xs text-left transition-colors",
-														"hover:bg-black/5 dark:hover:bg-white/10",
-														subItem.disabled
-															? "opacity-50 cursor-not-allowed text-gray-500 dark:text-gray-400"
-															: "cursor-default text-gray-800 dark:text-gray-200",
-													)}
-												>
-													{subItem.icon ? (
-														<span className="w-3.5 h-3.5 flex items-center justify-center text-sm">
-															{subItem.icon}
-														</span>
-													) : (
-														<span className="w-3.5 h-3.5" />
-													)}
-													{subItem.label}
-												</button>
-											);
-										})}
-									</motion.div>
-								</div>
+								<SubMenu
+									items={item.subItems!}
+									showOnLeft={showOnLeft}
+									onClose={onClose}
+									settings={settings}
+									wallpaper={wallpaper}
+									className="min-w-[160px]"
+								/>
 							)}
 						</div>
 					);

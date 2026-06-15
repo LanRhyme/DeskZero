@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { LayoutGrid, List, X } from "lucide-react";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { NumberInput } from "@/components/UI/NumberInput";
 import { Slider } from "@/components/UI/Slider";
 import { useContainerStore } from "@/stores/containerStore";
@@ -45,6 +45,37 @@ export function ContainerSettings({
 		container.style.cornerRadius ?? 10,
 	);
 
+	const containerRef = useRef<HTMLDivElement>(null);
+
+	useLayoutEffect(() => {
+		if (containerRef.current) {
+			const parent = containerRef.current.parentElement;
+			if (parent) {
+				const rect = containerRef.current.getBoundingClientRect();
+				const padding = 10;
+
+				const styleLeft = parseFloat(parent.style.left) || 0;
+				const styleTop = parseFloat(parent.style.top) || 0;
+
+				let newLeft = styleLeft;
+				let newTop = styleTop;
+
+				if (styleLeft + rect.width > window.innerWidth) {
+					newLeft = Math.max(padding, window.innerWidth - rect.width - padding);
+				}
+				if (newLeft < padding) newLeft = padding;
+
+				if (styleTop + rect.height > window.innerHeight) {
+					newTop = Math.max(padding, window.innerHeight - rect.height - padding);
+				}
+				if (newTop < padding) newTop = padding;
+
+				parent.style.left = `${newLeft}px`;
+				parent.style.top = `${newTop}px`;
+			}
+		}
+	});
+
 	const handleSave = () => {
 		if (name.trim() !== container.name) {
 			updateContainerName(container.id, name.trim());
@@ -73,7 +104,7 @@ export function ContainerSettings({
 	};
 
 	return (
-		<div className="w-full transform overflow-hidden rounded-xl bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-3xl p-3 text-left align-middle shadow-2xl transition-all border border-black/5 dark:border-white/10 ring-1 ring-black/5">
+		<div ref={containerRef} className="w-full transform overflow-hidden rounded-xl bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-3xl p-3 text-left align-middle shadow-2xl transition-all border border-black/5 dark:border-white/10 ring-1 ring-black/5">
 			<div className="text-sm font-medium leading-5 text-[var(--color-text)] flex justify-between items-center mb-3">
 				<span>
 					收纳盒设置{" "}

@@ -1,13 +1,15 @@
-import { Popover, Portal, Transition } from "@headlessui/react";
 import { motion } from "framer-motion";
-import { Settings } from "lucide-react";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Edit2, Settings, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useDrag } from "@/hooks/useDrag";
 import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import type { Container as ContainerType } from "@/types/container";
 import { cn } from "@/utils/cn";
+import { ContextMenu } from "@/components/ContextMenu/ContextMenu";
+import type { MenuItem } from "@/components/ContextMenu/ContextMenu";
 import { FileItem } from "../Item/FileItem";
 import { ContainerSettings } from "./ContainerSettings";
 import { FolderContainer } from "./FolderContainer";
@@ -24,7 +26,7 @@ export function Container({ container }: ContainerProps) {
 	if (container.type === "folder") {
 		return <FolderContainer container={container} />;
 	}
-	const { updateContainerPosition, updateContainerSize } = useContainerStore();
+	const { updateContainerPosition, updateContainerSize, deleteContainer, updateContainerName } = useContainerStore();
 	const { settings } = useSettingsStore();
 	const { wallpaper } = useDesktopStore();
 	const dragHandleRef = useRef<HTMLDivElement>(null);
@@ -32,6 +34,14 @@ export function Container({ container }: ContainerProps) {
 	const [resizePosOffset, setResizePosOffset] = useState({ x: 0, y: 0 });
 	const resizeOffsetRef = useRef({ x: 0, y: 0 });
 	const [settingsPos, setSettingsPos] = useState({ x: 0, y: 0 });
+	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+	const [isEditingName, setIsEditingName] = useState(false);
+	const [editNameValue, setEditNameValue] = useState(container.name);
+	const [menuState, setMenuState] = useState<{
+		visible: boolean;
+		x: number;
+		y: number;
+	}>({ visible: false, x: 0, y: 0 });
 
 	const { ref, pos, isDragging, listeners } = useDrag(container.position, {
 		dragHandleRef,
@@ -81,20 +91,58 @@ export function Container({ container }: ContainerProps) {
 	}, [container.size.width, container.size.height]);
 
 	useEffect(() => {
-		const popupWidth = 288;
-		const popupHeight = 500;
-		let x = pos.x + size.width + 10;
-		if (x + popupWidth > window.innerWidth) {
-			x = pos.x - popupWidth - 10;
-			if (x < 0) x = 10;
+		if (isSettingsOpen) {
+			const popupWidth = 288;
+			const popupHeight = 500;
+			let x = pos.x + size.width + 10;
+			if (x + popupWidth > window.innerWidth) {
+				x = pos.x - popupWidth - 10;
+				if (x < 0) x = 10;
+			}
+			let y = pos.y;
+			if (y + popupHeight > window.innerHeight) {
+				y = window.innerHeight - popupHeight - 10;
+				if (y < 0) y = 10;
+			}
+			setSettingsPos({ x, y });
 		}
-		let y = pos.y;
-		if (y + popupHeight > window.innerHeight) {
-			y = window.innerHeight - popupHeight - 10;
-			if (y < 0) y = 10;
-		}
-		setSettingsPos({ x, y });
-	}, [pos.x, pos.y, size.width]);
+	}, [isSettingsOpen, pos.x, pos.y, size.width]);
+
+	useEffect(() => {
+		setEditNameValue(container.name);
+	}, [container.name]);
+
+	const handleDelete = () => {
+		const { moveItemToDesktop } = useDesktopStore.getState();
+		container.items.forEach((item) => {
+			moveItemToDesktop(item, container.position.x, container.position.y);
+		});
+		deleteContainer(container.id);
+	};
+
+	const handleContextMenu = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setMenuState({ visible: true, x: e.clientX, y: e.clientY });
+	};
+
+	const contextMenuItems: MenuItem[] = [
+		{
+			label: "重命名",
+			icon: <Edit2 size={14} />,
+			onClick: () => setIsEditingName(true),
+		},
+		{
+			label: "设置",
+			icon: <Settings size={14} />,
+			onClick: () => setIsSettingsOpen(true),
+		},
+		{
+			label: "移除",
+			icon: <Trash2 size={14} />,
+			onClick: handleDelete,
+		},
+	];
 
 	const sizeRef = useRef(size);
 	sizeRef.current = size;
@@ -110,112 +158,88 @@ export function Container({ container }: ContainerProps) {
 		direction: "br" | "bl",
 	) => {
 		e.stopPropagation();
+		e.preventDefault();
 		setIsResizing(true);
 		const startX = e.clientX;
 		const startY = e.clientY;
-		const startWidth = sizeRef.current.width;
-		const startHeight = sizeRef.current.height;
+		const startWidth = size.width;
+		const startHeight = size.height;
+		const startPosX = pos.x;
+		const startPosY = pos.y;
 
 		const handlePointerMove = (moveEvent: PointerEvent) => {
 			const deltaX = moveEvent.clientX - startX;
 			const deltaY = moveEvent.clientY - startY;
 
-			let newWidth = startWidth;
-			let offsetX = 0;
-
 			if (direction === "br") {
-				newWidth = Math.max(150, startWidth + deltaX);
+				const newWidth = Math.max(160, startWidth + deltaX);
+				const newHeight = Math.max(120, startHeight + deltaY);
+				setSize({ width: newWidth, height: newHeight });
 			} else if (direction === "bl") {
-				newWidth = Math.max(150, startWidth - deltaX);
-				if (startWidth - deltaX >= 150) {
-					offsetX = deltaX;
-				} else {
-					offsetX = startWidth - 150;
+				const newWidth = Math.max(160, startWidth - deltaX);
+				const newHeight = Math.max(120, startHeight + deltaY);
+				const possiblePosX = startPosX + deltaX;
+
+				if (newWidth > 160 && possiblePosX >= 0) {
+					setSize({ width: newWidth, height: newHeight });
+					setResizePosOffset({ x: deltaX, y: 0 });
+					resizeOffsetRef.current = { x: deltaX, y: 0 };
 				}
-			}
-
-			const newHeight = Math.max(100, startHeight + deltaY);
-			setSize({ width: newWidth, height: newHeight });
-
-			if (direction === "bl") {
-				setResizePosOffset({ x: offsetX, y: 0 });
-				resizeOffsetRef.current = { x: offsetX, y: 0 };
 			}
 		};
 
 		const handlePointerUp = () => {
 			setIsResizing(false);
-			commitResize();
-
-			const finalOffsetX = resizeOffsetRef.current.x;
-			setResizePosOffset({ x: 0, y: 0 });
-			resizeOffsetRef.current = { x: 0, y: 0 };
-
-			if (finalOffsetX !== 0) {
-				const safeX = Math.max(0, pos.x + finalOffsetX);
-				updateContainerPosition(container.id, { x: safeX, y: pos.y });
+			if (direction === "bl") {
+				const finalX = Math.max(0, startPosX + resizeOffsetRef.current.x);
+				updateContainerPosition(container.id, { x: finalX, y: startPosY });
+				setResizePosOffset({ x: 0, y: 0 });
+				resizeOffsetRef.current = { x: 0, y: 0 };
 			}
-
-			window.removeEventListener("pointermove", handlePointerMove);
-			window.removeEventListener("pointerup", handlePointerUp);
+			commitResize();
+			document.removeEventListener("pointermove", handlePointerMove);
+			document.removeEventListener("pointerup", handlePointerUp);
 		};
 
-		window.addEventListener("pointermove", handlePointerMove);
-		window.addEventListener("pointerup", handlePointerUp);
+		document.addEventListener("pointermove", handlePointerMove);
+		document.addEventListener("pointerup", handlePointerUp);
 	};
 
-	const bgOpacity = container.style.backgroundOpacity ?? 0.3;
-	const bgColor = container.style.backgroundColor || "theme";
-	const layoutStyle =
-		container.style.layout === "list" ? "flex-col" : "flex-wrap content-start";
+	// Determine text and icon colors based on container background for accessibility
+	const isDarkBg =
+		settings.theme === "dark" || (settings.theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
-	// Custom background generation
 	const customBackground =
-		bgColor === "theme"
-			? `rgba(var(--color-container-bg-rgb), ${bgOpacity})`
-			: bgColor.startsWith("#") || bgColor.startsWith("rgb")
-				? `rgba(${hexToRgb(bgColor)}, ${bgOpacity})`
-				: bgColor;
+		container.style.backgroundColor === "theme" ||
+		!container.style.backgroundColor
+			? settings.theme === "dark" ||
+				(settings.theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)
+				? `rgba(26, 26, 26, ${container.style.backgroundOpacity ?? 0.3})`
+				: `rgba(255, 255, 255, ${container.style.backgroundOpacity ?? 0.3})`
+			: container.style.backgroundColor.startsWith("#")
+				? `rgba(${hexToRgb(container.style.backgroundColor)}, ${container.style.backgroundOpacity ?? 0.3})`
+				: container.style.backgroundColor;
 
-	// Calculate dynamic text colors based on background
-	const [isSystemDark, setIsSystemDark] = useState(
-		() => window.matchMedia("(prefers-color-scheme: dark)").matches,
-	);
-	useEffect(() => {
-		const mq = window.matchMedia("(prefers-color-scheme: dark)");
-		const handler = (e: MediaQueryListEvent) => setIsSystemDark(e.matches);
-		mq.addEventListener("change", handler);
-		return () => mq.removeEventListener("change", handler);
-	}, []);
+	// Simple contrast check for header
+	const isCustomBgDark =
+		container.style.backgroundColor !== "theme" &&
+		container.style.backgroundColor &&
+		container.style.backgroundColor.startsWith("#")
+			? isColorDark(container.style.backgroundColor)
+			: isDarkBg;
 
-	const isThemeDark =
-		settings.theme === "dark" || (settings.theme === "system" && isSystemDark);
+	const headerColor = isCustomBgDark ? "#ffffff" : "#1f2937";
+	const textShadow = isCustomBgDark
+		? "0 1px 2px rgba(0,0,0,0.5)"
+		: "0 1px 1px rgba(255,255,255,0.5)";
 
-	let isBaseLight = !isThemeDark;
-	if (bgColor !== "theme" && bgColor.startsWith("#")) {
-		const hex = bgColor;
-		const r = parseInt(hex.slice(1, 3), 16) || 0;
-		const g = parseInt(hex.slice(3, 5), 16) || 0;
-		const b = parseInt(hex.slice(5, 7), 16) || 0;
-		const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-		isBaseLight = luminance > 0.5;
-	}
+	// Layout style class
+	const layoutStyle =
+		container.style.layout === "list"
+			? "flex-col items-stretch"
+			: "flex-row flex-wrap content-start";
 
-	// If opacity is low, wallpaper dominates. Desktop wallpapers are usually best with white text.
-	const isVisualLight = bgOpacity >= 0.5 ? isBaseLight : false;
-
-	const headerColor = isVisualLight
-		? "rgba(0, 0, 0, 0.85)"
-		: "rgba(255, 255, 255, 0.95)";
-	const iconColor = isVisualLight
-		? "rgba(0, 0, 0, 0.65)"
-		: "rgba(255, 255, 255, 0.8)";
-	const textShadow = isVisualLight
-		? "0 1px 2px rgba(255, 255, 255, 0.6)"
-		: "0 1px 2px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0, 0, 0, 0.5)";
-	const iconFilter = isVisualLight
-		? "drop-shadow(0 1px 1px rgba(255,255,255,0.6))"
-		: "drop-shadow(0 1px 2px rgba(0,0,0,0.8))";
+	const cornerRadius = container.style.cornerRadius ?? 10;
 
 	return (
 		<>
@@ -229,7 +253,7 @@ export function Container({ container }: ContainerProps) {
 					y: pos.y + resizePosOffset.y,
 					width: size.width,
 					height: size.height,
-					borderRadius: container.style.cornerRadius ?? 10,
+					borderRadius: cornerRadius,
 					zIndex: isDragging || isResizing ? 40 : 10,
 					backgroundColor:
 						settings.wallpaperCompatible && settings.globalBlur && wallpaper
@@ -247,10 +271,11 @@ export function Container({ container }: ContainerProps) {
 				initial={{ opacity: 0, scale: 0.95 }}
 				animate={{ opacity: isDragging ? 0.9 : 1, scale: 1 }}
 				className={cn(
-					"flex flex-col transition-colors border shadow-xl select-none relative",
+					"flex flex-col overflow-hidden transition-colors border shadow-xl select-none relative",
 					"border-[var(--color-border)]",
 					isDragging && "shadow-2xl ring-1 ring-black/10 dark:ring-white/10",
 				)}
+				onContextMenu={handleContextMenu}
 			>
 				{/* Fake Blur Layer for Dynamic Wallpaper Mode */}
 				{settings.wallpaperCompatible && settings.globalBlur && wallpaper && (
@@ -279,71 +304,49 @@ export function Container({ container }: ContainerProps) {
 					<div
 						ref={dragHandleRef}
 						{...listeners}
-						className="flex items-center justify-between px-2 py-1 transition-colors cursor-move touch-none relative min-h-[24px]"
+						className="flex items-center justify-center px-2 py-1 transition-colors cursor-move touch-none relative min-h-[24px]"
 						style={{ backgroundColor: "transparent" }} // Inherits inner color
 					>
-						<div className="w-6 pointer-events-none" />{" "}
-						{/* Placeholder for layout balance */}
-						<span
-							className="absolute left-1/2 -translate-x-1/2 text-xs font-medium pointer-events-none transition-colors"
-							style={{
-								color: headerColor,
-								textShadow,
-								opacity: settings.textOpacity ?? 1.0,
-							}}
-						>
-							{container.name}
-						</span>
-						<div className="flex gap-1 relative z-10">
-							<Popover>
-								{({ close }) => (
-									<>
-										<Popover.Button
-											as="button"
-											onPointerDown={(e: React.PointerEvent) =>
-												e.stopPropagation()
-											}
-											className="p-1 rounded transition-colors cursor-pointer focus:outline-none hover:bg-black/10 dark:hover:bg-white/10"
-											style={{
-												color: iconColor,
-												filter: iconFilter,
-												opacity: settings.iconOpacity ?? 1.0,
-											}}
-										>
-											<Settings size={12} />
-										</Popover.Button>
-										<Transition
-											as={Fragment}
-											enter="transition ease-out duration-200"
-											enterFrom="opacity-0 translate-y-1"
-											enterTo="opacity-100 translate-y-0"
-											leave="transition ease-in duration-150"
-											leaveFrom="opacity-100 translate-y-0"
-											leaveTo="opacity-0 translate-y-1"
-										>
-											<Portal>
-												<Popover.Panel
-													className="fixed z-[100] shadow-2xl pointer-events-auto"
-													style={{
-														left: settingsPos.x,
-														top: settingsPos.y,
-														width: 288,
-													}}
-													onPointerDown={(e: React.PointerEvent) =>
-														e.stopPropagation()
-													}
-												>
-													<ContainerSettings
-														container={container}
-														onClose={close}
-													/>
-												</Popover.Panel>
-											</Portal>
-										</Transition>
-									</>
-								)}
-							</Popover>
-						</div>
+						{isEditingName ? (
+							<input
+								autoFocus
+								className="bg-white/50 dark:bg-black/50 text-[var(--color-text)] px-1 outline-none rounded text-xs font-medium text-center w-32 relative z-10"
+								style={{ color: headerColor }}
+								value={editNameValue}
+								onChange={(e) => setEditNameValue(e.target.value)}
+								onBlur={() => {
+									setIsEditingName(false);
+									if (editNameValue.trim())
+										updateContainerName(container.id, editNameValue.trim());
+								}}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										setIsEditingName(false);
+										if (editNameValue.trim())
+											updateContainerName(container.id, editNameValue.trim());
+									} else if (e.key === "Escape") {
+										setIsEditingName(false);
+										setEditNameValue(container.name);
+									}
+								}}
+								onPointerDown={(e) => e.stopPropagation()}
+							/>
+						) : (
+							<div
+								className="cursor-pointer max-w-[80%] truncate text-xs font-medium transition-colors"
+								style={{
+									color: headerColor,
+									textShadow,
+									opacity: settings.textOpacity ?? 1.0,
+								}}
+								onDoubleClick={(e) => {
+									e.stopPropagation();
+									setIsEditingName(true);
+								}}
+							>
+								{container.name}
+							</div>
+						)}
 					</div>
 				)}
 
@@ -425,11 +428,52 @@ export function Container({ container }: ContainerProps) {
 					</svg>
 				</div>
 			</motion.div>
+
+			{menuState.visible && (
+				<ContextMenu
+					x={menuState.x}
+					y={menuState.y}
+					items={contextMenuItems}
+					onClose={() => setMenuState((prev) => ({ ...prev, visible: false }))}
+				/>
+			)}
+
+			{isSettingsOpen &&
+				createPortal(
+					<motion.div
+						className="fixed z-[100] pointer-events-auto"
+						style={{
+							left: settingsPos.x,
+							top: settingsPos.y,
+							width: 288,
+						}}
+						onPointerDown={(e) => e.stopPropagation()}
+					>
+						<ContainerSettings
+							container={container}
+							onClose={() => setIsSettingsOpen(false)}
+						/>
+					</motion.div>,
+					document.body,
+				)}
 		</>
 	);
 }
 
-// Helper
+// Helpers
+function isColorDark(hex: string) {
+	let c = hex.substring(1).split("");
+	if (c.length === 3) {
+		c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+	}
+	const cNum = Number("0x" + c.join(""));
+	const r = (cNum >> 16) & 255;
+	const g = (cNum >> 8) & 255;
+	const b = cNum & 255;
+	const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+	return brightness < 128;
+}
+
 function hexToRgb(hex: string) {
 	let c = hex.substring(1).split("");
 	if (c.length === 3) {

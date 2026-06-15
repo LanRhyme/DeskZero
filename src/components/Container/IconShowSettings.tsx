@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Slider } from "@/components/UI/Slider";
+import { SwitchToggle } from "@/components/UI/SwitchToggle";
 import { NumberInput } from "@/components/UI/NumberInput";
 import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
@@ -193,7 +194,7 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 					</div>
 					<div className="pt-2 flex items-center justify-between">
 						<span className="text-xs text-[var(--color-text)] font-medium">显示图标名称</span>
-						<input type="checkbox" checked={showNamesInside} onChange={(e) => setShowNamesInside(e.target.checked)} className="rounded text-[var(--color-primary)] focus:ring-[var(--color-primary)] animate-none" />
+						<SwitchToggle checked={showNamesInside} onChange={setShowNamesInside} />
 					</div>
 					<div className="pt-2">
 						<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">

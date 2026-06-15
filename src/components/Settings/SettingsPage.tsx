@@ -1,4 +1,4 @@
-import { Switch, Tab } from "@headlessui/react";
+import { Tab } from "@headlessui/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
 	AlertCircle,
@@ -10,39 +10,14 @@ import {
 } from "lucide-react";
 import { Fragment, useRef, useState } from "react";
 import { Slider } from "@/components/UI/Slider";
+import { SwitchToggle } from "@/components/UI/SwitchToggle";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useToastStore } from "@/stores/toastStore";
 import { syncWindowsLayout } from "@/services/desktopService";
 import { cn } from "@/utils/cn";
 import appConfig from "../../../deskzero.config.json";
 
-function CustomSwitch({
-	checked,
-	onChange,
-}: {
-	checked: boolean;
-	onChange: (val: boolean) => void;
-}) {
-	return (
-		<Switch
-			checked={checked}
-			onChange={onChange}
-			className={cn(
-				checked ? "bg-[var(--color-accent)]" : "bg-black/10 dark:bg-white/10",
-				"relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-300 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent border border-black/5 dark:border-white/5",
-			)}
-		>
-			<span className="sr-only">Toggle</span>
-			<span
-				aria-hidden="true"
-				className={cn(
-					checked ? "translate-x-[22px]" : "translate-x-1",
-					"pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-300 ease-in-out",
-				)}
-			/>
-		</Switch>
-	);
-}
+const CustomSwitch = SwitchToggle;
 
 function SettingRow({
 	title,

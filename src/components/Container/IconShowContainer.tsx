@@ -210,8 +210,6 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 					position: "absolute",
 					left: 0,
 					top: 0,
-					x: pos.x + resizePosOffset.x,
-					y: pos.y + resizePosOffset.y,
 					width: size.width,
 					height: size.height,
 					borderRadius: cornerRadius,
@@ -221,8 +219,9 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 					WebkitBackdropFilter: !settings.wallpaperCompatible && settings.globalBlur ? "var(--backdrop-blur)" : "none",
 					...maskStyle,
 				}}
-				initial={{ opacity: 0, scale: 0.95 }}
-				animate={{ opacity: isDragging ? 0.9 : 1, scale: 1 }}
+				initial={{ opacity: 0, scale: 0.95, x: pos.x, y: pos.y }}
+				animate={{ opacity: isDragging ? 0.9 : 1, scale: 1, x: pos.x + resizePosOffset.x, y: pos.y + resizePosOffset.y }}
+				transition={isDragging || isResizing ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 30 }}
 				className={cn(
 					"flex flex-col overflow-hidden transition-colors border shadow-xl select-none relative",
 					"border-[var(--color-border)]",

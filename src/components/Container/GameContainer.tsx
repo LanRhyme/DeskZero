@@ -251,15 +251,16 @@ export function GameContainer({ container }: GameContainerProps) {
 				whileTap={{ scale: 0.98 }}
 				style={{
 					position: "absolute",
-					left: pos.x + resizePosOffset.x,
-					top: pos.y + resizePosOffset.y,
+					left: 0,
+					top: 0,
 					width: size.width,
 					height: size.height,
 					zIndex: isDragging || isResizing ? 40 : 10,
 					opacity: bgOpacity,
 				}}
-				initial={{ opacity: 0, scale: 0.95 }}
-				animate={{ opacity: isDragging ? 0.9 : bgOpacity, scale: 1 }}
+				initial={{ opacity: 0, scale: 0.95, x: pos.x, y: pos.y }}
+				animate={{ opacity: isDragging ? 0.9 : bgOpacity, scale: 1, x: pos.x + resizePosOffset.x, y: pos.y + resizePosOffset.y }}
+				transition={isDragging || isResizing ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 30 }}
 				className={cn(
 					"flex flex-col transition-shadow select-none relative bg-transparent",
 					isDragging && "shadow-2xl ring-2 ring-[var(--color-accent)]/50",

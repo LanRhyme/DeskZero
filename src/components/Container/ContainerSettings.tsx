@@ -3,6 +3,7 @@ import { LayoutGrid, List, X } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { NumberInput } from "@/components/UI/NumberInput";
 import { Slider } from "@/components/UI/Slider";
+import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
 import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
 import type { Container } from "@/types/container";
@@ -101,7 +102,10 @@ export function ContainerSettings({
 		onClose();
 	};
 
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
 	return (
+		<>
 		<div ref={containerRef} className="w-full transform overflow-hidden rounded-xl bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-3xl p-3 text-left align-middle shadow-2xl transition-all border border-black/5 dark:border-white/10 ring-1 ring-black/5">
 			<div className="text-sm font-medium leading-5 text-[var(--color-text)] flex justify-between items-center mb-3">
 				<span>
@@ -342,7 +346,7 @@ export function ContainerSettings({
 					<button
 						type="button"
 						className="flex-1 justify-center rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/20 transition-colors focus:outline-none"
-						onClick={handleDelete}
+						onClick={() => setShowDeleteConfirm(true)}
 					>
 						移除
 					</button>
@@ -363,5 +367,17 @@ export function ContainerSettings({
 				</div>
 			</div>
 		</div>
+		<ConfirmDialog
+			isOpen={showDeleteConfirm}
+			title="移除收纳盒"
+			message={`确定要移除「${container.name}」吗？容器内的图标将回到桌面。`}
+			confirmLabel="移除"
+			onConfirm={async () => {
+				setShowDeleteConfirm(false);
+				await handleDelete();
+			}}
+			onCancel={() => setShowDeleteConfirm(false)}
+		/>
+		</>
 	);
 }

@@ -3,6 +3,7 @@ import { Settings, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useDrag } from "@/hooks/useDrag";
+import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
 import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -132,6 +133,8 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 		await deleteContainer(container.id);
 	};
 
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
 	const handleContainerContextMenu = (e: React.MouseEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -192,11 +195,11 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 				icon: <Settings size={14} />,
 				onClick: () => setIsSettingsOpen(true),
 			},
-			{
-				label: "移除",
-				icon: <Trash2 size={14} />,
-				onClick: handleDelete,
-			},
+		{
+			label: "移除",
+			icon: <Trash2 size={14} />,
+			onClick: () => setShowDeleteConfirm(true),
+		},
 		];
 	};
 
@@ -345,6 +348,17 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 					</motion.div>,
 					document.body,
 				)}
+			<ConfirmDialog
+				isOpen={showDeleteConfirm}
+				title="移除图标展示容器"
+				message={`确定要移除「${container.name}」吗？容器内的图标将回到桌面。`}
+				confirmLabel="移除"
+				onConfirm={async () => {
+					setShowDeleteConfirm(false);
+					await handleDelete();
+				}}
+				onCancel={() => setShowDeleteConfirm(false)}
+			/>
 		</>
 	);
 }

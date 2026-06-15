@@ -3,6 +3,7 @@ import { Edit2, Settings, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useDrag } from "@/hooks/useDrag";
+import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
 import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -127,6 +128,8 @@ function NormalContainer({ container }: ContainerProps) {
 		await deleteContainer(container.id);
 	};
 
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
 	const handleContextMenu = (e: React.MouseEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -147,7 +150,7 @@ function NormalContainer({ container }: ContainerProps) {
 		{
 			label: "移除",
 			icon: <Trash2 size={14} />,
-			onClick: handleDelete,
+			onClick: () => setShowDeleteConfirm(true),
 		},
 	];
 
@@ -459,11 +462,20 @@ function NormalContainer({ container }: ContainerProps) {
 					</motion.div>,
 					document.body,
 				)}
+			<ConfirmDialog
+				isOpen={showDeleteConfirm}
+				title="移除收纳盒"
+				message={`确定要移除「${container.name}」吗？容器内的图标将回到桌面。`}
+				confirmLabel="移除"
+				onConfirm={async () => {
+					setShowDeleteConfirm(false);
+					await handleDelete();
+				}}
+				onCancel={() => setShowDeleteConfirm(false)}
+			/>
 		</>
 	);
 }
-
-// Helpers
 function isColorDark(hex: string) {
 	let c = hex.substring(1).split("");
 	if (c.length === 3) {

@@ -1,0 +1,75 @@
+import { motion, AnimatePresence } from "framer-motion";
+
+interface ConfirmDialogProps {
+	isOpen: boolean;
+	title: string;
+	message: string;
+	confirmLabel?: string;
+	cancelLabel?: string;
+	confirmStyle?: "danger" | "default";
+	onConfirm: () => void;
+	onCancel: () => void;
+}
+
+export function ConfirmDialog({
+	isOpen,
+	title,
+	message,
+	confirmLabel = "确认",
+	cancelLabel = "取消",
+	confirmStyle = "danger",
+	onConfirm,
+	onCancel,
+}: ConfirmDialogProps) {
+	return (
+		<AnimatePresence>
+			{isOpen && (
+				<div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+					<motion.div
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						exit={{ opacity: 0 }}
+						onClick={onCancel}
+						className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+					/>
+					<motion.div
+						initial={{ opacity: 0, scale: 0.95, y: 10 }}
+						animate={{ opacity: 1, scale: 1, y: 0 }}
+						exit={{ opacity: 0, scale: 0.95, y: 10 }}
+						transition={{ type: "spring", duration: 0.4, bounce: 0 }}
+						className="relative w-full max-w-sm bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-xl rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden"
+					>
+						<div className="p-5">
+							<h3 className="text-sm font-semibold text-[var(--color-text)] mb-2">
+								{title}
+							</h3>
+							<p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+								{message}
+							</p>
+						</div>
+						<div className="flex gap-2 px-5 pb-4">
+							<button
+								type="button"
+								className="flex-1 justify-center rounded-lg border border-transparent bg-black/5 dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[var(--color-text)] hover:bg-black/10 dark:hover:bg-white/10 transition-colors focus:outline-none"
+								onClick={onCancel}
+							>
+								{cancelLabel}
+							</button>
+							<button
+								type="button"
+								className={`flex-1 justify-center rounded-lg border border-transparent px-3 py-1.5 text-xs font-medium text-white transition-colors shadow-md focus:outline-none ${
+									confirmStyle === "danger"
+										? "bg-red-500 hover:bg-red-600 shadow-red-500/25"
+										: "bg-[var(--color-accent)] hover:bg-[var(--color-accent)] shadow-[var(--color-accent)]/25"
+								}`}
+								onClick={onConfirm}
+							>
+								{confirmLabel}
+							</button>
+						</div>
+					</motion.div>
+				</div>
+			)}
+		</AnimatePresence>
+	);
+}

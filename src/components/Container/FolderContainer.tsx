@@ -22,6 +22,7 @@ import {
 	type MenuItem,
 } from "@/components/ContextMenu/ContextMenu";
 import { useDrag } from "@/hooks/useDrag";
+import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
 import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -282,6 +283,8 @@ export function FolderContainer({ container }: ContainerProps) {
 		setMenuState({ visible: true, x: e.clientX, y: e.clientY });
 	};
 
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
 	const contextMenuItems: MenuItem[] = [
 		{
 			label: "刷新",
@@ -379,9 +382,7 @@ export function FolderContainer({ container }: ContainerProps) {
 		{
 			label: "移除",
 			icon: <Trash2 size={14} />,
-			onClick: () => {
-				useContainerStore.getState().deleteContainer(container.id);
-			},
+			onClick: () => setShowDeleteConfirm(true),
 		},
 	];
 
@@ -612,6 +613,17 @@ export function FolderContainer({ container }: ContainerProps) {
 					onClose={() => setMenuState((prev) => ({ ...prev, visible: false }))}
 				/>
 			)}
+			<ConfirmDialog
+				isOpen={showDeleteConfirm}
+				title="移除目录索引容器"
+				message={`确定要移除「${container.name}」吗？`}
+				confirmLabel="移除"
+				onConfirm={() => {
+					setShowDeleteConfirm(false);
+					useContainerStore.getState().deleteContainer(container.id);
+				}}
+				onCancel={() => setShowDeleteConfirm(false)}
+			/>
 		</>
 	);
 }

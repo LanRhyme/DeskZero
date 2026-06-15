@@ -8,6 +8,7 @@ import {
 	type MenuItem,
 } from "@/components/ContextMenu/ContextMenu";
 import { useDrag } from "@/hooks/useDrag";
+import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
 import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -201,6 +202,8 @@ export function GameContainer({ container }: GameContainerProps) {
 		setMenuState({ visible: true, x: e.clientX, y: e.clientY });
 	};
 
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
 	const contextMenuItems: MenuItem[] = [
 		{
 			label: "设置",
@@ -210,11 +213,7 @@ export function GameContainer({ container }: GameContainerProps) {
 		{
 			label: "移除",
 			icon: <Trash2 size={14} />,
-			onClick: async () => {
-				const { moveItemsToDesktop } = useDesktopStore.getState();
-				await moveItemsToDesktop(container.items, pos.x, pos.y, true);
-				await deleteContainer(container.id);
-			},
+			onClick: () => setShowDeleteConfirm(true),
 		},
 		{
 			label: "复制",
@@ -413,6 +412,19 @@ export function GameContainer({ container }: GameContainerProps) {
 					onClose={() => setMenuState((prev) => ({ ...prev, visible: false }))}
 				/>
 			)}
+			<ConfirmDialog
+				isOpen={showDeleteConfirm}
+				title="移除游戏容器"
+				message={`确定要移除「${container.name}」吗？容器内的图标将回到桌面。`}
+				confirmLabel="移除"
+				onConfirm={async () => {
+					setShowDeleteConfirm(false);
+					const { moveItemsToDesktop } = useDesktopStore.getState();
+					await moveItemsToDesktop(container.items, pos.x, pos.y, true);
+					await deleteContainer(container.id);
+				}}
+				onCancel={() => setShowDeleteConfirm(false)}
+			/>
 		</>
 	);
 }

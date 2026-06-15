@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Slider } from "@/components/UI/Slider";
 import { SwitchToggle } from "@/components/UI/SwitchToggle";
+import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
 import { NumberInput } from "@/components/UI/NumberInput";
 import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
@@ -92,7 +93,10 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 		onClose();
 	};
 
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
 	return (
+		<>
 		<div ref={containerRef} className="w-full transform overflow-hidden rounded-xl bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-3xl p-3 text-left align-middle shadow-2xl transition-all border border-black/5 dark:border-white/10 ring-1 ring-black/5">
 			<div className="text-sm font-medium leading-5 text-[var(--color-text)] flex justify-between items-center mb-3">
 				<span>展示容器设置</span>
@@ -224,11 +228,23 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 			</div>
 
 			<div className="pt-3 flex gap-2">
-				<button type="button" className="flex-1 justify-center rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/20 transition-colors focus:outline-none" onClick={handleDelete}>移除</button>
+				<button type="button" className="flex-1 justify-center rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/20 transition-colors focus:outline-none" onClick={() => setShowDeleteConfirm(true)}>移除</button>
 				<button type="button" className="flex-1 justify-center rounded-lg border border-transparent bg-black/5 dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[var(--color-text)] hover:bg-black/10 dark:hover:bg-white/10 transition-colors focus:outline-none" onClick={onClose}>取消</button>
 				<button type="button" className="flex-1 justify-center rounded-lg border border-transparent bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-accent)] transition-colors shadow-md shadow-[var(--color-accent)]/25 focus:outline-none" onClick={handleSave}>保存</button>
 			</div>
 		</div>
+		<ConfirmDialog
+			isOpen={showDeleteConfirm}
+			title="移除图标展示容器"
+			message={`确定要移除「${container.name}」吗？容器内的图标将回到桌面。`}
+			confirmLabel="移除"
+			onConfirm={async () => {
+				setShowDeleteConfirm(false);
+				await handleDelete();
+			}}
+			onCancel={() => setShowDeleteConfirm(false)}
+		/>
+		</>
 	);
 }
 

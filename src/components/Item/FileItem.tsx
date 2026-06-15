@@ -598,8 +598,8 @@ export function FileItem({
 						: { type: "spring", stiffness: 400, damping: 30 }
 			}
 			{...listeners}
-			whileHover={isIconShow ? (motionProps.whileHover || {}) : { scale: 1.05 }}
-			whileTap={isIconShow ? {} : { scale: 0.95 }}
+			whileHover={isIconShow ? (motionProps.whileHover || {}) : (isSelected && settings.selectedItemBlur ? {} : { scale: 1.05 })}
+			whileTap={isIconShow ? {} : (isSelected && settings.selectedItemBlur ? {} : { scale: 0.95 })}
 			onClick={handleClick}
 			onDoubleClick={handleDoubleClick}
 			onContextMenu={handleContextMenu}
@@ -612,28 +612,19 @@ export function FileItem({
 					: "",
 				isDragging && !item.isInContainer
 					? "opacity-50 cursor-grabbing"
-					: (isIconShow ? "cursor-default" : "cursor-default hover:bg-[var(--item-hover-bg)]"),
+					: (isIconShow ? "cursor-default" : (isSelected ? "cursor-default" : "cursor-default hover:bg-[var(--item-hover-bg)]")),
 				(isSelected && !isIconShow) &&
 					"bg-[var(--item-selected-bg)] ring-1 ring-[var(--item-selected-ring)]",
-				(isSelected && !isIconShow) &&
-					settings.selectedItemBlur &&
-					!settings.wallpaperCompatible &&
-					"selected-blur",
 				className,
 			)}
 		>
-			{isSelected &&
-				!isIconShow &&
-				settings.selectedItemBlur &&
-				settings.wallpaperCompatible &&
-				wallpaper && (
+			{isSelected && !isIconShow && settings.selectedItemBlur && wallpaper && (
 					<div
-						className="absolute inset-0 pointer-events-none"
+						className="absolute inset-0 pointer-events-none overflow-hidden"
 						style={{
 							backgroundImage: `url(${wallpaper})`,
-							backgroundAttachment: "fixed",
-							backgroundPosition: "top left",
-							backgroundSize: "100vw 100vh",
+							backgroundSize: "cover",
+							backgroundPosition: "center",
 							filter: "blur(20px)",
 							zIndex: -1,
 							borderRadius: "inherit",

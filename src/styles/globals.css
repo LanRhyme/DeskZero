@@ -65,12 +65,6 @@ body {
 	--item-hover-bg: rgba(0, 0, 0, 0.1);
 }
 
-/* 选中图标毛玻璃效果 */
-.selected-blur {
-	backdrop-filter: var(--backdrop-blur-light);
-	-webkit-backdrop-filter: var(--backdrop-blur-light);
-}
-
 /* 全局毛玻璃效果控制 */
 [data-global-blur="true"] {
 	--backdrop-blur: blur(30px);

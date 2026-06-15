@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Slider } from "@/components/UI/Slider";
 import { NumberInput } from "@/components/UI/NumberInput";
 import { useContainerStore } from "@/stores/containerStore";
+import { useDesktopStore } from "@/stores/desktopStore";
 import type { Container } from "@/types/container";
 import { cn } from "@/utils/cn";
 import { getGridSize } from "@/utils/grid";
@@ -84,6 +85,8 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 	};
 
 	const handleDelete = async () => {
+		const { moveItemsToDesktop } = useDesktopStore.getState();
+		await moveItemsToDesktop(container.items, container.position.x, container.position.y, true);
 		await deleteContainer(container.id);
 		onClose();
 	};

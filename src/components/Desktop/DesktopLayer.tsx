@@ -63,7 +63,7 @@ export default function DesktopLayer() {
 		x: number;
 		y: number;
 		paths: string[];
-		customHeaderItems?: any[];
+		customHeaderItems?: MenuItem[];
 	}>({ visible: false, x: 0, y: 0, paths: [] });
 	const [canPaste, setCanPaste] = useState(false);
 	const [createPrompt, setCreatePrompt] = useState<{

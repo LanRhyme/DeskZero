@@ -28,6 +28,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import type { Container as ContainerType } from "@/types/container";
 import type { Item, ItemType } from "@/types/item";
 import { cn } from "@/utils/cn";
+import { hexToRgb } from "@/utils/color";
 import { FileItem } from "../Item/FileItem";
 import { ContainerSettings } from "./ContainerSettings";
 
@@ -616,11 +617,4 @@ export function FolderContainer({ container }: ContainerProps) {
 }
 
 // Helper
-function hexToRgb(hex: string) {
-	let c = hex.substring(1).split("");
-	if (c.length === 3) {
-		c = [c[0], c[0], c[1], c[1], c[2], c[2]];
-	}
-	const cNum = Number("0x" + c.join(""));
-	return [(cNum >> 16) & 255, (cNum >> 8) & 255, cNum & 255].join(",");
-}
+

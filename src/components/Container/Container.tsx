@@ -8,6 +8,7 @@ import { useDesktopStore } from "@/stores/desktopStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import type { Container as ContainerType } from "@/types/container";
 import { cn } from "@/utils/cn";
+import { hexToRgb } from "@/utils/color";
 import { ContextMenu } from "@/components/ContextMenu/ContextMenu";
 import type { MenuItem } from "@/components/ContextMenu/ContextMenu";
 import { FileItem } from "../Item/FileItem";
@@ -476,11 +477,4 @@ function isColorDark(hex: string) {
 	return brightness < 128;
 }
 
-function hexToRgb(hex: string) {
-	let c = hex.substring(1).split("");
-	if (c.length === 3) {
-		c = [c[0], c[0], c[1], c[1], c[2], c[2]];
-	}
-	const cNum = Number("0x" + c.join(""));
-	return [(cNum >> 16) & 255, (cNum >> 8) & 255, cNum & 255].join(",");
-}
+

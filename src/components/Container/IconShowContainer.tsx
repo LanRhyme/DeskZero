@@ -12,6 +12,7 @@ import { FileItem } from "../Item/FileItem";
 import { IconShowSettings } from "./IconShowSettings";
 import { ContextMenu } from "../ContextMenu/ContextMenu";
 import type { MenuItem } from "../ContextMenu/ContextMenu";
+import { hexToRgb } from "@/utils/color";
 import { snapPosition, snapSize } from "@/utils/grid";
 
 interface IconShowContainerProps {
@@ -157,15 +158,6 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 	};
 
 	// Styles
-	const hexToRgb = (hex: string) => {
-		let c = hex.substring(1).split("");
-		if (c.length === 3) {
-			c = [c[0], c[0], c[1], c[1], c[2], c[2]];
-		}
-		const cNum = Number("0x" + c.join(""));
-		return [(cNum >> 16) & 255, (cNum >> 8) & 255, cNum & 255].join(",");
-	};
-
 	const cornerRadius = container.style.cornerRadius ?? 10;
 	const bgOpacity = container.style.backgroundOpacity ?? 0.3;
 	const customBackground =

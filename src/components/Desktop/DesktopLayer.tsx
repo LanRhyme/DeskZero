@@ -313,20 +313,38 @@ export default function DesktopLayer() {
 
 					if (paths.length > 0) {
 						const { invoke } = await import("@tauri-apps/api/core");
-						try {
-							if (e.shiftKey) {
-								await Promise.all(
-									paths.map((p) => invoke("delete_file", { path: p })),
-								);
-							} else {
-								await Promise.all(
-									paths.map((p) => invoke("trash_file", { path: p })),
-								);
+					try {
+						if (e.shiftKey) {
+							const results = await Promise.allSettled(
+								paths.map((p) => invoke("delete_file", { path: p })),
+							);
+							const failed = results.filter((r) => r.status === "rejected");
+							if (failed.length > 0) {
+								useToastStore
+									.getState()
+									.addToast(
+										`${failed.length} 个文件未找到（已清理引用）`,
+										"warning",
+									);
 							}
-							await useDesktopStore.getState().fetchDesktopItems();
-							useToastStore
-								.getState()
-								.addToast(`已删除 ${paths.length} 个文件`, "success");
+						} else {
+							const results = await Promise.allSettled(
+								paths.map((p) => invoke("trash_file", { path: p })),
+							);
+							const failed = results.filter((r) => r.status === "rejected");
+							if (failed.length > 0) {
+								useToastStore
+									.getState()
+									.addToast(
+										`${failed.length} 个文件未找到（已清理引用）`,
+										"warning",
+									);
+							}
+						}
+						await useDesktopStore.getState().fetchDesktopItems();
+						useToastStore
+							.getState()
+							.addToast(`已删除 ${paths.length} 个文件`, "success");
 						} catch (err) {
 							console.error("Delete failed:", err);
 							useToastStore
@@ -950,6 +968,21 @@ export default function DesktopLayer() {
 											JSON.stringify(savedLayout),
 										);
 									}
+
+									// 更新容器内重命名项的路径/ID/名称
+									const utf8BytesForId = new TextEncoder().encode(newPath);
+									const binaryStrForId = Array.from(utf8BytesForId)
+										.map((b) => String.fromCharCode(b))
+										.join("");
+									const newBase64Id = btoa(binaryStrForId);
+									const { updateItemPathInContainer } =
+										useContainerStore.getState();
+									updateItemPathInContainer(
+										renamePrompt.targetPath,
+										newBase64Id,
+										newPath,
+										newName,
+									);
 
 									setTimeout(() => {
 										fetchDesktopItems();

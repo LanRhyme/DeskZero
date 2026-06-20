@@ -258,3 +258,11 @@ pub fn show_properties_dialog(path: String) -> Result<(), String> {
     }
     Ok(())
 }
+
+#[tauri::command]
+pub fn check_files_exist(paths: Vec<String>) -> Vec<String> {
+    paths
+        .into_iter()
+        .filter(|p| !Path::new(p).exists())
+        .collect()
+}

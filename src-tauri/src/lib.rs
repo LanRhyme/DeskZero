@@ -405,6 +405,7 @@ pub fn run() {
             commands::file::create_shortcut_item,
             commands::file::show_properties_dialog,
             commands::file::trash_file,
+            commands::file::check_files_exist,
             commands::system::get_settings,
             commands::system::save_settings,
             commands::system::close_settings_window,

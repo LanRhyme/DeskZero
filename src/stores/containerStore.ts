@@ -68,6 +68,12 @@ interface ContainerState {
 		index1: number,
 		index2: number,
 	) => void;
+	updateItemPathInContainer: (
+		oldPath: string,
+		newId: string,
+		newPath: string,
+		newName: string,
+	) => void;
 }
 
 export const useContainerStore = create<ContainerState>((set, get) => ({
@@ -83,7 +89,32 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 			const timeoutPromise = new Promise<Container[]>((_, reject) =>
 				setTimeout(() => reject(new Error("Timeout loading containers")), 5000),
 			);
-			const containers = await Promise.race([fetchPromise, timeoutPromise]);
+			let containers = await Promise.race([fetchPromise, timeoutPromise]);
+
+			// 自动清理幽灵条目（文件已不存在的引用）
+			const allPaths = containers.flatMap((c) => c.items.map((i) => i.path));
+			if (allPaths.length > 0) {
+				try {
+					const missingPaths = await invoke<string[]>("check_files_exist", { paths: allPaths });
+					if (missingPaths.length > 0) {
+						const missingSet = new Set(missingPaths);
+						containers = containers.map((c) => ({
+							...c,
+							items: c.items.filter((i) => !missingSet.has(i.path)),
+						}));
+						// 持久化被修改的容器
+						for (const c of containers) {
+							const original = get().containers.find((oc) => oc.id === c.id);
+							if (original && original.items.length !== c.items.length) {
+								await invoke("save_container", { container: c });
+							}
+						}
+					}
+				} catch (e) {
+					console.warn("[fetchContainers] 清理幽灵条目失败:", e);
+				}
+			}
+
 			set({ containers });
 		} catch (err: any) {
 			console.error("fetchContainers error:", err);
@@ -294,5 +325,29 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 		}));
 		const updated = get().containers.find((c) => c.id === containerId);
 		if (updated) persistContainer(updated);
+	},
+
+	updateItemPathInContainer: (oldPath, newId, newPath, newName) => {
+		set((state) => ({
+			containers: state.containers.map((c) => {
+				const itemIndex = c.items.findIndex((i) => i.path === oldPath);
+				if (itemIndex === -1) return c;
+				const newItems = [...c.items];
+				newItems[itemIndex] = {
+					...newItems[itemIndex],
+					id: newId,
+					path: newPath,
+					name: newName,
+				};
+				return { ...c, items: newItems };
+			}),
+		}));
+		// 持久化所有被修改的容器
+		const containers = get().containers;
+		for (const c of containers) {
+			if (c.items.some((i) => i.path === newPath)) {
+				persistContainer(c);
+			}
+		}
 	},
 }));

@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronRight, Copy, Scissors, Trash2, Type } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useToastStore } from "@/stores/toastStore";
@@ -96,11 +97,37 @@ export function ItemContextMenu({
 
 	const handleDelete = async () => {
 		try {
-			await Promise.all(paths.map((p) => invoke("trash_file", { path: p })));
+			const results = await Promise.allSettled(
+				paths.map((p) => invoke("trash_file", { path: p })),
+			);
+			const failed = results.filter((r) => r.status === "rejected");
+			const succeeded = results.filter((r) => r.status === "fulfilled");
+			// 即使部分文件删除失败（如文件已不存在），也从桌面/容器中移除条目
 			fetchDesktopItems();
-			useToastStore
-				.getState()
-				.addToast(`已删除 ${paths.length} 个文件`, "success");
+			// 清理容器内的幽灵条目（文件已不存在的引用）
+			const containers = useContainerStore.getState().containers;
+			for (const p of paths) {
+				for (const c of containers) {
+					const ghost = c.items.find((i) => i.path === p);
+					if (ghost) {
+						useContainerStore
+							.getState()
+							.removeItemFromContainer(c.id, ghost.id);
+					}
+				}
+			}
+			if (failed.length === 0) {
+				useToastStore
+					.getState()
+					.addToast(`已删除 ${succeeded.length} 个文件`, "success");
+			} else {
+				useToastStore
+					.getState()
+					.addToast(
+						`${succeeded.length} 个已删除，${failed.length} 个文件未找到（已清理引用）`,
+						"warning",
+					);
+			}
 			onClose();
 		} catch (e) {
 			console.error(e);

@@ -96,6 +96,20 @@ export function WidgetSettingsPanel({
   const [monitorColor, setMonitorColor] = useState(widgetConfig.config?.monitorColor || "theme");
   const [contentSizeScale, setContentSizeScale] = useState(widgetConfig.config?.contentSizeScale ?? 1.0);
 
+  // 5. 一言设置
+  const [hitokotoSourceMode, setHitokotoSourceMode] = useState(widgetConfig.config?.sourceMode || "api");
+  const [hitokotoCategory, setHitokotoCategory] = useState(widgetConfig.config?.category || "all");
+  const [hitokotoRefreshInterval, setHitokotoRefreshInterval] = useState(widgetConfig.config?.refreshInterval ?? 3600);
+  const [hitokotoFontColor, setHitokotoFontColor] = useState(widgetConfig.config?.fontColor || "theme");
+  const [hitokotoFontSizeScale, setHitokotoFontSizeScale] = useState(widgetConfig.config?.fontSizeScale ?? 1.0);
+  const [hitokotoTextAlign, setHitokotoTextAlign] = useState(widgetConfig.config?.textAlign || "center");
+  const [hitokotoShowAuthor, setHitokotoShowAuthor] = useState(widgetConfig.config?.showAuthor !== false);
+  const [hitokotoShowQuotes, setHitokotoShowQuotes] = useState(widgetConfig.config?.showQuotes !== false);
+  const [hitokotoClickAction, setHitokotoClickAction] = useState(widgetConfig.config?.clickAction || "refresh");
+  const [hitokotoCustomText, setHitokotoCustomText] = useState(widgetConfig.config?.customText || "");
+  const [hitokotoCustomAuthor, setHitokotoCustomAuthor] = useState(widgetConfig.config?.customAuthor || "");
+  const [hitokotoCustomFrom, setHitokotoCustomFrom] = useState(widgetConfig.config?.customFrom || "");
+
   // 备份打开设置面板时的初始样式，以便取消时完美回滚
   const initialStyleRef = useRef<any>(null);
   useEffect(() => {
@@ -145,6 +159,22 @@ export function WidgetSettingsPanel({
           contentSizeScale,
         });
         break;
+      case "hitokoto":
+        Object.assign(newConfig, {
+          sourceMode: hitokotoSourceMode,
+          category: hitokotoCategory,
+          refreshInterval: hitokotoRefreshInterval,
+          fontColor: hitokotoFontColor,
+          fontSizeScale: hitokotoFontSizeScale,
+          textAlign: hitokotoTextAlign,
+          showAuthor: hitokotoShowAuthor,
+          showQuotes: hitokotoShowQuotes,
+          clickAction: hitokotoClickAction,
+          customText: hitokotoCustomText,
+          customAuthor: hitokotoCustomAuthor,
+          customFrom: hitokotoCustomFrom,
+        });
+        break;
     }
 
     updateContainerStyle(container.id, {
@@ -182,6 +212,18 @@ export function WidgetSettingsPanel({
     viewMode,
     monitorColor,
     contentSizeScale,
+    hitokotoSourceMode,
+    hitokotoCategory,
+    hitokotoRefreshInterval,
+    hitokotoFontColor,
+    hitokotoFontSizeScale,
+    hitokotoTextAlign,
+    hitokotoShowAuthor,
+    hitokotoShowQuotes,
+    hitokotoClickAction,
+    hitokotoCustomText,
+    hitokotoCustomAuthor,
+    hitokotoCustomFrom,
   ]);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -658,6 +700,269 @@ export function WidgetSettingsPanel({
           </div>
         );
 
+      case "hitokoto":
+        return (
+          <div className="space-y-3.5">
+            {/* 数据来源 */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">数据来源</label>
+              <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-lg">
+                {[
+                  { key: "api", label: "API 自动拉取" },
+                  { key: "custom", label: "自定义文本" },
+                ].map((mode) => (
+                  <button
+                    key={mode.key}
+                    type="button"
+                    onClick={() => {
+                      setHitokotoSourceMode(mode.key);
+                      // 切换模式时自动配置一个合理的点击动作默认值
+                      if (mode.key === "custom" && hitokotoClickAction === "refresh") {
+                        setHitokotoClickAction("copy");
+                      }
+                    }}
+                    className={`flex-1 py-1 rounded-md text-[10px] font-medium transition-all ${
+                      hitokotoSourceMode === mode.key
+                        ? "bg-white dark:bg-neutral-800 shadow-sm text-[var(--color-text)] font-semibold"
+                        : "text-[var(--color-text-secondary)]"
+                    }`}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* API 模式下的配置 */}
+            {hitokotoSourceMode === "api" && (
+              <>
+                {/* 语录分类 */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">语录类型</label>
+                  <CustomSelect
+                    value={hitokotoCategory}
+                    onChange={setHitokotoCategory}
+                    options={[
+                      { value: "all", label: "全品类随机" },
+                      { value: "a", label: "动画 (Anime)" },
+                      { value: "b", label: "漫画 (Comic)" },
+                      { value: "c", label: "游戏 (Game)" },
+                      { value: "d", label: "文学小说 (Novel)" },
+                      { value: "f", label: "原创 (Original)" },
+                      { value: "h", label: "网络语录 (Net)" },
+                      { value: "k", label: "哲学 (Philosophy)" },
+                      { value: "o", label: "中国诗词 (Poetry)" },
+                      { value: "i", label: "励志鸡汤 (Soul)" },
+                      { value: "j", label: "其他 (Other)" },
+                    ]}
+                  />
+                </div>
+
+                {/* 刷新频率 */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">自动刷新频率</label>
+                  <CustomSelect
+                    value={String(hitokotoRefreshInterval)}
+                    onChange={(val) => setHitokotoRefreshInterval(Number(val))}
+                    options={[
+                      { value: "0", label: "手动刷新 (点击卡片)" },
+                      { value: "300", label: "每 5 分钟" },
+                      { value: "900", label: "每 15 分钟" },
+                      { value: "1800", label: "每 30 分钟" },
+                      { value: "3600", label: "每 1 小时" },
+                      { value: "21600", label: "每 6 小时" },
+                      { value: "43200", label: "每 12 小时" },
+                      { value: "86400", label: "每 24 小时" },
+                    ]}
+                    position="top"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* 自定义模式下的配置 */}
+            {hitokotoSourceMode === "custom" && (
+              <div className="space-y-2.5">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">语录文本</label>
+                  <textarea
+                    value={hitokotoCustomText}
+                    onChange={(e) => setHitokotoCustomText(e.target.value)}
+                    placeholder="输入要显示的句子..."
+                    rows={2}
+                    className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-2 py-1.5 text-[11px] text-[var(--color-text)] outline-none focus:ring-1 focus:ring-[var(--color-accent)] resize-none"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-semibold text-[var(--color-text)] opacity-60 block">作者</label>
+                    <input
+                      type="text"
+                      value={hitokotoCustomAuthor}
+                      onChange={(e) => setHitokotoCustomAuthor(e.target.value)}
+                      placeholder="选填"
+                      className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-2 py-1 text-[11px] text-[var(--color-text)] outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-semibold text-[var(--color-text)] opacity-60 block">出处/来源</label>
+                    <input
+                      type="text"
+                      value={hitokotoCustomFrom}
+                      onChange={(e) => setHitokotoCustomFrom(e.target.value)}
+                      placeholder="选填"
+                      className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-2 py-1 text-[11px] text-[var(--color-text)] outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 点击动作 */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">点击卡片动作</label>
+              <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-lg">
+                {[
+                  { key: "refresh", label: "刷新语录" },
+                  { key: "copy", label: "复制文本" },
+                  { key: "none", label: "无操作" },
+                ].map((act) => (
+                  <button
+                    key={act.key}
+                    type="button"
+                    onClick={() => setHitokotoClickAction(act.key)}
+                    disabled={hitokotoSourceMode === "custom" && act.key === "refresh"}
+                    className={`flex-1 py-1 rounded-md text-[10px] font-medium transition-all ${
+                      hitokotoClickAction === act.key
+                        ? "bg-white dark:bg-neutral-800 shadow-sm text-[var(--color-text)] font-semibold"
+                        : "text-[var(--color-text-secondary)] disabled:opacity-40"
+                    }`}
+                  >
+                    {act.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 文字颜色 */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">文字颜色</label>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { key: "theme", label: "主题" },
+                  { key: "accent", label: "强调" },
+                  { key: "gradient-rainbow", label: "渐变" },
+                  { key: "#ffffff", label: "纯白" },
+                  { key: "#1f2937", label: "深炭" },
+                ].map((col) => (
+                  <button
+                    key={col.key}
+                    type="button"
+                    onClick={() => setHitokotoFontColor(col.key)}
+                    className={`py-0.5 px-2 rounded text-[10px] font-medium transition-all border ${
+                      hitokotoFontColor === col.key
+                        ? "bg-[var(--color-accent)] border-transparent text-white"
+                        : "bg-black/5 dark:bg-white/5 border-transparent text-[var(--color-text-secondary)] hover:bg-black/10"
+                    }`}
+                  >
+                    {col.label}
+                  </button>
+                ))}
+                {/* 自定义拾色器 */}
+                <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded px-1.5 py-0.5 border border-transparent">
+                  <span className="text-[10px] text-[var(--color-text-secondary)] font-medium">自定义</span>
+                  <div className="relative w-4.5 h-4.5 rounded overflow-hidden border border-black/15 shrink-0 cursor-pointer shadow-sm">
+                    <input
+                      type="color"
+                      value={
+                        hitokotoFontColor.startsWith("#") &&
+                        !["#ffffff", "#1f2937"].includes(hitokotoFontColor)
+                          ? hitokotoFontColor
+                          : "#10b981"
+                      }
+                      onChange={(e) => setHitokotoFontColor(e.target.value)}
+                      className="absolute inset-[-5px] w-[200%] h-[200%] cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 文字对齐 */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">文字对齐</label>
+              <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-lg">
+                {[
+                  { key: "left", label: "左对齐" },
+                  { key: "center", label: "居中" },
+                  { key: "right", label: "右对齐" },
+                ].map((align) => (
+                  <button
+                    key={align.key}
+                    type="button"
+                    onClick={() => setHitokotoTextAlign(align.key)}
+                    className={`flex-1 py-1 rounded-md text-[10px] font-medium transition-all ${
+                      hitokotoTextAlign === align.key
+                        ? "bg-white dark:bg-neutral-800 shadow-sm text-[var(--color-text)] font-semibold"
+                        : "text-[var(--color-text-secondary)]"
+                    }`}
+                  >
+                    {align.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 字号缩放比例 */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] font-medium">
+                <span>文字大小比例</span>
+                <span>{Math.round(hitokotoFontSizeScale * 100)}%</span>
+              </div>
+              <Slider
+                min={0.6}
+                max={1.8}
+                step={0.1}
+                value={hitokotoFontSizeScale}
+                onChange={setHitokotoFontSizeScale}
+              />
+            </div>
+
+            {/* 开关配置 */}
+            <div className="space-y-2.5 pt-1">
+              <label className="flex items-center justify-between cursor-pointer group">
+                <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
+                  显示来源和作者
+                </span>
+                <div className="relative flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={hitokotoShowAuthor}
+                    onChange={(e) => setHitokotoShowAuthor(e.target.checked)}
+                    className="peer sr-only"
+                  />
+                  <div className="w-7 h-4 bg-black/10 dark:bg-white/10 rounded-full peer peer-checked:after:translate-x-[12px] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[var(--color-accent)] transition-colors"></div>
+                </div>
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer group">
+                <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
+                  显示双引号装饰
+                </span>
+                <div className="relative flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={hitokotoShowQuotes}
+                    onChange={(e) => setHitokotoShowQuotes(e.target.checked)}
+                    className="peer sr-only"
+                  />
+                  <div className="w-7 h-4 bg-black/10 dark:bg-white/10 rounded-full peer peer-checked:after:translate-x-[12px] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[var(--color-accent)] transition-colors"></div>
+                </div>
+              </label>
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -782,6 +1087,69 @@ export function WidgetSettingsPanel({
           保存
         </button>
       </div>
+    </div>
+  );
+}
+
+function CustomSelect({
+  value,
+  onChange,
+  options,
+  position = "bottom",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  position?: "top" | "bottom";
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const currentOption = options.find((o) => o.value === value) || options[0];
+
+  return (
+    <div ref={dropdownRef} className="relative w-full">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full text-[11px] bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded-lg px-2.5 py-1.5 text-left outline-none border border-black/10 dark:border-white/10 flex justify-between items-center cursor-default hover:bg-black/10 dark:hover:bg-white/10 transition-colors animate-none"
+      >
+        <span>{currentOption?.label}</span>
+        <span className="text-[9px] opacity-60">▼</span>
+      </button>
+      {isOpen && (
+        <div className={cn(
+          "absolute z-[110] left-0 right-0 bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-lg shadow-xl overflow-hidden py-1 max-h-[160px] overflow-y-auto hidden-native-scrollbar",
+          position === "top" ? "bottom-full mb-1" : "top-full mt-1"
+        )}>
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              className={cn(
+                "w-full text-left px-3 py-1.5 text-[11px] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-default block",
+                opt.value === value ? "text-[var(--color-accent)] font-semibold" : "text-[var(--color-text)]"
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

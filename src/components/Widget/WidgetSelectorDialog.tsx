@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Monitor, Clock, StickyNote, Activity, Plus, X, FileCode } from "lucide-react";
+import { Monitor, Clock, StickyNote, Activity, Plus, X, FileCode, Quote } from "lucide-react";
 import { useState } from "react";
 import { getAllWidgets } from "./WidgetRegistry";
+
 import { useWidgetStore, type CustomWidgetEntry } from "@/stores/widgetStore";
 import { useContainerStore } from "@/stores/containerStore";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -19,6 +20,7 @@ const iconMap: Record<string, React.ReactNode> = {
   clock: <Clock size={24} />,
   stickyNote: <StickyNote size={24} />,
   systemMonitor: <Activity size={24} />,
+  hitokoto: <Quote size={24} />,
   custom: <FileCode size={24} />,
 };
 
@@ -29,6 +31,8 @@ export function WidgetSelectorDialog({
 }: WidgetSelectorDialogProps) {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const builtInWidgets = getAllWidgets();
+
+
   const { customWidgets, addCustomWidget } = useWidgetStore();
   const createContainer = useContainerStore((s) => s.createContainer);
 
@@ -150,7 +154,7 @@ export function WidgetSelectorDialog({
             </div>
 
             {/* 小组件列表 */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 hidden-native-scrollbar relative">
               {/* 内置小组件 */}
               <div>
                 <div className="text-[10px] font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-2.5">
@@ -208,6 +212,7 @@ export function WidgetSelectorDialog({
                   </button>
                 </div>
               </div>
+
             </div>
 
             {/* 底部按钮 */}

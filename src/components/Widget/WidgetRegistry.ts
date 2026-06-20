@@ -2,6 +2,7 @@ import type { WidgetRegistration, WidgetConfig } from "@/types/widget";
 import { ClockWidget } from "./widgets/ClockWidget";
 import { StickyNoteWidget } from "./widgets/StickyNoteWidget";
 import { SystemMonitorWidget } from "./widgets/SystemMonitorWidget";
+import { HitokotoWidget } from "./widgets/HitokotoWidget";
 
 const registry = new Map<string, WidgetRegistration>();
 
@@ -65,3 +66,28 @@ registerWidget({
 	},
 	component: SystemMonitorWidget,
 });
+
+registerWidget({
+	widgetType: "hitokoto",
+	name: "一言",
+	icon: "Quote",
+	defaultSize: { width: 2, height: 1 },
+	defaultConfig: {
+		widgetType: "hitokoto",
+		config: {
+			category: "all",
+			refreshInterval: 3600,
+			fontColor: "theme",
+			fontSizeScale: 1.0,
+			textAlign: "center",
+			showAuthor: true,
+			showQuotes: true,
+			clickAction: "refresh",
+			customText: "",
+			customAuthor: "",
+			customFrom: "",
+		},
+	},
+	component: HitokotoWidget,
+});
+

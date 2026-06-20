@@ -81,6 +81,7 @@ pub fn load_containers() -> Result<Vec<Container>, String> {
             position,
             size: size.map(|s| s as u64),
             modified_at: modified_at.map(|m| m as u64),
+            ..Default::default()
         }))
     }).map_err(|e| e.to_string())?;
     

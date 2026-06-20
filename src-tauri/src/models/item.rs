@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// 项目类型枚举 — 通过自定义序列化支持未知类型，
 /// 避免新版本添加的类型在老版本中被强制回退为 File 导致数据损坏。
@@ -62,6 +63,9 @@ pub struct Item {
     pub size: Option<u64>,
     #[serde(alias = "modified_at")]
     pub modified_at: Option<u64>,
+    /// 保留当前版本未定义的项目属性，防止跨版本丢失
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 impl Default for Item {
@@ -78,6 +82,7 @@ impl Default for Item {
             position: None,
             size: None,
             modified_at: None,
+            extra: HashMap::new(),
         }
     }
 }

@@ -19,6 +19,8 @@ pub fn get_connection() -> Result<Connection> {
     conn.pragma_update(None, "journal_mode", "wal")?;
     // 设置忙等待超时为 5 秒，避免立即返回 SQLITE_BUSY
     conn.pragma_update(None, "busy_timeout", 5000)?;
+    // 启用外键约束（SQLite 默认关闭），确保 ON DELETE CASCADE 生效
+    conn.execute("PRAGMA foreign_keys = ON", [])?;
     Ok(conn)
 }
 
@@ -77,6 +79,28 @@ pub fn init_db() -> Result<()> {
             x REAL,
             y REAL,
             order_index INTEGER NOT NULL
+        )",
+        [],
+    )?;
+
+    // Backups table (仅存储元数据)
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS backups (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            remark TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        )",
+        [],
+    )?;
+
+    // Backup data table (存储快照 JSON 数据，与元数据分离)
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS backup_data (
+            backup_id TEXT PRIMARY KEY,
+            data TEXT NOT NULL,
+            FOREIGN KEY (backup_id) REFERENCES backups(id) ON DELETE CASCADE
         )",
         [],
     )?;

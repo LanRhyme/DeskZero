@@ -1,3 +1,4 @@
+pub mod backup_store;
 pub mod container_store;
 pub mod settings_store;
 pub mod desktop_store;
@@ -10,5 +11,7 @@ pub fn init() -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(test)]
+mod backup_store_test;
 #[cfg(test)]
 mod container_store_test;

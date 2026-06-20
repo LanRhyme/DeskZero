@@ -30,9 +30,10 @@ Rust 测试：在 `src-tauri/` 下执行 `cargo test`。
 ### Rust 后端 (`src-tauri/src/`)
 
 - 入口：`main.rs` -> `lib.rs::run()` — 初始化 Tauri，嵌入窗口到 Windows 桌面层
-- `commands/` — Tauri invoke 处理器：`container`、`desktop`、`file`、`system`
-- `models/` — 数据类型：`container`、`item`、`settings`
-- `storage/` — SQLite 持久化（`rusqlite` bundled）：`db.rs`（初始化/建表）、`container_store`、`settings_store`、`desktop_store`、`migration`
+- `commands/` — Tauri invoke 处理器：`container`、`desktop`、`file`、`system`、`backup`
+- `models/` — 数据类型：`container`、`item`、`settings`、`backup`
+- `storage/` — SQLite 持久化（`rusqlite` bundled）：`db.rs`（初始化/建表/PRAGMA 配置）、`container_store`、`settings_store`、`desktop_store`、`backup_store`、`migration`
+- `backup_timer.rs` — 后台自动备份定时器（tokio 异步循环）
 - `desktop/` — Windows 桌面集成：`icon_scanner`、`shortcut`、`watcher`
 - `clipboard.rs` — 文件剪贴板操作
 - `context_menu.rs` — Windows 右键菜单
@@ -45,6 +46,7 @@ Rust 测试：在 `src-tauri/` 下执行 `cargo test`。
 - Release 配置：`lto = true`、`opt-level = "s"`、`strip = true`
 - 数据库路径：`%APPDATA%/DeskZero/deskzero.db`
 - 存储初始化流程：`init_db()` 建表 -> `run_migrations()` 迁移
+- 备份系统：`backup_store` 管理快照 CRUD，`backup_timer` 后台定时自动备份，`BACKUP_LOCK` 互斥锁保护所有存储操作
 
 ## 持久化规范
 
@@ -58,7 +60,7 @@ Rust 测试：在 `src-tauri/` 下执行 `cargo test`。
 
 ### 后端模块结构
 
-- **`src/storage/db.rs`**：负责数据库初始化（`init_db`），包含所有 `CREATE TABLE IF NOT EXISTS` 语句。每次添加新表都必须在此注册。
+- **`src/storage/db.rs`**：负责数据库初始化（`init_db`），包含所有 `CREATE TABLE IF NOT EXISTS` 语句。每次添加新表都必须在此注册。`get_connection()` 中必须执行 `PRAGMA foreign_keys = ON` 以确保外键约束生效。
 - **`src/storage/migration.rs`**：用于处理老旧格式的迁移。
 - **特定领域的 Store 文件**（如 `settings_store.rs`, `container_store.rs`）：存放领域模型的数据库 CRUD 方法，它们只应暴露出对模型的操作，如 `load_containers()` 和 `save_containers()`，而封装掉所有 SQL 细节。
 
@@ -167,6 +169,22 @@ static CONTAINER_LOCK: Mutex<()> = Mutex::new(());
 pub fn update_container_full(container: Container) -> Result<(), String> {
     let _lock = CONTAINER_LOCK.lock().map_err(|e| ...)?;
     // load -> modify -> save 在锁保护下执行
+}
+```
+
+#### 存储层也可内聚锁保护
+
+备份系统采用锁在存储层（`backup_store`）而非命令层的模式，因为后台定时器也需调用存储方法。公开方法加锁，内部 `_internal` 方法去锁，内部方法之间相互调用以避免死锁：
+
+```rust
+static BACKUP_LOCK: Mutex<()> = Mutex::new(());
+
+pub fn create_backup(name: &str, backup_type: &str) -> Result<BackupRecord, String> {
+    let _lock = BACKUP_LOCK.lock().map_err(|e| ...)?;
+    create_backup_internal(name, backup_type)
+}
+fn create_backup_internal(name: &str, backup_type: &str) -> Result<BackupRecord, String> {
+    // 实际逻辑，内部调用 purge_old_backups_internal（不调用公开方法，避免死锁）
 }
 ```
 

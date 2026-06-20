@@ -2,17 +2,32 @@ import { Tab } from "@headlessui/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
 	AlertCircle,
+	Archive,
 	Info,
 	LayoutGrid,
 	Palette,
+	Plus,
+	RotateCcw,
 	Settings,
+	Trash2,
 	X,
 } from "lucide-react";
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
 import { Slider } from "@/components/UI/Slider";
 import { SwitchToggle } from "@/components/UI/SwitchToggle";
+import { useContainerStore } from "@/stores/containerStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useToastStore } from "@/stores/toastStore";
+import type { BackupRecord, BackupSettings } from "@/types/backup";
+import {
+	createBackup,
+	deleteBackup,
+	getBackupSettings,
+	listBackups,
+	restoreBackup,
+	saveBackupSettings,
+} from "@/services/backupService";
 import { syncWindowsLayout } from "@/services/desktopService";
 import { cn } from "@/utils/cn";
 import appConfig from "../../../deskzero.config.json";
@@ -110,6 +125,121 @@ export function SettingsPage() {
 	};
 
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+	// 备份管理状态
+	const [backupList, setBackupList] = useState<BackupRecord[]>([]);
+	const [backupSettings, setBackupSettingsState] = useState<BackupSettings>({
+		autoBackupEnabled: true,
+		autoBackupHours: 6,
+		maxBackups: 20,
+	});
+	const [backupLoading, setBackupLoading] = useState(false);
+	const [backupNote, setBackupNote] = useState("");
+	const [confirmDialog, setConfirmDialog] = useState<{
+		open: boolean;
+		title: string;
+		message: string;
+		onConfirm: () => void;
+	}>({ open: false, title: "", message: "", onConfirm: () => {} });
+
+	const loadBackupData = useCallback(async () => {
+		try {
+			const [list, settings] = await Promise.all([
+				listBackups(),
+				getBackupSettings(),
+			]);
+			setBackupList(list);
+			setBackupSettingsState(settings);
+		} catch (err) {
+			console.error("加载备份数据失败:", err);
+		}
+	}, []);
+
+	useEffect(() => {
+		loadBackupData();
+	}, [loadBackupData]);
+
+	const handleCreateBackup = async () => {
+		try {
+			setBackupLoading(true);
+			const name = backupNote.trim() || undefined;
+			await createBackup(name);
+			setBackupNote("");
+			await loadBackupData();
+			useToastStore.getState().addToast("备份创建成功", "success");
+		} catch (err: any) {
+			useToastStore.getState().addToast("备份失败: " + err.toString(), "error");
+		} finally {
+			setBackupLoading(false);
+		}
+	};
+
+	const handleRestoreBackup = (backup: BackupRecord) => {
+		setConfirmDialog({
+			open: true,
+			title: "还原备份",
+			message: `确定要还原"${backup.name}"吗？当前的桌面布局、容器和设置将被覆盖。`,
+			onConfirm: async () => {
+				try {
+					setBackupLoading(true);
+					await restoreBackup(backup.id);
+					await useSettingsStore.getState().loadSettings();
+					await useContainerStore.getState().fetchContainers();
+					
+					// 发送事件到主窗口刷新桌面图标
+					const { emit } = await import("@tauri-apps/api/event");
+					await emit("sync-desktop-layout");
+					
+					useToastStore.getState().addToast("备份还原成功", "success");
+				} catch (err: any) {
+					useToastStore.getState().addToast("还原失败: " + err.toString(), "error");
+				} finally {
+					setBackupLoading(false);
+					setConfirmDialog((prev) => ({ ...prev, open: false }));
+				}
+			},
+		});
+	};
+
+	const handleDeleteBackup = (backup: BackupRecord) => {
+		setConfirmDialog({
+			open: true,
+			title: "删除备份",
+			message: `确定要删除"${backup.name}"吗？此操作不可撤销。`,
+			onConfirm: async () => {
+				try {
+					await deleteBackup(backup.id);
+					await loadBackupData();
+					useToastStore.getState().addToast("备份已删除", "success");
+				} catch (err: any) {
+					useToastStore.getState().addToast("删除失败: " + err.toString(), "error");
+				} finally {
+					setConfirmDialog((prev) => ({ ...prev, open: false }));
+				}
+			},
+		});
+	};
+
+	const handleSaveBackupSettings = async (changes: Partial<BackupSettings>) => {
+		const newSettings = { ...backupSettings, ...changes };
+		setBackupSettingsState(newSettings);
+		try {
+			await saveBackupSettings(changes);
+		} catch (err: any) {
+			useToastStore.getState().addToast("保存设置失败: " + err.toString(), "error");
+		}
+	};
+
+	const formatBackupTime = (timestamp: number) => {
+		const date = new Date(timestamp);
+		return date.toLocaleString("zh-CN", {
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+		});
+	};
 	const thumbRef = useRef<HTMLDivElement>(null);
 	const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const [isScrolling, setIsScrolling] = useState(false);
@@ -147,6 +277,7 @@ export function SettingsPage() {
 	const tabs = [
 		{ id: "general", name: "通用设置", icon: Settings },
 		{ id: "appearance", name: "外观个性化", icon: Palette },
+		{ id: "backup", name: "备份管理", icon: Archive },
 		{ id: "about", name: "关于 DeskZero", icon: Info },
 	];
 
@@ -617,6 +748,153 @@ export function SettingsPage() {
 							</motion.div>
 						</Tab.Panel>
 
+						{/* Backup Settings */}
+						<Tab.Panel className="p-10 max-w-4xl mx-auto min-h-full">
+							<motion.div
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ duration: 0.4 }}
+							>
+								<h2 className="text-3xl font-extrabold mb-8 text-[var(--color-text)] tracking-tight">
+									备份管理
+								</h2>
+
+								<div className="space-y-6">
+									{/* 自动备份设置 */}
+									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
+										<SettingRow
+											title="自动备份"
+											desc="定时自动备份桌面布局、容器和设置"
+										>
+											<CustomSwitch
+												checked={backupSettings.autoBackupEnabled}
+												onChange={() =>
+													handleSaveBackupSettings({
+														autoBackupEnabled: !backupSettings.autoBackupEnabled,
+													})
+												}
+											/>
+										</SettingRow>
+
+										{backupSettings.autoBackupEnabled && (
+											<>
+												<SettingSliderRow
+													title="备份间隔"
+													desc="每隔多少小时自动备份一次"
+													value={backupSettings.autoBackupHours}
+													onChange={(v: number) =>
+														handleSaveBackupSettings({ autoBackupHours: v })
+													}
+													min={1}
+													max={24}
+													step={1}
+													format={(v: number) => `${v} 小时`}
+												/>
+												<SettingSliderRow
+													title="最大保留数"
+													desc="超出数量时自动删除最旧的备份"
+													value={backupSettings.maxBackups}
+													onChange={(v: number) =>
+														handleSaveBackupSettings({ maxBackups: v })
+													}
+													min={5}
+													max={100}
+													step={5}
+													format={(v: number) => `${v} 个`}
+													noBorder
+												/>
+											</>
+										)}
+									</div>
+
+									{/* 手动备份 */}
+									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-4 shadow-sm backdrop-blur-xl">
+										<div className="flex items-center gap-3 mb-3">
+											<input
+												type="text"
+												value={backupNote}
+												onChange={(e) => setBackupNote(e.target.value)}
+												placeholder="备份备注（可选）"
+												className="flex-1 px-3 py-2 bg-black/5 dark:bg-white/5 rounded-lg text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)]/50 outline-none border border-transparent focus:border-[var(--color-accent)]/30 transition-colors"
+											/>
+											<button
+												onClick={handleCreateBackup}
+												disabled={backupLoading}
+												className="px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg text-sm font-medium hover:bg-opacity-90 transition-all shadow-sm active:scale-95 disabled:opacity-50 flex items-center gap-2"
+											>
+												<Plus size={14} />
+												立即备份
+											</button>
+										</div>
+									</div>
+
+									{/* 备份列表 */}
+									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 shadow-sm backdrop-blur-xl overflow-hidden">
+										<div className="px-6 py-3 border-b border-black/5 dark:border-white/5">
+											<div className="text-sm font-medium text-[var(--color-text)]">
+												备份历史
+												<span className="ml-2 text-xs text-[var(--color-text-secondary)]">
+													共 {backupList.length} 个备份
+												</span>
+											</div>
+										</div>
+
+										{backupList.length === 0 ? (
+											<div className="px-6 py-12 text-center text-sm text-[var(--color-text-secondary)]/60">
+												暂无备份记录
+											</div>
+										) : (
+											<div className="max-h-[400px] overflow-y-auto hidden-native-scrollbar">
+												{backupList.map((backup) => (
+													<div
+														key={backup.id}
+														className="flex items-center justify-between px-6 py-3 border-b border-black/5 dark:border-white/5 last:border-b-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors group"
+													>
+														<div className="flex-1 min-w-0">
+															<div className="flex items-center gap-2">
+																<span className="text-sm font-medium text-[var(--color-text)] truncate">
+																	{backup.name}
+																</span>
+																<span
+																	className={cn(
+																		"text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+																		backup.type === "manual"
+																			? "bg-blue-500/10 text-blue-500"
+																			: "bg-green-500/10 text-green-500"
+																	)}
+																>
+																	{backup.type === "manual" ? "手动" : "自动"}
+																</span>
+															</div>
+															<div className="text-xs text-[var(--color-text-secondary)] mt-0.5">
+																{formatBackupTime(backup.createdAt)}
+															</div>
+														</div>
+														<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+															<button
+																onClick={() => handleRestoreBackup(backup)}
+																className="p-1.5 rounded-lg hover:bg-[var(--color-accent)]/10 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors"
+																title="还原"
+															>
+																<RotateCcw size={14} />
+															</button>
+															<button
+																onClick={() => handleDeleteBackup(backup)}
+																className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--color-text-secondary)] hover:text-red-500 transition-colors"
+																title="删除"
+															>
+																<Trash2 size={14} />
+															</button>
+														</div>
+													</div>
+												))}
+											</div>
+										)}
+									</div>
+								</div>
+							</motion.div>
+						</Tab.Panel>
+
 						{/* About Settings */}
 						<Tab.Panel className="p-10 max-w-4xl mx-auto min-h-full">
 							<motion.div
@@ -890,6 +1168,14 @@ export function SettingsPage() {
 					</div>
 				)}
 			</AnimatePresence>
+
+			<ConfirmDialog
+				isOpen={confirmDialog.open}
+				title={confirmDialog.title}
+				message={confirmDialog.message}
+				onConfirm={confirmDialog.onConfirm}
+				onCancel={() => setConfirmDialog((prev) => ({ ...prev, open: false }))}
+			/>
 		</div>
 	);
 }

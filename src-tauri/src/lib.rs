@@ -1,3 +1,4 @@
+mod backup_timer;
 mod clipboard;
 mod commands;
 mod context_menu;
@@ -364,6 +365,9 @@ pub fn run() {
                 });
             }
 
+            // 启动自动备份定时器
+            crate::backup_timer::start_backup_timer(app.handle().clone());
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -378,6 +382,13 @@ pub fn run() {
             commands::desktop::get_desktop_layout,
             commands::desktop::save_desktop_layout,
             commands::desktop::sync_windows_layout,
+            commands::backup::create_backup,
+            commands::backup::delete_backup,
+            commands::backup::get_backup_data,
+            commands::backup::get_backup_settings,
+            commands::backup::list_backups,
+            commands::backup::restore_backup,
+            commands::backup::save_backup_settings,
             commands::file::open_file,
             commands::file::rename_file,
             commands::file::delete_file,
@@ -393,6 +404,7 @@ pub fn run() {
             commands::file::pin_to_taskbar,
             commands::file::create_shortcut_item,
             commands::file::show_properties_dialog,
+            commands::file::trash_file,
             commands::system::get_settings,
             commands::system::save_settings,
             commands::system::close_settings_window,
@@ -400,7 +412,6 @@ pub fn run() {
             commands::system::get_wallpaper_base64,
             commands::system::get_wallpaper_engine_preview,
             commands::system::capture_desktop_background,
-            commands::file::trash_file,
             clipboard::copy_files_to_clipboard,
             clipboard::get_files_from_clipboard,
             clipboard::check_clipboard_has_files,

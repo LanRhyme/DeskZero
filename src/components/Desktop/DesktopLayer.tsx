@@ -201,7 +201,13 @@ export default function DesktopLayer() {
 				else unlistenFns.push(u);
 			});
 
-			listen("sync-desktop-layout", () => {
+			listen("sync-desktop-layout", async () => {
+				try {
+					await useSettingsStore.getState().loadSettings();
+					await useContainerStore.getState().fetchContainers();
+				} catch (err) {
+					console.error("Failed to reload settings or containers:", err);
+				}
 				fetchDesktopItems(true);
 			}).then((u) => {
 				if (isCancelled) u();

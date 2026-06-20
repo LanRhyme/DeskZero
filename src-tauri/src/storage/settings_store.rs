@@ -30,11 +30,18 @@ pub fn load_settings() -> Result<Settings, String> {
 pub fn save_settings(settings: &Settings) -> Result<(), String> {
     let conn = get_connection().map_err(|e| e.to_string())?;
     let data = serde_json::to_string(settings).map_err(|e| e.to_string())?;
-    
+
     conn.execute(
         "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)",
-        ("global", &data),
+        rusqlite::params!["global", &data],
     ).map_err(|e| e.to_string())?;
-    
+
     Ok(())
+}
+
+/// 原子更新设置 — 通过闭包修改后立即保存，避免 load-modify-save 的竞态窗口
+pub fn update_settings(f: impl FnOnce(&mut Settings)) -> Result<(), String> {
+    let mut settings = load_settings()?;
+    f(&mut settings);
+    save_settings(&settings)
 }

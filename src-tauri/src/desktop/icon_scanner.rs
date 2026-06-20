@@ -277,6 +277,7 @@ fn scan_paths(paths: &[PathBuf], is_desktop: bool) -> Result<Vec<Item>, String> 
                 position: None,
                 size: Some(entry.size),
                 modified_at: Some(entry.mtime),
+                ..Default::default()
             }
         })
         .collect();
@@ -332,6 +333,7 @@ fn scan_paths(paths: &[PathBuf], is_desktop: bool) -> Result<Vec<Item>, String> 
                 position: None,
                 size: None,
                 modified_at: None,
+                ..Default::default()
             });
         }
 
@@ -350,6 +352,7 @@ fn scan_paths(paths: &[PathBuf], is_desktop: bool) -> Result<Vec<Item>, String> 
                 position: None,
                 size: None,
                 modified_at: None,
+                ..Default::default()
             });
         }
     }

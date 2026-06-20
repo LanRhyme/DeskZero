@@ -52,6 +52,7 @@ mod tests {
             modified_at: None,
             position: None,
             size: None,
+            extra: HashMap::new(),
         };
 
         let container = Container {

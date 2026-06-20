@@ -41,6 +41,8 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 	const currentPos = useRef<Position>(pos);
 	currentPos.current = pos;
 
+	const lastPointerDownTime = useRef<number>(0);
+
 	const onPointerDown = (e: React.PointerEvent) => {
 		if (options?.disabled) return;
 		if (e.button !== 0) return; // Only left click
@@ -62,9 +64,18 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 			return;
 		}
 
-		e.stopPropagation();
-		const elem = e.currentTarget as HTMLElement;
-		elem.setPointerCapture(e.pointerId);
+		// 检测双击：如果两次按下时间间隔小于300ms，则判定为双击，不启动拖拽并放行事件
+		const now = Date.now();
+		const isDoubleClick = now - lastPointerDownTime.current < 300;
+		lastPointerDownTime.current = now;
+
+		if (isDoubleClick) {
+			dragInfo.current.dragging = false;
+			dragInfo.current.hasMoved = false;
+			return;
+		}
+
+		// 允许 pointer down 事件正常冒泡，不执行 stopPropagation 和 setPointerCapture
 
 		dragInfo.current = {
 			startX: e.clientX,
@@ -87,6 +98,14 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 			dragInfo.current.hasMoved = true;
 			setIsDragging(true);
 			options?.onDragStart?.();
+
+			// 确认是拖拽，在这里设置 capture 以防冲突
+			const elem = e.currentTarget as HTMLElement;
+			try {
+				elem.setPointerCapture(e.pointerId);
+			} catch (err) {
+				console.warn("[useDrag] SetPointerCapture failed:", err);
+			}
 		}
 
 		if (dragInfo.current.hasMoved) {

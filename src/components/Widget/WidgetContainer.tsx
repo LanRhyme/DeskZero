@@ -26,6 +26,7 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
   const {
     updateContainerPosition,
     updateContainerSize,
+    updateContainerGeometry,
     updateContainerStyle,
     deleteContainer,
   } = useContainerStore();
@@ -35,6 +36,7 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
   const [resizePosOffset, setResizePosOffset] = useState({ x: 0, y: 0 });
   const resizeOffsetRef = useRef({ x: 0, y: 0 });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [menuState, setMenuState] = useState<{
@@ -45,9 +47,11 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
 
   // 从 style 中读取 widgetConfig
   const widgetConfig: WidgetConfig = (container.style as any).config || getDefaultWidgetConfig("clock")!;
+  const transparentBackground = widgetConfig.config?.transparentBackground === true;
 
   // 整个卡片拖拽（不需要单独的 dragHandle）
   const { ref, pos, isDragging, listeners } = useDrag(container.position, {
+    disabled: isEditing,
     onDragEnd: (newPos) => {
       const gw = settings.gridWidth || 80;
       const gh = settings.gridHeight || 104;
@@ -93,10 +97,6 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
 
   const sizeRef = useRef(size);
   sizeRef.current = size;
-  const commitResize = () => {
-    const snapped = snapSize(sizeRef.current.width, sizeRef.current.height);
-    updateContainerSize(container.id, snapped);
-  };
 
   const handleResizePointerDown = (
     e: React.PointerEvent,
@@ -124,23 +124,34 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
         const newWidth = Math.max(60, startWidth - deltaX);
         const newHeight = Math.max(60, startHeight + deltaY);
         const possiblePosX = startPosX + deltaX;
+        
+        let targetWidth = startWidth - resizeOffsetRef.current.x;
+        let targetXOffset = resizeOffsetRef.current.x;
+        
         if (newWidth > 60 && possiblePosX >= 0) {
-          setSize({ width: newWidth, height: newHeight });
-          setResizePosOffset({ x: deltaX, y: 0 });
-          resizeOffsetRef.current = { x: deltaX, y: 0 };
+          targetWidth = newWidth;
+          targetXOffset = deltaX;
         }
+        
+        setSize({ width: targetWidth, height: newHeight });
+        setResizePosOffset({ x: targetXOffset, y: 0 });
+        resizeOffsetRef.current = { x: targetXOffset, y: 0 };
       }
     };
 
     const handlePointerUp = () => {
       setIsResizing(false);
+      const snappedSize = snapSize(sizeRef.current.width, sizeRef.current.height);
       if (direction === "bl") {
         const snappedPos = snapPosition(startPosX + resizeOffsetRef.current.x, startPosY);
-        updateContainerPosition(container.id, snappedPos);
+        // 使用 Geometry 合并更新位置和尺寸，避免两次 store 更新渲染的竞态
+        updateContainerGeometry(container.id, snappedPos, snappedSize);
         setResizePosOffset({ x: 0, y: 0 });
         resizeOffsetRef.current = { x: 0, y: 0 };
+      } else {
+        updateContainerSize(container.id, snappedSize);
       }
-      commitResize();
+      setSize(snappedSize); // 立即更新本地状态，确保瞬时网格对齐
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
@@ -151,8 +162,12 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
 
   // 样式计算
   const bgOpacity = container.style.backgroundOpacity ?? 0.5;
-  const customBackground =
-    container.style.backgroundColor === "theme" || !container.style.backgroundColor
+  const isStickyNote = widgetConfig.widgetType === "stickyNote";
+  const stickyColor = widgetConfig.config?.color || "#ffeb3b";
+
+  const customBackground = isStickyNote
+    ? `rgba(${hexToRgb(stickyColor)}, ${bgOpacity})`
+    : container.style.backgroundColor === "theme" || !container.style.backgroundColor
       ? `rgba(var(--color-container-bg-rgb), ${bgOpacity})`
       : container.style.backgroundColor.startsWith("#")
         ? `rgba(${hexToRgb(container.style.backgroundColor)}, ${bgOpacity})`
@@ -177,28 +192,49 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
           position: "absolute",
           left: 0,
           top: 0,
+          borderRadius: cornerRadius,
+          zIndex: isDragging || isResizing ? 40 : 10,
+          backgroundColor:
+            transparentBackground
+              ? "transparent"
+              : settings.wallpaperCompatible && settings.globalBlur && wallpaper
+                ? "transparent"
+                : customBackground,
+          backdropFilter:
+            transparentBackground
+              ? "none"
+              : !settings.wallpaperCompatible && settings.globalBlur
+                ? "var(--backdrop-blur)"
+                : "none",
+          WebkitBackdropFilter:
+            transparentBackground
+              ? "none"
+              : !settings.wallpaperCompatible && settings.globalBlur
+                ? "var(--backdrop-blur)"
+                : "none",
+          cursor: isDragging ? "grabbing" : "grab",
+        }}
+        initial={{
+          opacity: 0,
+          scale: 0.95,
+          x: pos.x,
+          y: pos.y,
+          width: size.width,
+          height: size.height,
+        }}
+        animate={{
+          opacity: isDragging ? 0.9 : 1,
+          scale: 1,
           x: pos.x + resizePosOffset.x,
           y: pos.y + resizePosOffset.y,
           width: size.width,
           height: size.height,
-          borderRadius: cornerRadius,
-          zIndex: isDragging || isResizing ? 40 : 10,
-          backgroundColor:
-            settings.wallpaperCompatible && settings.globalBlur && wallpaper
-              ? "transparent"
-              : customBackground,
-          backdropFilter:
-            !settings.wallpaperCompatible && settings.globalBlur
-              ? "var(--backdrop-blur)"
-              : "none",
-          WebkitBackdropFilter:
-            !settings.wallpaperCompatible && settings.globalBlur
-              ? "var(--backdrop-blur)"
-              : "none",
-          cursor: isDragging ? "grabbing" : "grab",
         }}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: isDragging ? 0.9 : 1, scale: 1 }}
+        transition={
+          isDragging || isResizing
+            ? { duration: 0 }
+            : { type: "spring", stiffness: 400, damping: 30 }
+        }
         className={cn(
           "flex flex-col overflow-hidden select-none relative touch-none",
           "transition-[box-shadow] duration-200",
@@ -214,7 +250,7 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
         }}
       >
         {/* 壁纸模糊层 */}
-        {settings.wallpaperCompatible && settings.globalBlur && wallpaper && (
+        {settings.wallpaperCompatible && settings.globalBlur && wallpaper && !transparentBackground && (
           <div
             className="absolute inset-0 pointer-events-none overflow-hidden"
             style={{ zIndex: -1, borderRadius: "inherit" }}
@@ -241,6 +277,9 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
               containerId={container.id}
               width={size.width}
               height={size.height}
+              isEditing={isEditing}
+              setIsEditing={setIsEditing}
+              backgroundOpacity={container.style.backgroundOpacity}
             />
           ) : widgetConfig.widgetType === "custom" ? (
             <CustomWidgetIframe

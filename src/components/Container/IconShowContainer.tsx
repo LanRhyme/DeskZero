@@ -98,11 +98,17 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 				const newHeight = Math.max(100, startHeight + deltaY);
 				const possiblePosX = startPosX + deltaX;
 
+				let targetWidth = startWidth - resizeOffsetRef.current.x;
+				let targetXOffset = resizeOffsetRef.current.x;
+
 				if (newWidth > 100 && possiblePosX >= 0) {
-					setSize({ width: newWidth, height: newHeight });
-					setResizePosOffset({ x: deltaX, y: 0 });
-					resizeOffsetRef.current = { x: deltaX, y: 0 };
+					targetWidth = newWidth;
+					targetXOffset = deltaX;
 				}
+
+				setSize({ width: targetWidth, height: newHeight });
+				setResizePosOffset({ x: targetXOffset, y: 0 });
+				resizeOffsetRef.current = { x: targetXOffset, y: 0 };
 			}
 		};
 

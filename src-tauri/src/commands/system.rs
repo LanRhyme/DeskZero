@@ -6,7 +6,7 @@ use tauri::Manager;
 
 static SETTINGS_LOCK: Mutex<()> = Mutex::new(());
 
-static SYSTEM: LazyLock<Mutex<System>> = LazyLock::new(|| Mutex::new(System::new()));
+static SYSTEM: LazyLock<Mutex<System>> = LazyLock::new(|| Mutex::new(System::new_all()));
 
 #[tauri::command]
 pub fn get_settings() -> Result<Settings, String> {
@@ -47,6 +47,10 @@ pub struct SystemInfo {
     pub memory_total: u64,
     pub disk_used: u64,
     pub disk_total: u64,
+    pub cpu_brand: String,
+    pub cpu_cores: usize,
+    pub cpu_threads: usize,
+    pub uptime: u64,
 }
 
 #[tauri::command]
@@ -60,6 +64,15 @@ pub fn get_system_info() -> Result<SystemInfo, String> {
     let cpu_usage = sys.global_cpu_info().cpu_usage();
     let memory_used = sys.used_memory();
     let memory_total = sys.total_memory();
+
+    let cpu_brand = sys.cpus()
+        .first()
+        .map(|c| c.brand().trim().to_string())
+        .unwrap_or_else(|| "Unknown CPU".to_string());
+    
+    let cpu_cores = sys.physical_core_count().unwrap_or(0);
+    let cpu_threads = sys.cpus().len();
+    let uptime = System::uptime();
 
     // Windows 下查找 C:\ 盘，其他平台查找 / 挂载点
     #[cfg(target_os = "windows")]
@@ -89,6 +102,10 @@ pub fn get_system_info() -> Result<SystemInfo, String> {
         memory_total,
         disk_used,
         disk_total,
+        cpu_brand,
+        cpu_cores,
+        cpu_threads,
+        uptime,
     })
 }
 

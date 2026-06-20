@@ -45,6 +45,9 @@ export interface WidgetComponentProps {
 	containerId: string;
 	width: number;
 	height: number;
+	isEditing?: boolean;
+	setIsEditing?: (editing: boolean) => void;
+	backgroundOpacity?: number;
 }
 
 export interface WidgetToHostMessage {

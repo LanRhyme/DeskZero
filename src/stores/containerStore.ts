@@ -40,6 +40,11 @@ interface ContainerState {
 	) => Promise<Container>;
 	updateContainerPosition: (id: string, position: Position) => void;
 	updateContainerSize: (id: string, size: Size) => void;
+	updateContainerGeometry: (
+		id: string,
+		position: Position,
+		size: Size,
+	) => void;
 	updateContainerStyle: (
 		id: string,
 		style: Partial<Container["style"]>,
@@ -146,6 +151,17 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 		set((state) => ({
 			containers: state.containers.map((c) =>
 				c.id === id ? { ...c, size } : c,
+			),
+		}));
+		const updated = get().containers.find((c) => c.id === id);
+		if (updated) persistContainer(updated);
+	},
+
+	updateContainerGeometry: (id, position, size) => {
+		useHistoryStore.getState().pushState();
+		set((state) => ({
+			containers: state.containers.map((c) =>
+				c.id === id ? { ...c, position, size } : c,
 			),
 		}));
 		const updated = get().containers.find((c) => c.id === id);

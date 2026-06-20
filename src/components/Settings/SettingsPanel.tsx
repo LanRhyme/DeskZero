@@ -1,5 +1,8 @@
 import { useSettingsStore } from "@/stores/settingsStore";
 import type { IconSize, ItemBackground, Theme } from "@/types/settings";
+import { CustomSelect } from "@/components/UI/CustomSelect";
+import { SwitchToggle } from "@/components/UI/SwitchToggle";
+import { Slider } from "@/components/UI/Slider";
 
 interface Props {
 	onClose: () => void;
@@ -29,73 +32,49 @@ export default function SettingsPanel({ onClose }: Props) {
 				<div className="space-y-4">
 					<div>
 						<label className="text-sm font-medium block mb-1">主题</label>
-						<select
-							className="w-full rounded-md px-3 py-2 text-sm"
-							style={{
-								background: "var(--color-bg-hover)",
-								color: "var(--color-text)",
-								border: "1px solid var(--color-border)",
-							}}
+						<CustomSelect
 							value={settings.theme}
-							onChange={(e) => saveSettings({ theme: e.target.value as Theme })}
-						>
-							<option value="light">浅色</option>
-							<option value="dark">深色</option>
-							<option value="system">跟随系统</option>
-						</select>
+							onChange={(v) => saveSettings({ theme: v as Theme })}
+							options={[
+								{ value: "light", label: "浅色" },
+								{ value: "dark", label: "深色" },
+								{ value: "system", label: "跟随系统" },
+							]}
+						/>
 					</div>
 
 					<div>
 						<label className="text-sm font-medium block mb-1">图标大小</label>
-						<select
-							className="w-full rounded-md px-3 py-2 text-sm"
-							style={{
-								background: "var(--color-bg-hover)",
-								color: "var(--color-text)",
-								border: "1px solid var(--color-border)",
-							}}
+						<CustomSelect
 							value={settings.iconSize}
-							onChange={(e) =>
-								saveSettings({ iconSize: e.target.value as IconSize })
-							}
-						>
-							<option value="small">小</option>
-							<option value="medium">中</option>
-							<option value="large">大</option>
-						</select>
+							onChange={(v) => saveSettings({ iconSize: v as IconSize })}
+							options={[
+								{ value: "small", label: "小" },
+								{ value: "medium", label: "中" },
+								{ value: "large", label: "大" },
+							]}
+						/>
 					</div>
 
 					<div>
 						<label className="text-sm font-medium block mb-1">Item 背景</label>
-						<select
-							className="w-full rounded-md px-3 py-2 text-sm"
-							style={{
-								background: "var(--color-bg-hover)",
-								color: "var(--color-text)",
-								border: "1px solid var(--color-border)",
-							}}
+						<CustomSelect
 							value={settings.itemBackground}
-							onChange={(e) =>
-								saveSettings({
-									itemBackground: e.target.value as ItemBackground,
-								})
-							}
-						>
-							<option value="transparent">透明</option>
-							<option value="subtle">浅色</option>
-							<option value="visible">可见</option>
-						</select>
+							onChange={(v) => saveSettings({ itemBackground: v as ItemBackground })}
+							options={[
+								{ value: "transparent", label: "透明" },
+								{ value: "subtle", label: "浅色" },
+								{ value: "visible", label: "可见" },
+							]}
+						/>
 					</div>
 
 					<div>
 						<label className="text-sm font-medium block mb-1">网格对齐</label>
 						<div className="flex items-center gap-2">
-							<input
-								type="checkbox"
+							<SwitchToggle
 								checked={settings.gridEnabled}
-								onChange={(e) =>
-									saveSettings({ gridEnabled: e.target.checked })
-								}
+								onChange={(checked) => saveSettings({ gridEnabled: checked })}
 							/>
 							<span className="text-sm">启用</span>
 						</div>
@@ -103,16 +82,12 @@ export default function SettingsPanel({ onClose }: Props) {
 
 					<div>
 						<label className="text-sm font-medium block mb-1">网格宽度</label>
-						<input
-							type="range"
-							min="40"
-							max="160"
-							step="10"
+						<Slider
+							min={40}
+							max={160}
+							step={10}
 							value={settings.gridWidth}
-							onChange={(e) =>
-								saveSettings({ gridWidth: Number(e.target.value) })
-							}
-							className="w-full"
+							onChange={(val) => saveSettings({ gridWidth: val })}
 						/>
 						<span
 							className="text-xs"
@@ -124,16 +99,12 @@ export default function SettingsPanel({ onClose }: Props) {
 
 					<div>
 						<label className="text-sm font-medium block mb-1">网格高度</label>
-						<input
-							type="range"
-							min="40"
-							max="160"
-							step="10"
+						<Slider
+							min={40}
+							max={160}
+							step={10}
 							value={settings.gridHeight}
-							onChange={(e) =>
-								saveSettings({ gridHeight: Number(e.target.value) })
-							}
-							className="w-full"
+							onChange={(val) => saveSettings({ gridHeight: val })}
 						/>
 						<span
 							className="text-xs"

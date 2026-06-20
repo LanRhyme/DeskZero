@@ -261,7 +261,7 @@ export function GameContainer({ container }: GameContainerProps) {
 				animate={{ opacity: isDragging ? 0.9 : bgOpacity, scale: 1, x: pos.x + resizePosOffset.x, y: pos.y + resizePosOffset.y }}
 				transition={isDragging || isResizing ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 30 }}
 				className={cn(
-					"flex flex-col transition-shadow select-none relative bg-transparent",
+					"flex flex-col transition-shadow select-none touch-none relative bg-transparent",
 					isDragging && "shadow-2xl ring-2 ring-[var(--color-accent)]/50",
 				)}
 				onContextMenu={handleContextMenu}
@@ -374,17 +374,21 @@ export function GameContainer({ container }: GameContainerProps) {
 			{/* Settings Modal - absolute positioned over the container without blocking the whole screen */}
 			{isSettingsOpen &&
 				createPortal(
-					<motion.div
-						initial={{ opacity: 0, scale: 0.95 }}
-						animate={{ opacity: 1, scale: 1 }}
-						className="fixed z-[100] bg-white/90 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 p-4 rounded-xl shadow-2xl w-72 pointer-events-auto"
-						style={{
-							left: settingsPos.x,
-							top: settingsPos.y,
-							width: 288,
-						}}
+					<div
+						className="fixed inset-0 z-[99] settings-backdrop"
 						onPointerDown={(e) => e.stopPropagation()}
+						onClick={(e) => e.stopPropagation()}
 					>
+						<motion.div
+							initial={{ opacity: 0, scale: 0.95 }}
+							animate={{ opacity: 1, scale: 1 }}
+							className="fixed z-[100] bg-white/90 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 p-4 rounded-xl shadow-2xl w-72 pointer-events-auto"
+							style={{
+								left: settingsPos.x,
+								top: settingsPos.y,
+								width: 288,
+							}}
+						>
 						<div className="flex justify-between items-center mb-4">
 							<h3 className="font-bold text-[var(--color-text)]">
 								游戏容器设置
@@ -400,7 +404,8 @@ export function GameContainer({ container }: GameContainerProps) {
 							container={container}
 							onClose={() => setIsSettingsOpen(false)}
 						/>
-					</motion.div>,
+						</motion.div>
+					</div>,
 					document.body,
 				)}
 

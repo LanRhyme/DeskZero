@@ -331,24 +331,29 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
         />
       )}
 
-      {/* 设置面板 — portal 渲染到 body，与 ContainerSettings 一致 */}
+      {/* 设置面板 — portal 渲染到 body */}
       {isSettingsOpen &&
         createPortal(
-          <motion.div
-            className="fixed z-[100] pointer-events-auto"
-            style={{
-              left: pos.x + size.width + 10,
-              top: pos.y,
-              width: 288,
-            }}
+          <div
+            className="fixed inset-0 z-[99] settings-backdrop"
             onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
-            <WidgetSettingsPanel
-              container={container}
-              widgetConfig={widgetConfig}
-              onClose={() => setIsSettingsOpen(false)}
-            />
-          </motion.div>,
+            <motion.div
+              className="fixed z-[100] pointer-events-auto"
+              style={{
+                left: pos.x + size.width + 10,
+                top: pos.y,
+                width: 288,
+              }}
+            >
+              <WidgetSettingsPanel
+                container={container}
+                widgetConfig={widgetConfig}
+                onClose={() => setIsSettingsOpen(false)}
+              />
+            </motion.div>
+          </div>,
           document.body,
         )}
 

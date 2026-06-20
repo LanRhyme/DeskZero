@@ -232,7 +232,7 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 				animate={{ opacity: isDragging ? 0.9 : 1, scale: 1, x: pos.x + resizePosOffset.x, y: pos.y + resizePosOffset.y }}
 				transition={isDragging || isResizing ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 30 }}
 				className={cn(
-					"flex flex-col overflow-hidden transition-colors border shadow-xl select-none relative",
+					"flex flex-col overflow-hidden transition-colors border shadow-xl select-none touch-none relative",
 					"border-[var(--color-border)]",
 					isDragging && "shadow-2xl ring-1 ring-black/10 dark:ring-white/10",
 				)}
@@ -341,17 +341,22 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 
 			{isSettingsOpen &&
 				createPortal(
-					<motion.div
-						className="fixed z-[100] pointer-events-auto"
-						style={{
-							left: settingsPos.x,
-							top: settingsPos.y,
-							width: 288,
-						}}
+					<div
+						className="fixed inset-0 z-[99] settings-backdrop"
 						onPointerDown={(e) => e.stopPropagation()}
+						onClick={(e) => e.stopPropagation()}
 					>
-						<IconShowSettings container={container} onClose={() => setIsSettingsOpen(false)} />
-					</motion.div>,
+						<motion.div
+							className="fixed z-[100] pointer-events-auto"
+							style={{
+								left: settingsPos.x,
+								top: settingsPos.y,
+								width: 288,
+							}}
+						>
+							<IconShowSettings container={container} onClose={() => setIsSettingsOpen(false)} />
+						</motion.div>
+					</div>,
 					document.body,
 				)}
 			<ConfirmDialog

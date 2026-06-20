@@ -1,6 +1,8 @@
 import { useLayoutEffect, useRef } from "react";
 import { NumberInput } from "@/components/UI/NumberInput";
+import { SettingRow } from "@/components/UI/SettingRow";
 import { Slider } from "@/components/UI/Slider";
+import { TextInput } from "@/components/UI/TextInput";
 import { useContainerStore } from "@/stores/containerStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import type { Container as ContainerType } from "@/types/container";
@@ -66,10 +68,7 @@ export function GameContainerSettings({
 
 	return (
 		<div ref={containerRef} className="flex flex-col gap-3 text-sm">
-			<div className="flex flex-col gap-1">
-				<label className="text-[11px] text-[var(--color-text-secondary)] font-bold">
-					网格大小 (宽 x 高)
-				</label>
+			<SettingRow title="网格大小 (宽 x 高)" layout="vertical">
 				<div className="flex gap-2 items-center">
 					<NumberInput
 						value={gridW}
@@ -87,13 +86,9 @@ export function GameContainerSettings({
 						className="flex-1"
 					/>
 				</div>
-			</div>
+			</SettingRow>
 
-			<div className="flex flex-col gap-2">
-				<label className="text-[11px] text-[var(--color-text-secondary)] font-bold">
-					不透明度 ({Math.round((container.style.backgroundOpacity ?? 1) * 100)}
-					%)
-				</label>
+			<SettingRow title={`不透明度 (${Math.round((container.style.backgroundOpacity ?? 1) * 100)}%)`} layout="vertical">
 				<Slider
 					min={0}
 					max={1}
@@ -103,12 +98,9 @@ export function GameContainerSettings({
 						updateContainerStyle(container.id, { backgroundOpacity: val })
 					}
 				/>
-			</div>
+			</SettingRow>
 
-			<div className="flex flex-col gap-2">
-				<label className="text-[11px] text-[var(--color-text-secondary)] font-bold">
-					圆角 ({container.style.cornerRadius ?? 16}px)
-				</label>
+			<SettingRow title={`圆角 (${container.style.cornerRadius ?? 16}px)`} layout="vertical">
 				<Slider
 					min={0}
 					max={40}
@@ -118,25 +110,20 @@ export function GameContainerSettings({
 						updateContainerStyle(container.id, { cornerRadius: val })
 					}
 				/>
-			</div>
+			</SettingRow>
 
-			<div className="flex flex-col gap-1">
-				<label className="text-[11px] text-[var(--color-text-secondary)] font-bold">
-					封面图片 (URL/路径)
-				</label>
-				<input
-					type="text"
+			<SettingRow title="封面图片 (URL/路径)" layout="vertical">
+				<TextInput
 					placeholder="可输入自定义图片链接或本地路径"
 					value={container.style.coverImage || ""}
-					onChange={(e) =>
-						updateContainerStyle(container.id, { coverImage: e.target.value })
+					onChange={(val) =>
+						updateContainerStyle(container.id, { coverImage: val })
 					}
-					className="w-full px-2 py-1 text-xs bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded border border-transparent focus:border-[var(--color-accent)] outline-none"
 				/>
 				<span className="text-[10px] text-[var(--color-text-secondary)]">
 					自动获取失败时可手动设置，支持本地图片路径或网络链接。
 				</span>
-			</div>
+			</SettingRow>
 
 			<div className="flex justify-end pt-1">
 				<button

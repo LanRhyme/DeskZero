@@ -1,9 +1,12 @@
 import { X } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Slider } from "@/components/UI/Slider";
 import { SwitchToggle } from "@/components/UI/SwitchToggle";
 import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
+import { ColorPicker } from "@/components/UI/ColorPicker";
+import { CustomSelect } from "@/components/UI/CustomSelect";
 import { NumberInput } from "@/components/UI/NumberInput";
+import { SettingRow } from "@/components/UI/SettingRow";
 import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
 import type { Container } from "@/types/container";
@@ -108,7 +111,7 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 			<div className="space-y-3 max-h-[420px] overflow-y-auto hidden-native-scrollbar pr-1 pb-4">
 				{/* Colors */}
 				<div className="space-y-2">
-					<label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">背景设置</label>
+			<SettingRow title="背景设置" layout="vertical">
 					<div className="flex gap-1.5 mb-2">
 						<button onClick={() => setBgColor("theme")} className={cn("flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200", bgColor === "theme" ? "bg-[var(--color-accent)] text-white" : "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)]")}>跟随主题</button>
 						<button onClick={() => setBgColor(bgColor === "theme" ? "#000000" : bgColor)} className={cn("flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200", bgColor !== "theme" ? "bg-[var(--color-accent)] text-white" : "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)]")}>自定义颜色</button>
@@ -116,9 +119,11 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 
 					<div className="flex items-center gap-3">
 						{bgColor !== "theme" && (
-							<div className="relative w-8 h-8 rounded-full overflow-hidden shadow-inner ring-1 ring-black/10 dark:ring-white/10 cursor-pointer shrink-0">
-								<input type="color" value={bgColor.startsWith("#") ? bgColor : "#000000"} onChange={(e) => setBgColor(e.target.value)} className="absolute inset-[-10px] w-[200%] h-[200%] cursor-pointer" />
-							</div>
+							<ColorPicker
+								value={bgColor.startsWith("#") ? bgColor : "#000000"}
+								onChange={setBgColor}
+								size="md"
+							/>
 						)}
 						<div className="flex-1">
 							<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
@@ -128,6 +133,7 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 							<Slider min={0} max={1} step={0.05} value={opacity} onChange={setOpacity} />
 						</div>
 					</div>
+				</SettingRow>
 				</div>
 
 				{/* Corner Radius */}
@@ -143,7 +149,7 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 
 				{/* Grid Size */}
 				<div className="space-y-2">
-					<label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">网格尺寸 (格数)</label>
+					<SettingRow title="网格尺寸 (格数)" layout="vertical">
 					<div className="flex gap-3">
 						<div className="flex-1 space-y-1">
 							<span className="text-[10px] text-[var(--color-text-secondary)] block">列数 (宽)</span>
@@ -154,13 +160,14 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 							<NumberInput min={1} max={20} value={rows} onChange={setRows} />
 						</div>
 					</div>
+				</SettingRow>
 				</div>
 
 				<div className="h-[1px] w-full bg-black/5 dark:bg-white/10 my-1" />
 
 				{/* Feathering */}
 				<div className="space-y-2">
-					<label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">边缘羽化</label>
+					<SettingRow title="边缘羽化" layout="vertical">
 					<div>
 						<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
 							<span>X 轴羽化</span>
@@ -175,13 +182,14 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 						</div>
 						<Slider min={0} max={100} step={1} value={featherY} onChange={setFeatherY} />
 					</div>
+				</SettingRow>
 				</div>
 
 				<div className="h-[1px] w-full bg-black/5 dark:bg-white/10 my-1" />
 
 				{/* Icon Styles */}
 				<div className="space-y-2">
-					<label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">图标设置</label>
+					<SettingRow title="图标设置" layout="vertical">
 					<div>
 						<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
 							<span>图标大小</span>
@@ -207,11 +215,12 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 						</div>
 						<Slider min={0.2} max={1.8} step={0.05} value={iconGapRatio} onChange={setIconGapRatio} />
 					</div>
+				</SettingRow>
 				</div>
 
 				{/* Hover Animations */}
 				<div className="space-y-2">
-					<label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">悬停微动画</label>
+					<SettingRow title="悬停微动画" layout="vertical">
 					<CustomSelect
 						value={hoverAnimation}
 						onChange={setHoverAnimation}
@@ -223,7 +232,9 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 							{ value: "rotate", label: "微旋" },
 						]}
 						position="top"
+						size="md"
 					/>
+				</SettingRow>
 				</div>
 			</div>
 
@@ -248,65 +259,4 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 	);
 }
 
-function CustomSelect({
-	value,
-	onChange,
-	options,
-	position = "bottom",
-}: {
-	value: string;
-	onChange: (v: string) => void;
-	options: { value: string; label: string }[];
-	position?: "top" | "bottom";
-}) {
-	const [isOpen, setIsOpen] = useState(false);
-	const dropdownRef = useRef<HTMLDivElement>(null);
 
-	useEffect(() => {
-		const handleClickOutside = (e: MouseEvent) => {
-			if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-				setIsOpen(false);
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, []);
-
-	const currentOption = options.find((o) => o.value === value) || options[0];
-
-	return (
-		<div ref={dropdownRef} className="relative w-full">
-			<button
-				type="button"
-				onClick={() => setIsOpen(!isOpen)}
-				className="w-full text-xs bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded-lg px-3 py-2 text-left outline-none border border-black/10 dark:border-white/10 flex justify-between items-center cursor-default hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-			>
-				<span>{currentOption?.label}</span>
-				<span className="text-[10px] opacity-60">▼</span>
-			</button>
-			{isOpen && (
-				<div className={cn(
-					"absolute z-[110] left-0 right-0 bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-lg shadow-xl overflow-hidden py-1",
-					position === "top" ? "bottom-full mb-1" : "top-full mt-1"
-				)}>
-					{options.map((opt) => (
-						<button
-							key={opt.value}
-							type="button"
-							onClick={() => {
-								onChange(opt.value);
-								setIsOpen(false);
-							}}
-							className={cn(
-								"w-full text-left px-3 py-1.5 text-xs hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-default block",
-								opt.value === value ? "text-[var(--color-accent)] font-semibold" : "text-[var(--color-text)]"
-							)}
-						>
-							{opt.label}
-						</button>
-					))}
-				</div>
-			)}
-		</div>
-	);
-}

@@ -450,20 +450,25 @@ function NormalContainer({ container }: ContainerProps) {
 
 			{isSettingsOpen &&
 				createPortal(
-					<motion.div
-						className="fixed z-[100] pointer-events-auto"
-						style={{
-							left: settingsPos.x,
-							top: settingsPos.y,
-							width: 288,
-						}}
+					<div
+						className="fixed inset-0 z-[99] settings-backdrop"
 						onPointerDown={(e) => e.stopPropagation()}
+						onClick={(e) => e.stopPropagation()}
 					>
-						<ContainerSettings
-							container={container}
-							onClose={() => setIsSettingsOpen(false)}
-						/>
-					</motion.div>,
+						<motion.div
+							className="fixed z-[100] pointer-events-auto"
+							style={{
+								left: settingsPos.x,
+								top: settingsPos.y,
+								width: 288,
+							}}
+						>
+							<ContainerSettings
+								container={container}
+								onClose={() => setIsSettingsOpen(false)}
+							/>
+						</motion.div>
+					</div>,
 					document.body,
 				)}
 			<ConfirmDialog

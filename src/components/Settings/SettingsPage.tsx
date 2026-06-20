@@ -13,7 +13,10 @@ import {
 	X,
 } from "lucide-react";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { ColorPicker } from "@/components/UI/ColorPicker";
 import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
+import { SegmentedControl } from "@/components/UI/SegmentedControl";
+import { SettingRow } from "@/components/UI/SettingRow";
 import { Slider } from "@/components/UI/Slider";
 import { SwitchToggle } from "@/components/UI/SwitchToggle";
 import { useContainerStore } from "@/stores/containerStore";
@@ -31,71 +34,6 @@ import {
 import { syncWindowsLayout } from "@/services/desktopService";
 import { cn } from "@/utils/cn";
 import appConfig from "../../../deskzero.config.json";
-
-const CustomSwitch = SwitchToggle;
-
-function SettingRow({
-	title,
-	desc,
-	children,
-	noBorder = false,
-}: {
-	title: string;
-	desc: string;
-	children: React.ReactNode;
-	noBorder?: boolean;
-}) {
-	return (
-		<div
-			className={cn(
-				"flex items-center justify-between py-4 group transition-colors",
-				!noBorder && "border-b border-black/5 dark:border-white/5",
-			)}
-		>
-			<div className="pr-8 flex-1">
-				<div className="font-medium text-sm text-[var(--color-text)] mb-1 tracking-wide">
-					{title}
-				</div>
-				<div className="text-xs text-[var(--color-text-secondary)] leading-relaxed group-hover:text-[var(--color-text)]/80 transition-colors duration-300">
-					{desc}
-				</div>
-			</div>
-			<div className="shrink-0 flex items-center justify-end min-w-[120px]">
-				{children}
-			</div>
-		</div>
-	);
-}
-
-function SettingSliderRow({
-	title,
-	desc,
-	value,
-	onChange,
-	min,
-	max,
-	step,
-	format = (v: number) => `${v}`,
-	noBorder = false,
-}: any) {
-	return (
-		<SettingRow title={title} desc={desc} noBorder={noBorder}>
-			<div className="flex items-center gap-4 w-48">
-				<Slider
-					value={value}
-					onChange={onChange}
-					min={min}
-					max={max}
-					step={step}
-					className="flex-1"
-				/>
-				<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">
-					{format(value)}
-				</span>
-			</div>
-		</SettingRow>
-	);
-}
 
 export function SettingsPage() {
 	const { settings, saveSettings, loading, error } = useSettingsStore();
@@ -378,14 +316,14 @@ export function SettingsPage() {
 											title="开机启动"
 											desc="登录 Windows 时自动运行 DeskZero（功能开发中）"
 										>
-											<CustomSwitch checked={false} onChange={() => {}} />
+											<SwitchToggle checked={false} onChange={() => {}} />
 										</SettingRow>
 
 										<SettingRow
 											title="隐藏文件后缀名"
 											desc="桌面非快捷方式文件是否隐藏后缀名"
 										>
-											<CustomSwitch
+											<SwitchToggle
 												checked={settings.hideFileExtensions !== false}
 												onChange={() =>
 													saveSettings({
@@ -402,7 +340,7 @@ export function SettingsPage() {
 											desc="在桌面空白处双击可快速隐藏或显示所有图标"
 											noBorder
 										>
-											<CustomSwitch
+											<SwitchToggle
 												checked={settings.doubleClickHide !== false}
 												onChange={() =>
 													saveSettings({
@@ -426,57 +364,52 @@ export function SettingsPage() {
 												{syncing ? "同步中..." : "立即同步"}
 											</button>
 										</SettingRow>
-										<SettingSliderRow
+										<SettingRow
 											title="桌面网格宽度"
 											desc="调整桌面图标的水平对齐间距"
-											value={settings.gridWidth ?? 80}
-											onChange={(v: number) => saveSettings({ gridWidth: v })}
-											min={60}
-											max={150}
-											step={5}
-											format={(v: number) => `${v}px`}
-										/>
-										<SettingSliderRow
+										>
+											<div className="flex items-center gap-4 w-48">
+												<Slider value={settings.gridWidth ?? 80} onChange={(v: number) => saveSettings({ gridWidth: v })} min={60} max={150} step={5} className="flex-1" />
+												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridWidth ?? 80}px`}</span>
+											</div>
+										</SettingRow>
+										<SettingRow
 											title="桌面网格高度"
 											desc="调整桌面图标的垂直对齐间距"
-											value={settings.gridHeight ?? 104}
-											onChange={(v: number) => saveSettings({ gridHeight: v })}
-											min={60}
-											max={150}
-											step={5}
-											format={(v: number) => `${v}px`}
-										/>
-										<SettingSliderRow
+										>
+											<div className="flex items-center gap-4 w-48">
+												<Slider value={settings.gridHeight ?? 104} onChange={(v: number) => saveSettings({ gridHeight: v })} min={60} max={150} step={5} className="flex-1" />
+												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridHeight ?? 104}px`}</span>
+											</div>
+										</SettingRow>
+										<SettingRow
 											title="水平网格间隙"
 											desc="调整网格之间的水平不可放置区域"
-											value={settings.gridGapX ?? 20}
-											onChange={(v: number) => saveSettings({ gridGapX: v })}
-											min={0}
-											max={100}
-											step={5}
-											format={(v: number) => `${v}px`}
-										/>
-										<SettingSliderRow
+										>
+											<div className="flex items-center gap-4 w-48">
+												<Slider value={settings.gridGapX ?? 20} onChange={(v: number) => saveSettings({ gridGapX: v })} min={0} max={100} step={5} className="flex-1" />
+												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridGapX ?? 20}px`}</span>
+											</div>
+										</SettingRow>
+										<SettingRow
 											title="垂直网格间隙"
 											desc="调整网格之间的垂直不可放置区域"
-											value={settings.gridGapY ?? 20}
-											onChange={(v: number) => saveSettings({ gridGapY: v })}
-											min={0}
-											max={100}
-											step={5}
-											format={(v: number) => `${v}px`}
-										/>
-										<SettingSliderRow
+										>
+											<div className="flex items-center gap-4 w-48">
+												<Slider value={settings.gridGapY ?? 20} onChange={(v: number) => saveSettings({ gridGapY: v })} min={0} max={100} step={5} className="flex-1" />
+												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridGapY ?? 20}px`}</span>
+											</div>
+										</SettingRow>
+										<SettingRow
 											title="软件名称文字大小"
 											desc="调整桌面图标文字的显示大小"
-											value={settings.fontSize || 12}
-											onChange={(v: number) => saveSettings({ fontSize: v })}
-											min={10}
-											max={24}
-											step={1}
-											format={(v: number) => `${v}px`}
 											noBorder
-										/>
+										>
+											<div className="flex items-center gap-4 w-48">
+												<Slider value={settings.fontSize || 12} onChange={(v: number) => saveSettings({ fontSize: v })} min={10} max={24} step={1} className="flex-1" />
+												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.fontSize || 12}px`}</span>
+											</div>
+										</SettingRow>
 									</div>
 								</div>
 							</motion.div>
@@ -495,127 +428,53 @@ export function SettingsPage() {
 
 								<div className="space-y-6">
 									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
-										<SettingRow title="主题" desc="选择应用的主题外观风格">
-											<div className="flex bg-black/5 dark:bg-white/5 rounded-xl p-1 gap-1">
-												{["light", "dark", "system"].map((t) => (
-													<button
-														key={t}
-														onClick={() => saveSettings({ theme: t as any })}
-														className={cn(
-															"px-4 py-2 rounded-lg text-xs font-medium transition-all duration-300",
-															settings.theme === t
-																? "bg-white dark:bg-black/60 text-[var(--color-text)] shadow-sm scale-100"
-																: "text-[var(--color-text-secondary)] hover:text-[var(--color-text)] scale-95 hover:scale-100",
-														)}
-													>
-														{t === "light"
-															? "浅色"
-															: t === "dark"
-																? "深色"
-																: "跟随系统"}
-													</button>
-												))}
-											</div>
-										</SettingRow>
+									<SettingRow title="主题" desc="选择应用的主题外观风格">
+										<SegmentedControl
+											options={[
+												{ value: "light", label: "浅色" },
+												{ value: "dark", label: "深色" },
+												{ value: "system", label: "跟随系统" },
+											]}
+											value={settings.theme}
+											onChange={(v) => saveSettings({ theme: v as any })}
+										/>
+									</SettingRow>
 
-										<SettingRow
-											title="主题色"
-											desc="设置高亮和焦点控件的强调色"
-										>
-											<div className="flex gap-3 items-center">
-												{["#0078d4", "#8b5cf6", "#10b981", "#f43f5e"].map(
-													(color) => (
-														<div
-															key={color}
-															onClick={() =>
-																saveSettings({ accentColor: color })
-															}
-															className={cn(
-																"w-6 h-6 rounded-full cursor-pointer transition-transform shadow-inner border-2",
-																(settings.accentColor || "#0078d4") === color
-																	? "border-black/30 dark:border-white/50 scale-110"
-																	: "border-transparent hover:scale-110",
-															)}
-															style={{ backgroundColor: color }}
-														/>
-													),
-												)}
-												<div className="w-px h-6 bg-black/10 dark:bg-white/10 mx-1"></div>
-												<div className="relative group">
-													<input
-														type="color"
-														value={settings.accentColor || "#0078d4"}
-														onChange={(e) =>
-															saveSettings({ accentColor: e.target.value })
-														}
-														className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
-													/>
-													<div
-														className={cn(
-															"w-6 h-6 rounded-full transition-transform shadow-inner border-2",
-															![
-																"#0078d4",
-																"#8b5cf6",
-																"#10b981",
-																"#f43f5e",
-															].includes(settings.accentColor || "#0078d4")
-																? "border-black/30 dark:border-white/50 scale-110"
-																: "border-transparent group-hover:scale-110",
-														)}
-														style={{
-															background: ![
-																"#0078d4",
-																"#8b5cf6",
-																"#10b981",
-																"#f43f5e",
-															].includes(settings.accentColor || "#0078d4")
-																? settings.accentColor
-																: "conic-gradient(from 90deg, #f43f5e, #8b5cf6, #0078d4, #10b981, #eab308, #f43f5e)",
-														}}
-													/>
-												</div>
-											</div>
-										</SettingRow>
+									<SettingRow
+										title="主题色"
+										desc="设置高亮和焦点控件的强调色"
+									>
+										<ColorPicker
+											value={settings.accentColor || "#0078d4"}
+											onChange={(color) => saveSettings({ accentColor: color })}
+											presets={[
+												{ color: "#0078d4" },
+												{ color: "#8b5cf6" },
+												{ color: "#10b981" },
+												{ color: "#f43f5e" },
+											]}
+										/>
+									</SettingRow>
 
-										<SettingRow
-											title="选中图标背景"
-											desc="设置图标处于选中状态时的背板颜色"
-										>
-											<div className="flex bg-black/5 dark:bg-white/5 rounded-xl p-1 gap-1">
-												<button
-													onClick={() =>
-														saveSettings({ selectedItemBackground: "white" })
-													}
-													className={cn(
-														"px-4 py-2 rounded-lg text-xs font-medium transition-all duration-300",
-														settings.selectedItemBackground === "white"
-															? "bg-white dark:bg-black/60 text-[var(--color-text)] shadow-sm scale-100"
-															: "text-[var(--color-text-secondary)] hover:text-[var(--color-text)] scale-95 hover:scale-100",
-													)}
-												>
-													明亮半透明
-												</button>
-												<button
-													onClick={() =>
-														saveSettings({ selectedItemBackground: "black" })
-													}
-													className={cn(
-														"px-4 py-2 rounded-lg text-xs font-medium transition-all duration-300",
-														settings.selectedItemBackground === "black"
-															? "bg-white dark:bg-black/60 text-[var(--color-text)] shadow-sm scale-100"
-															: "text-[var(--color-text-secondary)] hover:text-[var(--color-text)] scale-95 hover:scale-100",
-													)}
-												>
-													暗色半透明
-												</button>
-											</div>
-										</SettingRow>
+									<SettingRow
+										title="选中图标背景"
+										desc="设置图标处于选中状态时的背板颜色"
+									>
+										<SegmentedControl
+											options={[
+												{ value: "white", label: "明亮半透明" },
+												{ value: "black", label: "暗色半透明" },
+											]}
+											value={settings.selectedItemBackground || "white"}
+											onChange={(v) => saveSettings({ selectedItemBackground: v as any })}
+										/>
+									</SettingRow>
 
 										<SettingRow
 											title="选中图标毛玻璃效果"
 											desc="为选中项背板添加高斯模糊效果"
 										>
-											<CustomSwitch
+											<SwitchToggle
 												checked={!!settings.selectedItemBlur}
 												onChange={() =>
 													saveSettings({
@@ -629,7 +488,7 @@ export function SettingsPage() {
 											title="全局毛玻璃效果"
 											desc="为收纳盒等容器和界面元素添加毛玻璃"
 										>
-											<CustomSwitch
+											<SwitchToggle
 												checked={!!settings.globalBlur}
 												onChange={() =>
 													saveSettings({ globalBlur: !settings.globalBlur })
@@ -641,7 +500,7 @@ export function SettingsPage() {
 											title="壁纸模糊穿透兼容模式"
 											desc="若毛玻璃无法穿透至桌面壁纸，请开启此选项"
 										>
-											<CustomSwitch
+											<SwitchToggle
 												checked={!!settings.wallpaperCompatible}
 												onChange={() =>
 													saveSettings({
@@ -656,7 +515,7 @@ export function SettingsPage() {
 											desc="隐藏桌面快捷方式左下角的小箭头标识"
 											noBorder
 										>
-											<CustomSwitch
+											<SwitchToggle
 												checked={!!settings.hideShortcutBadge}
 												onChange={() =>
 													saveSettings({
@@ -673,7 +532,7 @@ export function SettingsPage() {
 											desc="为桌面图标添加柔和的环境发光效果"
 											noBorder={!settings.iconGlow}
 										>
-											<CustomSwitch
+											<SwitchToggle
 												checked={!!settings.iconGlow}
 												onChange={() =>
 													saveSettings({ iconGlow: !settings.iconGlow })
@@ -690,31 +549,25 @@ export function SettingsPage() {
 													className="overflow-hidden"
 												>
 													<div className="pl-6 pb-2 relative before:absolute before:left-2 before:top-0 before:bottom-6 before:w-[2px] before:rounded-full before:bg-[var(--color-accent)]/20">
-														<SettingSliderRow
+														<SettingRow
 															title="发光范围"
 															desc="调整图标发光效果的扩散程度"
-															value={settings.iconGlowRadius ?? 12}
-															onChange={(v: number) =>
-																saveSettings({ iconGlowRadius: v })
-															}
-															min={2}
-															max={30}
-															step={1}
-															format={(v: number) => `${v}px`}
-														/>
-														<SettingSliderRow
+														>
+															<div className="flex items-center gap-4 w-48">
+																<Slider value={settings.iconGlowRadius ?? 12} onChange={(v: number) => saveSettings({ iconGlowRadius: v })} min={2} max={30} step={1} className="flex-1" />
+																<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.iconGlowRadius ?? 12}px`}</span>
+															</div>
+														</SettingRow>
+														<SettingRow
 															title="发光强度"
 															desc="调整发光效果的透明度和亮度"
-															value={settings.iconGlowIntensity ?? 0.6}
-															onChange={(v: number) =>
-																saveSettings({ iconGlowIntensity: v })
-															}
-															min={0.1}
-															max={1.0}
-															step={0.05}
-															format={(v: number) => `${Math.round(v * 100)}%`}
 															noBorder
-														/>
+														>
+															<div className="flex items-center gap-4 w-48">
+																<Slider value={settings.iconGlowIntensity ?? 0.6} onChange={(v: number) => saveSettings({ iconGlowIntensity: v })} min={0.1} max={1.0} step={0.05} className="flex-1" />
+																<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${Math.round((settings.iconGlowIntensity ?? 0.6) * 100)}%`}</span>
+															</div>
+														</SettingRow>
 													</div>
 												</motion.div>
 											)}
@@ -722,27 +575,25 @@ export function SettingsPage() {
 									</div>
 
 									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
-										<SettingSliderRow
+										<SettingRow
 											title="图标不透明度"
 											desc="调整桌面所有图标的整体不透明度"
-											value={settings.iconOpacity ?? 1.0}
-											onChange={(v: number) => saveSettings({ iconOpacity: v })}
-											min={0.1}
-											max={1.0}
-											step={0.05}
-											format={(v: number) => `${Math.round(v * 100)}%`}
-										/>
-										<SettingSliderRow
+										>
+											<div className="flex items-center gap-4 w-48">
+												<Slider value={settings.iconOpacity ?? 1.0} onChange={(v: number) => saveSettings({ iconOpacity: v })} min={0.1} max={1.0} step={0.05} className="flex-1" />
+												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${Math.round((settings.iconOpacity ?? 1.0) * 100)}%`}</span>
+											</div>
+										</SettingRow>
+										<SettingRow
 											title="字体不透明度"
 											desc="调整桌面图标文字的不透明度"
-											value={settings.textOpacity ?? 1.0}
-											onChange={(v: number) => saveSettings({ textOpacity: v })}
-											min={0.1}
-											max={1.0}
-											step={0.05}
-											format={(v: number) => `${Math.round(v * 100)}%`}
 											noBorder
-										/>
+										>
+											<div className="flex items-center gap-4 w-48">
+												<Slider value={settings.textOpacity ?? 1.0} onChange={(v: number) => saveSettings({ textOpacity: v })} min={0.1} max={1.0} step={0.05} className="flex-1" />
+												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${Math.round((settings.textOpacity ?? 1.0) * 100)}%`}</span>
+											</div>
+										</SettingRow>
 									</div>
 								</div>
 							</motion.div>
@@ -766,7 +617,7 @@ export function SettingsPage() {
 											title="自动备份"
 											desc="定时自动备份桌面布局、容器和设置"
 										>
-											<CustomSwitch
+											<SwitchToggle
 												checked={backupSettings.autoBackupEnabled}
 												onChange={() =>
 													handleSaveBackupSettings({
@@ -778,31 +629,25 @@ export function SettingsPage() {
 
 										{backupSettings.autoBackupEnabled && (
 											<>
-												<SettingSliderRow
+												<SettingRow
 													title="备份间隔"
 													desc="每隔多少小时自动备份一次"
-													value={backupSettings.autoBackupHours}
-													onChange={(v: number) =>
-														handleSaveBackupSettings({ autoBackupHours: v })
-													}
-													min={1}
-													max={24}
-													step={1}
-													format={(v: number) => `${v} 小时`}
-												/>
-												<SettingSliderRow
+												>
+													<div className="flex items-center gap-4 w-48">
+														<Slider value={backupSettings.autoBackupHours} onChange={(v: number) => handleSaveBackupSettings({ autoBackupHours: v })} min={1} max={24} step={1} className="flex-1" />
+														<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${backupSettings.autoBackupHours} 小时`}</span>
+													</div>
+												</SettingRow>
+												<SettingRow
 													title="最大保留数"
 													desc="超出数量时自动删除最旧的备份"
-													value={backupSettings.maxBackups}
-													onChange={(v: number) =>
-														handleSaveBackupSettings({ maxBackups: v })
-													}
-													min={5}
-													max={100}
-													step={5}
-													format={(v: number) => `${v} 个`}
 													noBorder
-												/>
+												>
+													<div className="flex items-center gap-4 w-48">
+														<Slider value={backupSettings.maxBackups} onChange={(v: number) => handleSaveBackupSettings({ maxBackups: v })} min={5} max={100} step={5} className="flex-1" />
+														<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${backupSettings.maxBackups} 个`}</span>
+													</div>
+												</SettingRow>
 											</>
 										)}
 									</div>

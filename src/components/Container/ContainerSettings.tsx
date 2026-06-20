@@ -4,10 +4,14 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { NumberInput } from "@/components/UI/NumberInput";
 import { Slider } from "@/components/UI/Slider";
 import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
+import { SwitchToggle } from "@/components/UI/SwitchToggle";
+import { ColorPicker } from "@/components/UI/ColorPicker";
+import { SegmentedControl } from "@/components/UI/SegmentedControl";
+import { SettingRow } from "@/components/UI/SettingRow";
+import { TextInput } from "@/components/UI/TextInput";
 import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
 import type { Container } from "@/types/container";
-import { cn } from "@/utils/cn";
 
 interface ContainerSettingsProps {
 	container: Container;
@@ -126,63 +130,29 @@ export function ContainerSettings({
 
 			<div className="space-y-3">
 				{/* Name */}
-				<div className="space-y-2">
-					<label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">
-						收纳盒名称
-					</label>
-					<input
-						type="text"
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm text-[var(--color-text)] outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-shadow"
-						placeholder="输入收纳盒名称..."
-					/>
-				</div>
+				<SettingRow title="收纳盒名称" layout="vertical">
+					<TextInput value={name} onChange={setName} placeholder="输入收纳盒名称..." />
+				</SettingRow>
 
 				{/* Colors */}
-				<div className="space-y-2">
-					<label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">
-						背景设置
-					</label>
-					<div className="flex gap-1.5 mb-2">
-						<button
-							onClick={() => setBgColor("theme")}
-							className={cn(
-								"flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200",
-								bgColor === "theme" || !bgColor
-									? "bg-[var(--color-accent)] text-white shadow-sm shadow-[var(--color-accent)]/20"
-									: "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)] hover:bg-black/10 dark:hover:bg-white/10",
-							)}
-						>
-							跟随主题
-						</button>
-						<button
-							onClick={() =>
-								setBgColor(
-									bgColor === "theme" || !bgColor ? "#000000" : bgColor,
-								)
-							}
-							className={cn(
-								"flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200",
-								bgColor !== "theme" && bgColor
-									? "bg-[var(--color-accent)] text-white shadow-sm shadow-[var(--color-accent)]/20"
-									: "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)] hover:bg-black/10 dark:hover:bg-white/10",
-							)}
-						>
-							自定义
-						</button>
-					</div>
+				<SettingRow title="背景设置" layout="vertical">
+					<SegmentedControl
+						options={[
+							{ value: "theme", label: "跟随主题" },
+							{ value: "custom", label: "自定义" },
+						]}
+						value={bgColor === "theme" || !bgColor ? "theme" : "custom"}
+						onChange={(v) => setBgColor(v === "theme" ? "theme" : "#000000")}
+						variant="accent"
+					/>
 
 					<div className="flex items-center gap-3">
 						{bgColor !== "theme" && bgColor && (
-							<div className="relative w-8 h-8 rounded-full overflow-hidden shadow-inner ring-1 ring-black/10 dark:ring-white/10 cursor-pointer group shrink-0">
-								<input
-									type="color"
-									value={bgColor.startsWith("#") ? bgColor : "#000000"}
-									onChange={(e) => setBgColor(e.target.value)}
-									className="absolute inset-[-10px] w-[200%] h-[200%] cursor-pointer"
-								/>
-							</div>
+							<ColorPicker
+								value={bgColor.startsWith("#") ? bgColor : "#000000"}
+								onChange={setBgColor}
+								size="md"
+							/>
 						)}
 						<div className="flex-1">
 							<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-2">
@@ -198,13 +168,10 @@ export function ContainerSettings({
 							/>
 						</div>
 					</div>
-				</div>
+				</SettingRow>
 
 				{/* Corner Radius */}
-				<div className="space-y-2">
-					<label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">
-						圆角大小
-					</label>
+				<SettingRow title="圆角大小" layout="vertical">
 					<div className="flex-1">
 						<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-2">
 							<span>半径</span>
@@ -218,42 +185,22 @@ export function ContainerSettings({
 							onChange={setCornerRadius}
 						/>
 					</div>
-				</div>
+				</SettingRow>
 
 				<div className="h-[1px] w-full bg-black/5 dark:bg-white/10 my-1" />
 
 				{/* Layout */}
-				<div className="space-y-2">
-					<label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">
-						排版方式
-					</label>
-					<div className="flex gap-1.5">
-						<button
-							onClick={() => setLayout("grid")}
-							className={cn(
-								"flex-1 py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-all duration-200",
-								layout === "grid"
-									? "bg-[var(--color-accent)] text-white shadow-sm shadow-[var(--color-accent)]/20"
-									: "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)] hover:bg-black/10 dark:hover:bg-white/10",
-							)}
-						>
-							<LayoutGrid size={14} />
-							网格
-						</button>
-						<button
-							onClick={() => setLayout("list")}
-							className={cn(
-								"flex-1 py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 text-xs font-medium transition-all duration-200",
-								layout === "list"
-									? "bg-[var(--color-accent)] text-white shadow-sm shadow-[var(--color-accent)]/20"
-									: "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)] hover:bg-black/10 dark:hover:bg-white/10",
-							)}
-						>
-							<List size={14} />
-							列表
-						</button>
-					</div>
-				</div>
+				<SettingRow title="排版方式" layout="vertical">
+					<SegmentedControl
+						options={[
+							{ value: "grid", label: "网格", icon: <LayoutGrid size={14} /> },
+							{ value: "list", label: "列表", icon: <List size={14} /> },
+						]}
+						value={layout}
+						onChange={(v) => setLayout(v as "grid" | "list")}
+						variant="accent"
+					/>
+				</SettingRow>
 
 				{/* Grid Size Config */}
 				<motion.div
@@ -265,37 +212,28 @@ export function ContainerSettings({
 					className="overflow-hidden"
 				>
 					<div className="space-y-2 pt-2">
-						<label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">
-							网格尺寸
-						</label>
-						<div className="flex gap-2">
-							<NumberInput
-								value={gridWidth}
-								onChange={setGridWidth}
-								prefix="W"
-								className="flex-1"
-								min={20}
-							/>
-							<NumberInput
-								value={gridHeight}
-								onChange={setGridHeight}
-								prefix="H"
-								className="flex-1"
-								min={20}
-							/>
-						</div>
+						<SettingRow title="网格尺寸" layout="vertical">
+							<div className="flex gap-2">
+								<NumberInput
+									value={gridWidth}
+									onChange={setGridWidth}
+									prefix="W"
+									className="flex-1"
+									min={20}
+								/>
+								<NumberInput
+									value={gridHeight}
+									onChange={setGridHeight}
+									prefix="H"
+									className="flex-1"
+									min={20}
+								/>
+							</div>
+						</SettingRow>
 					</div>
 					<div className="space-y-3 pt-4">
 						<label className="flex items-center gap-2 cursor-pointer group">
-							<div className="relative flex items-center">
-								<input
-									type="checkbox"
-									checked={hideAppNames}
-									onChange={(e) => setHideAppNames(e.target.checked)}
-									className="peer sr-only"
-								/>
-								<div className="w-8 h-4.5 bg-black/10 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[14px] peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-[var(--color-accent)] transition-colors"></div>
-							</div>
+							<SwitchToggle checked={hideAppNames} onChange={setHideAppNames} />
 							<span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
 								隐藏应用名称
 							</span>
@@ -314,27 +252,18 @@ export function ContainerSettings({
 				>
 					<div className="space-y-3 pt-2">
 						<div className="space-y-2">
-							<label className="text-xs font-medium text-[var(--color-text)] opacity-90 block">
-								列表项高度
-							</label>
-							<NumberInput
-								value={listHeight}
-								onChange={setListHeight}
-								prefix="H"
-								min={20}
-							/>
+							<SettingRow title="列表项高度" layout="vertical">
+								<NumberInput
+									value={listHeight}
+									onChange={setListHeight}
+									prefix="H"
+									min={20}
+								/>
+							</SettingRow>
 						</div>
 
 						<label className="flex items-center gap-2 cursor-pointer group">
-							<div className="relative flex items-center">
-								<input
-									type="checkbox"
-									checked={showDetails}
-									onChange={(e) => setShowDetails(e.target.checked)}
-									className="peer sr-only"
-								/>
-								<div className="w-8 h-4.5 bg-black/10 dark:bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-[14px] peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-[var(--color-accent)] transition-colors"></div>
-							</div>
+							<SwitchToggle checked={showDetails} onChange={setShowDetails} />
 							<span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
 								显示详细信息
 							</span>

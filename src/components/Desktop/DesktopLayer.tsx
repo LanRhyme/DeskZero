@@ -397,7 +397,8 @@ export default function DesktopLayer() {
 
 	const handleContextMenu = useCallback(async (e: React.MouseEvent) => {
 		e.preventDefault();
-		if ((e.target as HTMLElement).closest(".touch-none")) return; // Let FileItem handle it
+		if ((e.target as HTMLElement).closest(".touch-none")) return;
+		if ((e.target as HTMLElement).closest(".settings-backdrop")) return;
 
 		try {
 			const { invoke } = await import("@tauri-apps/api/core");
@@ -741,9 +742,9 @@ export default function DesktopLayer() {
 		if (e.button !== 0) return; // Only left click
 		if (
 			(e.target as HTMLElement).closest(".touch-none") ||
-			(e.target as HTMLElement).closest(".cursor-move")
+			(e.target as HTMLElement).closest(".cursor-move") ||
+			(e.target as HTMLElement).closest(".settings-backdrop")
 		) {
-			// Clicked on a draggable item or container
 			return;
 		}
 
@@ -760,7 +761,8 @@ export default function DesktopLayer() {
 		if (settings.doubleClickHide !== false) {
 			if (
 				(e.target as HTMLElement).closest(".touch-none") ||
-				(e.target as HTMLElement).closest(".cursor-move")
+				(e.target as HTMLElement).closest(".cursor-move") ||
+				(e.target as HTMLElement).closest(".settings-backdrop")
 			) {
 				return;
 			}

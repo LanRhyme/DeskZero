@@ -1,5 +1,10 @@
 import { X } from "lucide-react";
 import { useLayoutEffect, useRef, useState, useEffect } from "react";
+import { SwitchToggle } from "@/components/UI/SwitchToggle";
+import { ColorPicker } from "@/components/UI/ColorPicker";
+import { SegmentedControl } from "@/components/UI/SegmentedControl";
+import { CustomSelect } from "@/components/UI/CustomSelect";
+import { SettingRow } from "@/components/UI/SettingRow";
 import { Slider } from "@/components/UI/Slider";
 import { useContainerStore } from "@/stores/containerStore";
 import type { Container as ContainerType } from "@/types/container";
@@ -66,6 +71,7 @@ export function WidgetSettingsPanel({
   const [transparentBackground, setTransparentBackground] = useState(
     widgetConfig.config?.transparentBackground === true
   );
+  const [bgColor, setBgColor] = useState(container.style.backgroundColor || "theme");
 
   // 2. 时钟设置
   const [clockStyle, setClockStyle] = useState(widgetConfig.config?.clockStyle || "digital");
@@ -180,6 +186,7 @@ export function WidgetSettingsPanel({
     updateContainerStyle(container.id, {
       backgroundOpacity: opacity,
       cornerRadius,
+      backgroundColor: bgColor,
       config: {
         ...widgetConfig,
         config: newConfig,
@@ -188,6 +195,7 @@ export function WidgetSettingsPanel({
   }, [
     opacity,
     cornerRadius,
+    bgColor,
     transparentBackground,
     clockStyle,
     digitalStyle,
@@ -273,99 +281,58 @@ export function WidgetSettingsPanel({
       case "clock":
         return (
           <div className="space-y-3.5">
-            {/* 表盘样式 */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70">表盘样式</label>
-              <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-lg">
-                <button
-                  onClick={() => setClockStyle("digital")}
-                  className={`flex-1 py-1 rounded-md text-[11px] font-medium transition-all ${
-                    clockStyle === "digital"
-                      ? "bg-white dark:bg-neutral-800 shadow-sm text-[var(--color-text)]"
-                      : "text-[var(--color-text-secondary)]"
-                  }`}
-                >
-                  数字时钟
-                </button>
-                <button
-                  onClick={() => setClockStyle("analog")}
-                  className={`flex-1 py-1 rounded-md text-[11px] font-medium transition-all ${
-                    clockStyle === "analog"
-                      ? "bg-white dark:bg-neutral-800 shadow-sm text-[var(--color-text)]"
-                      : "text-[var(--color-text-secondary)]"
-                  }`}
-                >
-                  指针表盘
-                </button>
-              </div>
-            </div>
+            <SettingRow title="表盘样式" layout="vertical">
+              <SegmentedControl
+                options={[
+                  { value: "digital", label: "数字时钟" },
+                  { value: "analog", label: "指针表盘" },
+                ]}
+                value={clockStyle}
+                onChange={setClockStyle}
+              />
+            </SettingRow>
 
             {clockStyle === "digital" && (
               <>
-                {/* 数字时钟子类型 */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70">数字特效</label>
-                  <div className="flex gap-1">
-                    {["minimal", "glow", "retro"].map((style) => (
-                      <button
-                        key={style}
-                        onClick={() => setDigitalStyle(style)}
-                        className={`flex-1 py-1 px-1.5 rounded-lg text-[10px] font-medium transition-all ${
-                          digitalStyle === style
-                            ? "bg-[var(--color-accent)] text-white"
-                            : "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)] hover:bg-black/10"
-                        }`}
-                      >
-                        {style === "minimal" ? "极简" : style === "glow" ? "霓虹" : "LED"}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <SettingRow title="数字特效" layout="vertical">
+                  <SegmentedControl
+                    options={[
+                      { value: "minimal", label: "极简" },
+                      { value: "glow", label: "霓虹" },
+                      { value: "retro", label: "LED" },
+                    ]}
+                    value={digitalStyle}
+                    onChange={setDigitalStyle}
+                    variant="accent"
+                  />
+                </SettingRow>
 
-                 {/* 字体颜色 */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70">文字颜色</label>
+                 <SettingRow title="文字颜色" layout="vertical">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    {[
-                      { key: "theme", label: "主题" },
-                      { key: "accent", label: "强调" },
-                      { key: "gradient-rainbow", label: "渐变" },
-                      { key: "#f9fafb", label: "象牙白" },
-                      { key: "#1f2937", label: "深炭黑" },
-                      { key: "#10b981", label: "极光绿" },
-                      { key: "#f97316", label: "活力橙" },
-                    ].map((col) => (
-                      <button
-                        key={col.key}
-                        onClick={() => setFontColor(col.key)}
-                        className={`py-0.5 px-2 rounded text-[10px] font-medium transition-all border ${
-                          fontColor === col.key
-                            ? "bg-[var(--color-accent)] border-transparent text-white"
-                            : "bg-black/5 dark:bg-white/5 border-transparent text-[var(--color-text-secondary)] hover:bg-black/10"
-                        }`}
-                      >
-                        {col.label}
-                      </button>
-                    ))}
-                    {/* 自定义文字颜色拾色器 */}
+                    <SegmentedControl
+                      options={[
+                        { value: "theme", label: "主题" },
+                        { value: "accent", label: "强调" },
+                        { value: "gradient-rainbow", label: "渐变" },
+                        { value: "#f9fafb", label: "象牙白" },
+                        { value: "#1f2937", label: "深炭黑" },
+                        { value: "#10b981", label: "极光绿" },
+                        { value: "#f97316", label: "活力橙" },
+                      ]}
+                      value={fontColor.startsWith("#") && !["#f9fafb", "#1f2937", "#10b981", "#f97316"].includes(fontColor) ? "" : fontColor}
+                      onChange={setFontColor}
+                      variant="accent"
+                    />
                     <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded px-1.5 py-0.5 border border-transparent">
                       <span className="text-[10px] text-[var(--color-text-secondary)] font-medium">自定义</span>
-                      <div className="relative w-4.5 h-4.5 rounded overflow-hidden border border-black/15 shrink-0 cursor-pointer">
-                        <input
-                          type="color"
-                          value={
-                            fontColor.startsWith("#") && 
-                            !["#f9fafb", "#1f2937", "#10b981", "#f97316"].includes(fontColor)
-                              ? fontColor
-                              : "#ffffff"
-                          }
-                          onChange={(e) => setFontColor(e.target.value)}
-                          className="absolute inset-[-5px] w-[200%] h-[200%] cursor-pointer"
-                        />
-                      </div>
+                      <ColorPicker
+                        size="sm"
+                        value={fontColor.startsWith("#") && !["#f9fafb", "#1f2937", "#10b981", "#f97316"].includes(fontColor) ? fontColor : "#ffffff"}
+                        onChange={setFontColor}
+                      />
                     </div>
                   </div>
-                </div>
+                </SettingRow>
 
                 {/* 字体缩放比例 */}
                 <div className="space-y-1.5">
@@ -388,15 +355,7 @@ export function WidgetSettingsPanel({
                       <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
                         {sw.label}
                       </span>
-                      <div className="relative flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={sw.val}
-                          onChange={(e) => sw.set(e.target.checked)}
-                          className="peer sr-only"
-                        />
-                        <div className="w-7 h-4 bg-black/10 dark:bg-white/10 rounded-full peer peer-checked:after:translate-x-[12px] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[var(--color-accent)] transition-colors"></div>
-                      </div>
+                      <SwitchToggle checked={sw.val} onChange={sw.set} />
                     </label>
                   ))}
                 </div>
@@ -409,116 +368,46 @@ export function WidgetSettingsPanel({
         return (
           <div className="space-y-3.5">
             {/* 便签底色 */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">便签背景色</label>
-              {/* 预设模板 */}
-              <div className="space-y-1">
-                <span className="text-[9px] text-[var(--color-text-secondary)] opacity-85 block">预设模板</span>
-                <div className="flex items-center gap-2">
-                  {[
-                    { hex: "#ffeb3b", label: "柠檬黄" },
-                    { hex: "#ff9800", label: "甜橙橙" },
-                    { hex: "#ffebef", label: "樱花粉" },
-                    { hex: "#e8f5e9", label: "薄荷绿" },
-                    { hex: "#e3f2fd", label: "冰晶蓝" },
-                    { hex: "#f3e5f5", label: "薰衣紫" },
-                  ].map((col) => (
-                    <button
-                      key={col.hex}
-                      onClick={() => setStickyColor(col.hex)}
-                      className="w-5 h-5 rounded-full border border-black/10 transition-transform hover:scale-110 active:scale-95 flex items-center justify-center"
-                      style={{ backgroundColor: col.hex }}
-                      title={col.label}
-                    >
-                      {stickyColor === col.hex && (
-                        <div className="w-1.5 h-1.5 bg-gray-800 rounded-full" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {/* 自定义背景色 — 物理分隔 */}
-              <div className="flex items-center justify-between border-t border-black/5 dark:border-white/5 pt-1.5 mt-1.5">
-                <span className="text-[9px] text-[var(--color-text-secondary)] opacity-85">自定义背景色</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-mono text-[var(--color-text-secondary)] opacity-80 uppercase">{stickyColor}</span>
-                  <div className="relative w-5 h-5 rounded-md overflow-hidden border border-black/15 shrink-0 cursor-pointer shadow-sm">
-                    <input
-                      type="color"
-                      value={stickyColor}
-                      onChange={(e) => setStickyColor(e.target.value)}
-                      className="absolute inset-[-5px] w-[200%] h-[200%] cursor-pointer"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <SettingRow title="便签背景色" layout="vertical">
+              <ColorPicker
+                value={stickyColor}
+                onChange={setStickyColor}
+                presets={[
+                  { color: "#ffeb3b", label: "柠檬黄" },
+                  { color: "#ff9800", label: "甜橙橙" },
+                  { color: "#ffebef", label: "樱花粉" },
+                  { color: "#e8f5e9", label: "薄荷绿" },
+                  { color: "#e3f2fd", label: "冰晶蓝" },
+                  { color: "#f3e5f5", label: "薰衣紫" },
+                ]}
+              />
+            </SettingRow>
 
             {/* 新增：便签文字颜色 */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">文字颜色</label>
-              <div className="flex items-center gap-2">
-                {[
-                  { hex: "#1f2937", label: "经典黑" },
-                  { hex: "#ffffff", label: "纯洁白" },
-                  { hex: "#1e3a8a", label: "复古蓝" },
-                  { hex: "#7f1d1d", label: "暗紫红" },
-                ].map((col) => (
-                  <button
-                    key={col.hex}
-                    onClick={() => setNoteFontColor(col.hex)}
-                    className="w-5 h-5 rounded-full border border-black/10 transition-transform hover:scale-110 active:scale-95 flex items-center justify-center text-[10px]"
-                    style={{ backgroundColor: col.hex }}
-                    title={col.label}
-                  >
-                    {noteFontColor === col.hex && (
-                      <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full" />
-                    )}
-                  </button>
-                ))}
-                {/* 自定义文字颜色 */}
-                <div className="flex items-center gap-1.5 ml-auto bg-black/5 dark:bg-white/5 rounded px-1.5 py-0.5 border border-transparent">
-                  <span className="text-[9px] text-[var(--color-text-secondary)] font-medium">自定义</span>
-                  <div className="relative w-4.5 h-4.5 rounded overflow-hidden border border-black/15 shrink-0 cursor-pointer shadow-sm">
-                    <input
-                      type="color"
-                      value={
-                        noteFontColor.startsWith("#") && 
-                        !["#1f2937", "#ffffff", "#1e3a8a", "#7f1d1d"].includes(noteFontColor)
-                          ? noteFontColor
-                          : "#1f2937"
-                      }
-                      onChange={(e) => setNoteFontColor(e.target.value)}
-                      className="absolute inset-[-5px] w-[200%] h-[200%] cursor-pointer"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <SettingRow title="文字颜色" layout="vertical">
+              <ColorPicker
+                value={noteFontColor}
+                onChange={setNoteFontColor}
+                presets={[
+                  { color: "#1f2937", label: "经典黑" },
+                  { color: "#ffffff", label: "纯洁白" },
+                  { color: "#1e3a8a", label: "复古蓝" },
+                  { color: "#7f1d1d", label: "暗紫红" },
+                ]}
+              />
+            </SettingRow>
 
-            {/* 字体系列选择 */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70">字体风格</label>
-              <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-lg">
-                {[
-                  { key: "default", label: "无衬线" },
-                  { key: "mono", label: "等宽" },
-                  { key: "kaiti", label: "楷体" },
-                ].map((f) => (
-                  <button
-                    key={f.key}
-                    onClick={() => setNoteFontFamily(f.key)}
-                    className={`flex-1 py-0.5 rounded text-[10px] font-medium transition-all ${
-                      noteFontFamily === f.key
-                        ? "bg-white dark:bg-neutral-800 shadow-sm text-[var(--color-text)]"
-                        : "text-[var(--color-text-secondary)]"
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <SettingRow title="字体风格" layout="vertical">
+              <SegmentedControl
+                options={[
+                  { value: "default", label: "无衬线" },
+                  { value: "mono", label: "等宽" },
+                  { value: "kaiti", label: "楷体" },
+                ]}
+                value={noteFontFamily}
+                onChange={setNoteFontFamily}
+              />
+            </SettingRow>
 
             {/* 排版微调 */}
             <div className="space-y-1.5">
@@ -537,29 +426,17 @@ export function WidgetSettingsPanel({
               <Slider min={1.2} max={2.0} step={0.1} value={noteLineHeight} onChange={setNoteLineHeight} />
             </div>
 
-            {/* 对齐方式 */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70">对齐方式</label>
-              <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-lg">
-                {[
-                  { key: "left", label: "左对齐" },
-                  { key: "center", label: "居中" },
-                  { key: "right", label: "右对齐" },
-                ].map((a) => (
-                  <button
-                    key={a.key}
-                    onClick={() => setNoteTextAlign(a.key)}
-                    className={`flex-1 py-0.5 rounded text-[10px] font-medium transition-all ${
-                      noteTextAlign === a.key
-                        ? "bg-white dark:bg-neutral-800 shadow-sm text-[var(--color-text)]"
-                        : "text-[var(--color-text-secondary)]"
-                    }`}
-                  >
-                    {a.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <SettingRow title="对齐方式" layout="vertical">
+              <SegmentedControl
+                options={[
+                  { value: "left", label: "左对齐" },
+                  { value: "center", label: "居中" },
+                  { value: "right", label: "右对齐" },
+                ]}
+                value={noteTextAlign}
+                onChange={setNoteTextAlign}
+              />
+            </SettingRow>
 
             {/* 卡片装饰开关 */}
             <div className="space-y-2.5 pt-1">
@@ -571,15 +448,7 @@ export function WidgetSettingsPanel({
                   <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
                     {sw.label}
                   </span>
-                  <div className="relative flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={sw.val}
-                      onChange={(e) => sw.set(e.target.checked)}
-                      className="peer sr-only"
-                    />
-                    <div className="w-7 h-4 bg-black/10 dark:bg-white/10 rounded-full peer peer-checked:after:translate-x-[12px] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[var(--color-accent)] transition-colors"></div>
-                  </div>
+                  <SwitchToggle checked={sw.val} onChange={sw.set} />
                 </label>
               ))}
             </div>
@@ -589,72 +458,42 @@ export function WidgetSettingsPanel({
       case "systemMonitor":
         return (
           <div className="space-y-3.5">
-            {/* 布局排版 */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">布局排版</label>
-              <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-lg">
-                {[
-                  { key: "list", label: "进度列表" },
-                  { key: "gauge", label: "圆环表盘" },
-                  { key: "compact-dashboard", label: "极客控制台" },
-                ].map((mode) => (
-                  <button
-                    key={mode.key}
-                    onClick={() => setViewMode(mode.key)}
-                    className={`flex-1 py-1 rounded-md text-[10px] font-medium transition-all ${
-                      viewMode === mode.key
-                        ? "bg-white dark:bg-neutral-800 shadow-sm text-[var(--color-text)] font-semibold"
-                        : "text-[var(--color-text-secondary)]"
-                    }`}
-                  >
-                    {mode.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <SettingRow title="布局排版" layout="vertical">
+              <SegmentedControl
+                options={[
+                  { value: "list", label: "进度列表" },
+                  { value: "gauge", label: "圆环表盘" },
+                  { value: "compact-dashboard", label: "极客控制台" },
+                ]}
+                value={viewMode}
+                onChange={setViewMode}
+              />
+            </SettingRow>
 
-            {/* 指标颜色 */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">基准指示色</label>
+            <SettingRow title="基准指示色" layout="vertical">
               <div className="flex flex-wrap items-center gap-1.5">
-                {[
-                  { key: "theme", label: "主题" },
-                  { key: "accent", label: "强调" },
-                  { key: "#3b82f6", label: "科技蓝" },
-                  { key: "#10b981", label: "极光绿" },
-                  { key: "#f97316", label: "活力橙" },
-                ].map((col) => (
-                  <button
-                    key={col.key}
-                    onClick={() => setMonitorColor(col.key)}
-                    className={`py-0.5 px-2 rounded text-[10px] font-medium transition-all border ${
-                      monitorColor === col.key
-                        ? "bg-[var(--color-accent)] border-transparent text-white"
-                        : "bg-black/5 dark:bg-white/5 border-transparent text-[var(--color-text-secondary)] hover:bg-black/10"
-                    }`}
-                  >
-                    {col.label}
-                  </button>
-                ))}
-                {/* 自定义监控基准色 */}
+                <SegmentedControl
+                  options={[
+                    { value: "theme", label: "主题" },
+                    { value: "accent", label: "强调" },
+                    { value: "#3b82f6", label: "科技蓝" },
+                    { value: "#10b981", label: "极光绿" },
+                    { value: "#f97316", label: "活力橙" },
+                  ]}
+                  value={monitorColor.startsWith("#") && !["#3b82f6", "#10b981", "#f97316"].includes(monitorColor) ? "" : monitorColor}
+                  onChange={setMonitorColor}
+                  variant="accent"
+                />
                 <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded px-1.5 py-0.5 border border-transparent">
                   <span className="text-[10px] text-[var(--color-text-secondary)] font-medium">自定义</span>
-                  <div className="relative w-4.5 h-4.5 rounded overflow-hidden border border-black/15 shrink-0 cursor-pointer shadow-sm">
-                    <input
-                      type="color"
-                      value={
-                        monitorColor.startsWith("#") && 
-                        !["#3b82f6", "#10b981", "#f97316"].includes(monitorColor)
-                          ? monitorColor
-                          : "#3b82f6"
-                      }
-                      onChange={(e) => setMonitorColor(e.target.value)}
-                      className="absolute inset-[-5px] w-[200%] h-[200%] cursor-pointer"
-                    />
-                  </div>
+                  <ColorPicker
+                    size="sm"
+                    value={monitorColor.startsWith("#") && !["#3b82f6", "#10b981", "#f97316"].includes(monitorColor) ? monitorColor : "#3b82f6"}
+                    onChange={setMonitorColor}
+                  />
                 </div>
               </div>
-            </div>
+            </SettingRow>
 
             {/* 刷新频率 */}
             <div className="space-y-1.5">
@@ -685,15 +524,7 @@ export function WidgetSettingsPanel({
                   <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
                     {sw.label}
                   </span>
-                  <div className="relative flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={sw.val}
-                      onChange={(e) => sw.set(e.target.checked)}
-                      className="peer sr-only"
-                    />
-                    <div className="w-7 h-4 bg-black/10 dark:bg-white/10 rounded-full peer peer-checked:after:translate-x-[12px] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[var(--color-accent)] transition-colors"></div>
-                  </div>
+                  <SwitchToggle checked={sw.val} onChange={sw.set} />
                 </label>
               ))}
             </div>
@@ -703,42 +534,26 @@ export function WidgetSettingsPanel({
       case "hitokoto":
         return (
           <div className="space-y-3.5">
-            {/* 数据来源 */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">数据来源</label>
-              <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-lg">
-                {[
-                  { key: "api", label: "API 自动拉取" },
-                  { key: "custom", label: "自定义文本" },
-                ].map((mode) => (
-                  <button
-                    key={mode.key}
-                    type="button"
-                    onClick={() => {
-                      setHitokotoSourceMode(mode.key);
-                      // 切换模式时自动配置一个合理的点击动作默认值
-                      if (mode.key === "custom" && hitokotoClickAction === "refresh") {
-                        setHitokotoClickAction("copy");
-                      }
-                    }}
-                    className={`flex-1 py-1 rounded-md text-[10px] font-medium transition-all ${
-                      hitokotoSourceMode === mode.key
-                        ? "bg-white dark:bg-neutral-800 shadow-sm text-[var(--color-text)] font-semibold"
-                        : "text-[var(--color-text-secondary)]"
-                    }`}
-                  >
-                    {mode.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <SettingRow title="数据来源" layout="vertical">
+              <SegmentedControl
+                options={[
+                  { value: "api", label: "API 自动拉取" },
+                  { value: "custom", label: "自定义文本" },
+                ]}
+                value={hitokotoSourceMode}
+                onChange={(val) => {
+                  setHitokotoSourceMode(val);
+                  if (val === "custom" && hitokotoClickAction === "refresh") {
+                    setHitokotoClickAction("copy");
+                  }
+                }}
+              />
+            </SettingRow>
 
             {/* API 模式下的配置 */}
             {hitokotoSourceMode === "api" && (
               <>
-                {/* 语录分类 */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">语录类型</label>
+                <SettingRow title="语录类型" layout="vertical">
                   <CustomSelect
                     value={hitokotoCategory}
                     onChange={setHitokotoCategory}
@@ -756,11 +571,9 @@ export function WidgetSettingsPanel({
                       { value: "j", label: "其他 (Other)" },
                     ]}
                   />
-                </div>
+                </SettingRow>
 
-                {/* 刷新频率 */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">自动刷新频率</label>
+                <SettingRow title="自动刷新频率" layout="vertical">
                   <CustomSelect
                     value={String(hitokotoRefreshInterval)}
                     onChange={(val) => setHitokotoRefreshInterval(Number(val))}
@@ -776,15 +589,14 @@ export function WidgetSettingsPanel({
                     ]}
                     position="top"
                   />
-                </div>
+                </SettingRow>
               </>
             )}
 
             {/* 自定义模式下的配置 */}
             {hitokotoSourceMode === "custom" && (
               <div className="space-y-2.5">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">语录文本</label>
+                <SettingRow title="语录文本" layout="vertical">
                   <textarea
                     value={hitokotoCustomText}
                     onChange={(e) => setHitokotoCustomText(e.target.value)}
@@ -792,10 +604,9 @@ export function WidgetSettingsPanel({
                     rows={2}
                     className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-2 py-1.5 text-[11px] text-[var(--color-text)] outline-none focus:ring-1 focus:ring-[var(--color-accent)] resize-none"
                   />
-                </div>
+                </SettingRow>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-semibold text-[var(--color-text)] opacity-60 block">作者</label>
+                  <SettingRow title="作者" layout="vertical">
                     <input
                       type="text"
                       value={hitokotoCustomAuthor}
@@ -803,9 +614,8 @@ export function WidgetSettingsPanel({
                       placeholder="选填"
                       className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-2 py-1 text-[11px] text-[var(--color-text)] outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
                     />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-semibold text-[var(--color-text)] opacity-60 block">出处/来源</label>
+                  </SettingRow>
+                  <SettingRow title="出处/来源" layout="vertical">
                     <input
                       type="text"
                       value={hitokotoCustomFrom}
@@ -813,14 +623,12 @@ export function WidgetSettingsPanel({
                       placeholder="选填"
                       className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-2 py-1 text-[11px] text-[var(--color-text)] outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
                     />
-                  </div>
+                  </SettingRow>
                 </div>
               </div>
             )}
 
-            {/* 点击动作 */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">点击卡片动作</label>
+            <SettingRow title="点击卡片动作" layout="vertical">
               <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-lg">
                 {[
                   { key: "refresh", label: "刷新语录" },
@@ -842,76 +650,44 @@ export function WidgetSettingsPanel({
                   </button>
                 ))}
               </div>
-            </div>
+            </SettingRow>
 
-            {/* 文字颜色 */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">文字颜色</label>
+            <SettingRow title="文字颜色" layout="vertical">
               <div className="flex flex-wrap items-center gap-1.5">
-                {[
-                  { key: "theme", label: "主题" },
-                  { key: "accent", label: "强调" },
-                  { key: "gradient-rainbow", label: "渐变" },
-                  { key: "#ffffff", label: "纯白" },
-                  { key: "#1f2937", label: "深炭" },
-                ].map((col) => (
-                  <button
-                    key={col.key}
-                    type="button"
-                    onClick={() => setHitokotoFontColor(col.key)}
-                    className={`py-0.5 px-2 rounded text-[10px] font-medium transition-all border ${
-                      hitokotoFontColor === col.key
-                        ? "bg-[var(--color-accent)] border-transparent text-white"
-                        : "bg-black/5 dark:bg-white/5 border-transparent text-[var(--color-text-secondary)] hover:bg-black/10"
-                    }`}
-                  >
-                    {col.label}
-                  </button>
-                ))}
-                {/* 自定义拾色器 */}
+                <SegmentedControl
+                  options={[
+                    { value: "theme", label: "主题" },
+                    { value: "accent", label: "强调" },
+                    { value: "gradient-rainbow", label: "渐变" },
+                    { value: "#ffffff", label: "纯白" },
+                    { value: "#1f2937", label: "深炭" },
+                  ]}
+                  value={hitokotoFontColor.startsWith("#") && !["#ffffff", "#1f2937"].includes(hitokotoFontColor) ? "" : hitokotoFontColor}
+                  onChange={setHitokotoFontColor}
+                  variant="accent"
+                />
                 <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded px-1.5 py-0.5 border border-transparent">
                   <span className="text-[10px] text-[var(--color-text-secondary)] font-medium">自定义</span>
-                  <div className="relative w-4.5 h-4.5 rounded overflow-hidden border border-black/15 shrink-0 cursor-pointer shadow-sm">
-                    <input
-                      type="color"
-                      value={
-                        hitokotoFontColor.startsWith("#") &&
-                        !["#ffffff", "#1f2937"].includes(hitokotoFontColor)
-                          ? hitokotoFontColor
-                          : "#10b981"
-                      }
-                      onChange={(e) => setHitokotoFontColor(e.target.value)}
-                      className="absolute inset-[-5px] w-[200%] h-[200%] cursor-pointer"
-                    />
-                  </div>
+                  <ColorPicker
+                    size="sm"
+                    value={hitokotoFontColor.startsWith("#") && !["#ffffff", "#1f2937"].includes(hitokotoFontColor) ? hitokotoFontColor : "#10b981"}
+                    onChange={setHitokotoFontColor}
+                  />
                 </div>
               </div>
-            </div>
+            </SettingRow>
 
-            {/* 文字对齐 */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold text-[var(--color-text)] opacity-70 block">文字对齐</label>
-              <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-lg">
-                {[
-                  { key: "left", label: "左对齐" },
-                  { key: "center", label: "居中" },
-                  { key: "right", label: "右对齐" },
-                ].map((align) => (
-                  <button
-                    key={align.key}
-                    type="button"
-                    onClick={() => setHitokotoTextAlign(align.key)}
-                    className={`flex-1 py-1 rounded-md text-[10px] font-medium transition-all ${
-                      hitokotoTextAlign === align.key
-                        ? "bg-white dark:bg-neutral-800 shadow-sm text-[var(--color-text)] font-semibold"
-                        : "text-[var(--color-text-secondary)]"
-                    }`}
-                  >
-                    {align.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <SettingRow title="文字对齐" layout="vertical">
+              <SegmentedControl
+                options={[
+                  { value: "left", label: "左对齐" },
+                  { value: "center", label: "居中" },
+                  { value: "right", label: "右对齐" },
+                ]}
+                value={hitokotoTextAlign}
+                onChange={setHitokotoTextAlign}
+              />
+            </SettingRow>
 
             {/* 字号缩放比例 */}
             <div className="space-y-1.5">
@@ -934,30 +710,14 @@ export function WidgetSettingsPanel({
                 <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
                   显示来源和作者
                 </span>
-                <div className="relative flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={hitokotoShowAuthor}
-                    onChange={(e) => setHitokotoShowAuthor(e.target.checked)}
-                    className="peer sr-only"
-                  />
-                  <div className="w-7 h-4 bg-black/10 dark:bg-white/10 rounded-full peer peer-checked:after:translate-x-[12px] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[var(--color-accent)] transition-colors"></div>
-                </div>
+                <SwitchToggle checked={hitokotoShowAuthor} onChange={setHitokotoShowAuthor} />
               </label>
 
               <label className="flex items-center justify-between cursor-pointer group">
                 <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
                   显示双引号装饰
                 </span>
-                <div className="relative flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={hitokotoShowQuotes}
-                    onChange={(e) => setHitokotoShowQuotes(e.target.checked)}
-                    className="peer sr-only"
-                  />
-                  <div className="w-7 h-4 bg-black/10 dark:bg-white/10 rounded-full peer peer-checked:after:translate-x-[12px] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[var(--color-accent)] transition-colors"></div>
-                </div>
+                <SwitchToggle checked={hitokotoShowQuotes} onChange={setHitokotoShowQuotes} />
               </label>
             </div>
           </div>
@@ -1020,14 +780,47 @@ export function WidgetSettingsPanel({
         {/* TAB 1: 卡片外观设置 */}
         {activeTab === "style" && (
           <div className="space-y-3.5">
-            {/* 不透明度 */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] font-medium">
-                <span>背景不透明度</span>
-                <span>{Math.round(opacity * 100)}%</span>
+            {/* 背景设置 */}
+            {widgetConfig.widgetType !== "stickyNote" && (
+              <SettingRow title="背景设置" layout="vertical">
+                <SegmentedControl
+                  options={[
+                    { value: "theme", label: "跟随主题" },
+                    { value: "custom", label: "自定义" },
+                  ]}
+                  value={bgColor === "theme" || !bgColor ? "theme" : "custom"}
+                  onChange={(v) => setBgColor(v === "theme" ? "theme" : "#000000")}
+                  variant="accent"
+                />
+                <div className="flex items-center gap-3">
+                  {bgColor !== "theme" && bgColor && (
+                    <ColorPicker
+                      value={bgColor.startsWith("#") ? bgColor : "#000000"}
+                      onChange={setBgColor}
+                      size="md"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-2">
+                      <span>不透明度</span>
+                      <span>{Math.round(opacity * 100)}%</span>
+                    </div>
+                    <Slider min={0} max={1} step={0.05} value={opacity} onChange={setOpacity} />
+                  </div>
+                </div>
+              </SettingRow>
+            )}
+
+            {/* 便签类小组件只显示不透明度 */}
+            {widgetConfig.widgetType === "stickyNote" && (
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] font-medium">
+                  <span>背景不透明度</span>
+                  <span>{Math.round(opacity * 100)}%</span>
+                </div>
+                <Slider min={0} max={1} step={0.05} value={opacity} onChange={setOpacity} />
               </div>
-              <Slider min={0} max={1} step={0.05} value={opacity} onChange={setOpacity} />
-            </div>
+            )}
 
             {/* 圆角大小 */}
             <div className="space-y-1.5">
@@ -1043,15 +836,7 @@ export function WidgetSettingsPanel({
               <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
                 完全透明背景 (隐藏毛玻璃层)
               </span>
-              <div className="relative flex items-center">
-                <input
-                  type="checkbox"
-                  checked={transparentBackground}
-                  onChange={(e) => setTransparentBackground(e.target.checked)}
-                  className="peer sr-only"
-                />
-                <div className="w-7 h-4 bg-black/10 dark:bg-white/10 rounded-full peer peer-checked:after:translate-x-[12px] after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[var(--color-accent)] transition-colors"></div>
-              </div>
+              <SwitchToggle checked={transparentBackground} onChange={setTransparentBackground} />
             </label>
           </div>
         )}
@@ -1091,65 +876,4 @@ export function WidgetSettingsPanel({
   );
 }
 
-function CustomSelect({
-  value,
-  onChange,
-  options,
-  position = "bottom",
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: { value: string; label: string }[];
-  position?: "top" | "bottom";
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const currentOption = options.find((o) => o.value === value) || options[0];
-
-  return (
-    <div ref={dropdownRef} className="relative w-full">
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full text-[11px] bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded-lg px-2.5 py-1.5 text-left outline-none border border-black/10 dark:border-white/10 flex justify-between items-center cursor-default hover:bg-black/10 dark:hover:bg-white/10 transition-colors animate-none"
-      >
-        <span>{currentOption?.label}</span>
-        <span className="text-[9px] opacity-60">▼</span>
-      </button>
-      {isOpen && (
-        <div className={cn(
-          "absolute z-[110] left-0 right-0 bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-lg shadow-xl overflow-hidden py-1 max-h-[160px] overflow-y-auto hidden-native-scrollbar",
-          position === "top" ? "bottom-full mb-1" : "top-full mt-1"
-        )}>
-          {options.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => {
-                onChange(opt.value);
-                setIsOpen(false);
-              }}
-              className={cn(
-                "w-full text-left px-3 py-1.5 text-[11px] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-default block",
-                opt.value === value ? "text-[var(--color-accent)] font-semibold" : "text-[var(--color-text)]"
-              )}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}

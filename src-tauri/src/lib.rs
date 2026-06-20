@@ -412,6 +412,7 @@ pub fn run() {
             commands::system::get_wallpaper_base64,
             commands::system::get_wallpaper_engine_preview,
             commands::system::capture_desktop_background,
+            commands::system::get_system_info,
             clipboard::copy_files_to_clipboard,
             clipboard::get_files_from_clipboard,
             clipboard::check_clipboard_has_files,

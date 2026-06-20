@@ -12,6 +12,7 @@ import {
 	Gamepad2,
 	LayoutGrid,
 	Plus,
+	Puzzle,
 	RefreshCw,
 	Settings,
 	Tag,
@@ -31,8 +32,11 @@ import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useToastStore } from "@/stores/toastStore";
+import { useWidgetStore } from "@/stores/widgetStore";
 import { DesktopGrid } from "./DesktopGrid";
 import { useHistoryStore } from "@/stores/historyStore";
+import { WidgetSelectorDialog } from "@/components/Widget/WidgetSelectorDialog";
+import type { Position } from "@/types/container";
 
 export default function DesktopLayer() {
 	const containers = useContainerStore((state) => state.containers);
@@ -53,6 +57,8 @@ export default function DesktopLayer() {
 		setDropPrompt,
 	} = useDesktopStore();
 	const { settings } = useSettingsStore();
+	const fetchCustomWidgets = useWidgetStore((s) => s.fetchCustomWidgets);
+	useEffect(() => { fetchCustomWidgets(); }, []);
 	const [menuState, setMenuState] = useState<{
 		visible: boolean;
 		x: number;
@@ -80,6 +86,8 @@ export default function DesktopLayer() {
 		x: number;
 		y: number;
 	} | null>(null);
+	const [widgetSelectorOpen, setWidgetSelectorOpen] = useState(false);
+	const [widgetSelectorPos, setWidgetSelectorPos] = useState<Position>({ x: 0, y: 0 });
 
 	const prevGridWidth = useRef(settings.gridWidth);
 	const prevGridHeight = useRef(settings.gridHeight);
@@ -686,6 +694,18 @@ export default function DesktopLayer() {
 						}
 					},
 				},
+				{
+					divider: true,
+					onClick: () => {},
+				},
+				{
+					label: "新建小组件",
+					icon: <Puzzle size={14} />,
+					onClick: () => {
+						setWidgetSelectorPos({ x: menuState.x, y: menuState.y });
+						setWidgetSelectorOpen(true);
+					},
+				},
 			],
 		},
 		{ divider: true, onClick: () => {} },
@@ -1095,6 +1115,12 @@ export default function DesktopLayer() {
 					}}
 				/>
 			)}
+
+			<WidgetSelectorDialog
+				isOpen={widgetSelectorOpen}
+				onClose={() => setWidgetSelectorOpen(false)}
+				position={widgetSelectorPos}
+			/>
 		</div>
 	);
 }

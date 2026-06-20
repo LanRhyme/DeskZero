@@ -1,9 +1,12 @@
 use crate::models::Settings;
 use crate::storage::settings_store;
+use std::sync::{LazyLock, Mutex};
+use sysinfo::System;
 use tauri::Manager;
-use std::sync::Mutex;
 
 static SETTINGS_LOCK: Mutex<()> = Mutex::new(());
+
+static SYSTEM: LazyLock<Mutex<System>> = LazyLock::new(|| Mutex::new(System::new()));
 
 #[tauri::command]
 pub fn get_settings() -> Result<Settings, String> {
@@ -34,6 +37,59 @@ pub fn drag_settings_window(app: tauri::AppHandle) {
 #[cfg(target_os = "windows")]
 extern "system" {
     fn SystemParametersInfoW(uiAction: u32, uiParam: u32, pvParam: *mut u16, fWinIni: u32) -> i32;
+}
+
+/// 系统监控信息
+#[derive(serde::Serialize)]
+pub struct SystemInfo {
+    pub cpu_usage: f32,
+    pub memory_used: u64,
+    pub memory_total: u64,
+    pub disk_used: u64,
+    pub disk_total: u64,
+}
+
+#[tauri::command]
+pub fn get_system_info() -> Result<SystemInfo, String> {
+    use sysinfo::Disks;
+
+    let mut sys = SYSTEM.lock().map_err(|e| format!("锁获取失败: {}", e))?;
+    sys.refresh_cpu_usage();
+    sys.refresh_memory();
+
+    let cpu_usage = sys.global_cpu_info().cpu_usage();
+    let memory_used = sys.used_memory();
+    let memory_total = sys.total_memory();
+
+    // Windows 下查找 C:\ 盘，其他平台查找 / 挂载点
+    #[cfg(target_os = "windows")]
+    let root_path = std::path::Path::new("C:\\");
+    #[cfg(not(target_os = "windows"))]
+    let root_path = std::path::Path::new("/");
+
+    let disks = Disks::new_with_refreshed_list();
+    let (disk_used, disk_total) = disks
+        .iter()
+        .filter(|d| d.mount_point() == root_path)
+        .map(|d| (d.total_space() - d.available_space(), d.total_space()))
+        .next()
+        .unwrap_or_else(|| {
+            // 未找到根磁盘，汇总所有磁盘
+            disks
+                .iter()
+                .map(|d| (d.total_space() - d.available_space(), d.total_space()))
+                .fold((0, 0), |(a_used, a_total), (used, total)| {
+                    (a_used + used, a_total + total)
+                })
+        });
+
+    Ok(SystemInfo {
+        cpu_usage,
+        memory_used,
+        memory_total,
+        disk_used,
+        disk_total,
+    })
 }
 
 #[tauri::command]

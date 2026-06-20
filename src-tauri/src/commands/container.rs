@@ -48,6 +48,11 @@ pub fn create_container(
             width: 2.0 * step_x - settings.grid_gap_x as f64,
             height: 2.0 * step_y - settings.grid_gap_y as f64,
         };
+    } else if container_type == ContainerType::Widget {
+        style.background_opacity = 0.5;
+        style.corner_radius = 12.0;
+        // Widget 默认大小由前端根据具体小组件类型设置
+        // Rust 端使用通用默认值，前端会在创建后根据 widgetType 调整
     }
 
     let container = Container {

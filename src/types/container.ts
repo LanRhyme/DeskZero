@@ -1,6 +1,6 @@
 import type { Item } from "./item";
 
-export type ContainerType = "normal" | "mapping" | "folder" | "game" | "iconShow";
+export type ContainerType = "normal" | "mapping" | "folder" | "game" | "iconShow" | "widget";
 
 export interface Position {
 	x: number;

@@ -5,3 +5,4 @@ src-tauri/target/
 *.log
 .DS_Store
 Thumbs.db
+test-widget.html

@@ -52,9 +52,19 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 			}
 		}
 
+		// 跳过可交互元素（textarea、input、contenteditable），不触发拖拽
+		const target = e.target as HTMLElement;
+		if (
+			target.tagName === "TEXTAREA" ||
+			target.tagName === "INPUT" ||
+			target.isContentEditable
+		) {
+			return;
+		}
+
 		e.stopPropagation();
-		const target = e.currentTarget as HTMLElement;
-		target.setPointerCapture(e.pointerId);
+		const elem = e.currentTarget as HTMLElement;
+		elem.setPointerCapture(e.pointerId);
 
 		dragInfo.current = {
 			startX: e.clientX,

@@ -17,6 +17,7 @@ import { ContainerSettings } from "./ContainerSettings";
 import { FolderContainer } from "./FolderContainer";
 import { GameContainer } from "./GameContainer";
 import { IconShowContainer } from "./IconShowContainer";
+import { WidgetContainer } from "../Widget/WidgetContainer";
 
 interface ContainerProps {
 	container: ContainerType;
@@ -31,6 +32,9 @@ export function Container({ container }: ContainerProps) {
 	}
 	if (container.type === "iconShow") {
 		return <IconShowContainer container={container} />;
+	}
+	if (container.type === "widget") {
+		return <WidgetContainer container={container} />;
 	}
 	return <NormalContainer container={container} />;
 }

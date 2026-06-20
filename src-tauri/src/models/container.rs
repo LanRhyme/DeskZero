@@ -10,6 +10,7 @@ pub enum ContainerType {
     Folder,
     Game,
     IconShow,
+    Widget,
     /// 保留未知类型的原始字符串，防止跨版本数据丢失
     Other(String),
 }
@@ -22,6 +23,7 @@ impl Serialize for ContainerType {
             ContainerType::Folder => "folder",
             ContainerType::Game => "game",
             ContainerType::IconShow => "iconShow",
+            ContainerType::Widget => "widget",
             ContainerType::Other(raw) => raw.as_str(),
         };
         serializer.serialize_str(s)
@@ -37,6 +39,7 @@ impl<'de> Deserialize<'de> for ContainerType {
             "folder" => ContainerType::Folder,
             "game" => ContainerType::Game,
             "iconShow" => ContainerType::IconShow,
+            "widget" => ContainerType::Widget,
             _ => ContainerType::Other(s),
         })
     }

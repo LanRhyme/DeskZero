@@ -94,6 +94,33 @@ Rust 测试：在 `src-tauri/` 下执行 `cargo test`。
 - Rust 调试日志用 `eprintln!`（终端可见，应用内不显示）
 - 提交信息应使用中文
 
+## 可复用 UI 组件
+
+所有设置面板和配置 UI 必须使用 `src/components/UI/` 下的共享组件，禁止内联重复实现。
+
+### 组件清单
+
+| 组件 | 文件 | 用途 |
+|------|------|------|
+| `SwitchToggle` | `UI/SwitchToggle.tsx` | 开关切换，封装 `@headlessui/react` Switch |
+| `Slider` | `UI/Slider.tsx` | 滑块，自定义 pointer-event 实现 |
+| `NumberInput` | `UI/NumberInput.tsx` | 数字步进器（+/- 按钮 + 文本输入） |
+| `ColorPicker` | `UI/ColorPicker.tsx` | Canvas 2D 色板 + hex 输入 + 预设色块 |
+| `SegmentedControl` | `UI/SegmentedControl.tsx` | 分段按钮组（如 主题切换 light/dark/system） |
+| `CustomSelect` | `UI/CustomSelect.tsx` | 自定义下拉选择器，支持 top/bottom 定位 |
+| `TextInput` / `TextArea` | `UI/TextInput.tsx` | 文本输入框 / 多行文本域 |
+| `SettingRow` | `UI/SettingRow.tsx` | 设置行布局（标题 + 描述 + 控件），支持 horizontal/vertical |
+| `ConfirmDialog` | `UI/ConfirmDialog.tsx` | 确认对话框，framer-motion 动画 |
+| `ToastContainer` | `UI/ToastContainer.tsx` | Toast 通知 |
+
+### 使用规范
+
+1. **禁止内联重复实现**：不得在设置面板中自行实现 toggle、slider、color picker 等控件，必须引用共享组件。
+2. **设置面板 portal 模式**：所有容器/小组件的设置面板必须通过 `createPortal` 渲染到 `document.body`，外层包裹 `<div className="fixed inset-0 z-[99] settings-backdrop">` 阻止事件穿透。
+3. **事件隔离**：设置面板的 backdrop 必须阻止 `onPointerDown` 和 `onClick` 冒泡，桌面层的 `onPointerDown` / `onDoubleClick` / `handleContextMenu` 需检查 `.settings-backdrop` 守卫。
+4. **容器 `touch-none`**：可拖拽容器的根 `motion.div` 必须包含 `touch-none` class，否则桌面框选会穿透。
+5. **新增共享组件**：当两个及以上面板出现相同 UI 模式时，应提取为 `src/components/UI/` 下的共享组件。
+
 ## 代码健壮性规范
 
 此规范确保数据在跨版本升级、功能增减时保持安全，不丢失、不损坏。适用于任何未来负责本项目的 AI 或开发者。

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Edit2, Settings, Trash2 } from "lucide-react";
+import { ChevronDown, Edit2, Settings, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useDrag } from "@/hooks/useDrag";
@@ -40,7 +40,7 @@ export function Container({ container }: ContainerProps) {
 }
 
 function NormalContainer({ container }: ContainerProps) {
-	const { updateContainerPosition, updateContainerSize, deleteContainer, updateContainerName } = useContainerStore();
+	const { updateContainerPosition, updateContainerSize, deleteContainer, updateContainerName, updateContainerStyle } = useContainerStore();
 	const { settings } = useSettingsStore();
 	const { wallpaper } = useDesktopStore();
 	const dragHandleRef = useRef<HTMLDivElement>(null);
@@ -224,6 +224,14 @@ function NormalContainer({ container }: ContainerProps) {
 		settings.theme === "dark" || (settings.theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
 	const bgOpacity = container.style.backgroundOpacity ?? 0.3;
+	const isCollapsible = container.style.collapsible === true;
+	const isCollapsed = isCollapsible && container.style.collapsed === true;
+
+	const toggleCollapse = () => {
+		if (!isCollapsible) return;
+		updateContainerStyle(container.id, { collapsed: !isCollapsed });
+	};
+
 	const customBackground =
 		container.style.backgroundColor === "theme" ||
 		!container.style.backgroundColor
@@ -264,7 +272,8 @@ function NormalContainer({ container }: ContainerProps) {
 					x: pos.x + resizePosOffset.x,
 					y: pos.y + resizePosOffset.y,
 					width: size.width,
-					height: size.height,
+					height: isCollapsed ? 28 : size.height,
+					overflow: isCollapsed ? "hidden" : undefined,
 					borderRadius: cornerRadius,
 					zIndex: isDragging || isResizing ? 40 : 10,
 					backgroundColor:
@@ -286,6 +295,7 @@ function NormalContainer({ container }: ContainerProps) {
 					"flex flex-col overflow-hidden transition-colors border shadow-xl select-none relative",
 					"border-[var(--color-border)]",
 					isDragging && "shadow-2xl ring-1 ring-black/10 dark:ring-white/10",
+					isCollapsible && !isResizing && "transition-[height] duration-200 ease-in-out",
 				)}
 				onContextMenu={handleContextMenu}
 			>
@@ -316,8 +326,16 @@ function NormalContainer({ container }: ContainerProps) {
 					<div
 						ref={dragHandleRef}
 						{...listeners}
-						className="flex items-center justify-center px-2 py-1 transition-colors cursor-move touch-none relative min-h-[24px]"
-						style={{ backgroundColor: "transparent" }} // Inherits inner color
+						className={cn(
+							"flex items-center justify-center px-2 py-1 transition-colors cursor-move touch-none relative min-h-[24px]",
+							isCollapsible && "cursor-pointer",
+						)}
+						style={{ backgroundColor: "transparent" }}
+						onClick={() => {
+							if (!isDragging && isCollapsible) {
+								toggleCollapse();
+							}
+						}}
 					>
 						{isEditingName ? (
 							<input
@@ -357,10 +375,21 @@ function NormalContainer({ container }: ContainerProps) {
 								{container.name}
 							</div>
 						)}
+						{isCollapsible && (
+							<ChevronDown
+								size={12}
+								className={cn(
+									"shrink-0 transition-transform duration-200",
+									isCollapsed && "-rotate-90",
+								)}
+								style={{ color: headerColor }}
+							/>
+						)}
 					</div>
 				)}
 
 				{/* Body - Relative for free layout */}
+				{!isCollapsed && (
 				<div className="relative flex-1 overflow-hidden">
 					<motion.div
 						layoutScroll
@@ -395,6 +424,7 @@ function NormalContainer({ container }: ContainerProps) {
 						)}
 					/>
 				</div>
+				)}
 
 				{/* Resize Handle (Bottom Left) */}
 				<div

@@ -39,6 +39,8 @@ export interface ContainerStyle {
 	hoverAnimation?: string;
 	showNamesInside?: boolean;
 	iconGapRatio?: number;
+	collapsible?: boolean;
+	collapsed?: boolean;
 }
 
 export interface Container {

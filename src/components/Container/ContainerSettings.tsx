@@ -49,6 +49,9 @@ export function ContainerSettings({
 	const [cornerRadius, setCornerRadius] = useState(
 		container.style.cornerRadius ?? 10,
 	);
+	const [collapsible, setCollapsible] = useState(
+		container.style.collapsible ?? false,
+	);
 
 	const containerRef = useRef<HTMLDivElement>(null);
 
@@ -95,6 +98,7 @@ export function ContainerSettings({
 			showDetails,
 			hideAppNames,
 			cornerRadius,
+			collapsible,
 		});
 		onClose();
 	};
@@ -270,6 +274,15 @@ export function ContainerSettings({
 						</label>
 					</div>
 				</motion.div>
+
+				<div className="space-y-3">
+					<label className="flex items-center gap-2 cursor-pointer group">
+						<SwitchToggle checked={collapsible} onChange={setCollapsible} />
+						<span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
+							点击头部收起内容
+						</span>
+					</label>
+				</div>
 
 				<div className="pt-4 flex gap-2">
 					<button

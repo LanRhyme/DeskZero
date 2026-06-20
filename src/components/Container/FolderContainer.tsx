@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import {
 	ArrowDownUp,
 	Box,
+	ChevronDown,
 	Clock,
 	Edit2,
 	Eye,
@@ -232,10 +233,17 @@ export function FolderContainer({ container }: ContainerProps) {
 		window.addEventListener("pointerup", handlePointerUp);
 	};
 
-	const bgOpacity = container.style.backgroundOpacity ?? 0.3;
+	const isCollapsible = container.style.collapsible !== false;
+	const isCollapsed = isCollapsible && container.style.collapsed === true;
+
+	const toggleCollapse = () => {
+		if (!isCollapsible) return;
+		updateContainerStyle(container.id, { collapsed: !isCollapsed });
+	};
 	const cornerRadius = container.style.cornerRadius ?? 16;
 	const isListView = container.style.layout === "list";
 	const bgColor = container.style.backgroundColor || "theme";
+	const bgOpacity = container.style.backgroundOpacity ?? 0.3;
 
 	const sortBy = container.style.sortBy || "name";
 	const sortDesc = container.style.sortDesc || false;
@@ -405,7 +413,8 @@ export function FolderContainer({ container }: ContainerProps) {
 					x: pos.x + resizePosOffset.x,
 					y: pos.y + resizePosOffset.y,
 					width: size.width,
-					height: size.height,
+					height: isCollapsed ? 28 : size.height,
+					overflow: isCollapsed ? "hidden" : undefined,
 					borderRadius: cornerRadius,
 					zIndex: isDragging || isResizing ? 40 : 10,
 					backgroundColor:
@@ -424,9 +433,10 @@ export function FolderContainer({ container }: ContainerProps) {
 				initial={{ opacity: 0, scale: 0.95 }}
 				animate={{ opacity: 1, scale: 1 }}
 				className={cn(
-					"flex flex-col overflow-hidden transition-colors border shadow-xl select-none",
+					"flex flex-col overflow-hidden transition-colors border shadow-xl select-none touch-none",
 					"border-[var(--color-border)]",
 					isDragging && "shadow-2xl ring-2 ring-[var(--color-accent)]/50",
+					isCollapsible && !isResizing && "transition-[height] duration-200 ease-in-out",
 				)}
 				onContextMenu={handleContextMenu}
 			>
@@ -455,8 +465,16 @@ export function FolderContainer({ container }: ContainerProps) {
 				{/* Header (Drag handle) */}
 				<div
 					ref={dragHandleRef}
-					className="relative z-10 px-2 py-1 shrink-0 cursor-grab active:cursor-grabbing border-b border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5 min-h-[24px]"
+					className={cn(
+						"relative z-10 px-2 py-1 shrink-0 cursor-grab active:cursor-grabbing border-b border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5 min-h-[24px]",
+						isCollapsible && "cursor-pointer",
+					)}
 					style={{ backgroundColor: "transparent" }}
+					onClick={() => {
+						if (!isDragging && isCollapsible) {
+							toggleCollapse();
+						}
+					}}
 				>
 					<Folder
 						size={14}
@@ -499,9 +517,19 @@ export function FolderContainer({ container }: ContainerProps) {
 							</h3>
 						</div>
 					)}
+					{isCollapsible && (
+						<ChevronDown
+							size={12}
+							className={cn(
+								"shrink-0 text-[var(--color-text-secondary)] transition-transform duration-200",
+								isCollapsed && "-rotate-90",
+							)}
+						/>
+					)}
 				</div>
 
 				{/* Content area */}
+				{!isCollapsed && (
 				<div className="relative flex-1 z-10 overflow-hidden">
 					<motion.div
 						layoutScroll
@@ -548,6 +576,7 @@ export function FolderContainer({ container }: ContainerProps) {
 						)}
 					/>
 				</div>
+				)}
 
 				{/* Resize Handles */}
 				<div

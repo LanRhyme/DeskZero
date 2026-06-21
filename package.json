@@ -23,6 +23,7 @@
 		"clsx": "^2.1.1",
 		"framer-motion": "^12.40.0",
 		"lucide-react": "^1.16.0",
+		"lunar-javascript": "^1.7.7",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
 		"tailwind-merge": "^3.6.0",

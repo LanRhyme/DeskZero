@@ -1,5 +1,10 @@
 pub mod backup;
+pub mod calendar;
 pub mod container;
+pub mod countdown;
 pub mod desktop;
 pub mod file;
+pub mod music;
 pub mod system;
+pub mod todo;
+pub mod weather;

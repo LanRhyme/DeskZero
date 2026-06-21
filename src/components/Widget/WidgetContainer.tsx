@@ -336,7 +336,7 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
         createPortal(
           <div
             className="fixed inset-0 z-[99] settings-backdrop"
-            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
             <motion.div

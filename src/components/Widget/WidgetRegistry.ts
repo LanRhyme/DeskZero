@@ -3,6 +3,11 @@ import { ClockWidget } from "./widgets/ClockWidget";
 import { StickyNoteWidget } from "./widgets/StickyNoteWidget";
 import { SystemMonitorWidget } from "./widgets/SystemMonitorWidget";
 import { HitokotoWidget } from "./widgets/HitokotoWidget";
+import { CountdownWidget } from "./widgets/CountdownWidget";
+import { TodoWidget } from "./widgets/TodoWidget";
+import { CalendarWidget } from "./widgets/CalendarWidget";
+import { WeatherWidget } from "./widgets/WeatherWidget";
+import { MusicWidget } from "./widgets/MusicWidget";
 
 const registry = new Map<string, WidgetRegistration>();
 
@@ -89,5 +94,99 @@ registerWidget({
 		},
 	},
 	component: HitokotoWidget,
+});
+
+registerWidget({
+	widgetType: "countdown",
+	name: "倒计日",
+	icon: "Timer",
+	defaultSize: { width: 2, height: 2 },
+	defaultConfig: {
+		widgetType: "countdown",
+		config: {
+			displayMode: "list",
+			fontSizeScale: 1.0,
+			fontColor: "theme",
+			sortOrder: "date-asc",
+		},
+	},
+	component: CountdownWidget,
+});
+
+registerWidget({
+	widgetType: "todo",
+	name: "待办事项",
+	icon: "ListTodo",
+	defaultSize: { width: 2, height: 3 },
+	defaultConfig: {
+		widgetType: "todo",
+		config: {
+			sortOrder: "completed-last",
+			fontSizeScale: 1.0,
+			showPriority: true,
+			showDueDate: true,
+			fontColor: "theme",
+		},
+	},
+	component: TodoWidget,
+});
+
+registerWidget({
+	widgetType: "calendar",
+	name: "日历",
+	icon: "CalendarDays",
+	defaultSize: { width: 3, height: 3 },
+	defaultConfig: {
+		widgetType: "calendar",
+		config: {
+			showLunar: true,
+			fontSizeScale: 1.0,
+			fontColor: "theme",
+			highlightToday: true,
+			startOfWeek: "monday",
+			showWeekNumber: false,
+			showFestivals: true,
+			festivalColor: "#ef4444",
+		},
+	},
+	component: CalendarWidget,
+});
+
+registerWidget({
+	widgetType: "weather",
+	name: "天气",
+	icon: "CloudSun",
+	defaultSize: { width: 3, height: 1.5 },
+	defaultConfig: {
+		widgetType: "weather",
+		config: {
+			apiKey: "",
+			location: "",
+			fontSizeScale: 1.0,
+			fontColor: "theme",
+			showForecast: true,
+			tempUnit: "celsius",
+			showDetails: true,
+		},
+	},
+	component: WeatherWidget,
+});
+
+registerWidget({
+	widgetType: "music",
+	name: "音乐",
+	icon: "Music",
+	defaultSize: { width: 3, height: 1.5 },
+	defaultConfig: {
+		widgetType: "music",
+		config: {
+			fontSizeScale: 1.0,
+			fontColor: "theme",
+			showAlbumArt: true,
+			showProgress: true,
+			compactMode: false,
+		},
+	},
+	component: MusicWidget,
 });
 

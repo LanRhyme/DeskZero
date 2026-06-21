@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Monitor, Clock, StickyNote, Activity, Plus, X, FileCode, Quote } from "lucide-react";
+import { Monitor, Clock, StickyNote, Activity, Plus, X, FileCode, Quote, Timer, ListTodo, CalendarDays, CloudSun, Music } from "lucide-react";
 import { useState } from "react";
 import { getAllWidgets } from "./WidgetRegistry";
 
@@ -21,6 +21,11 @@ const iconMap: Record<string, React.ReactNode> = {
   stickyNote: <StickyNote size={24} />,
   systemMonitor: <Activity size={24} />,
   hitokoto: <Quote size={24} />,
+  countdown: <Timer size={24} />,
+  todo: <ListTodo size={24} />,
+  calendar: <CalendarDays size={24} />,
+  weather: <CloudSun size={24} />,
+  music: <Music size={24} />,
   custom: <FileCode size={24} />,
 };
 

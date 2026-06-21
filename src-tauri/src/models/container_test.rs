@@ -81,13 +81,13 @@ mod tests {
     /// 测试未知容器类型不会丢失 — 核心兼容性测试
     #[test]
     fn test_unknown_container_type_preserved() {
-        let json = r#"{"id":"w1","name":"Widget","type":"widget","position":{"x":0,"y":0},"size":{"width":200,"height":300},"items":[],"style":{},"createdAt":0,"updatedAt":0}"#;
+        let json = r#"{"id":"w1","name":"Widget","type":"unknown_type","position":{"x":0,"y":0},"size":{"width":200,"height":300},"items":[],"style":{},"createdAt":0,"updatedAt":0}"#;
         let container: Container = serde_json::from_str(json).unwrap();
-        assert_eq!(container.container_type, ContainerType::Other("widget".to_string()));
+        assert_eq!(container.container_type, ContainerType::Other("unknown_type".to_string()));
         
-        // 重新序列化后类型应保持为 "widget"，不会变成 "normal"
+        // 重新序列化后类型应保持为 "unknown_type"，不会变成 "normal"
         let re_json = serde_json::to_string(&container).unwrap();
-        assert!(re_json.contains("\"widget\""));
+        assert!(re_json.contains("\"unknown_type\""));
     }
 
     /// 测试未知样式字段不会丢失 — 核心兼容性测试

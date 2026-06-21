@@ -1,5 +1,7 @@
 import { X } from "lucide-react";
 import { useLayoutEffect, useRef, useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { emit, listen } from "@tauri-apps/api/event";
 import { SwitchToggle } from "@/components/UI/SwitchToggle";
 import { ColorPicker } from "@/components/UI/ColorPicker";
 import { SegmentedControl } from "@/components/UI/SegmentedControl";
@@ -10,6 +12,133 @@ import { useContainerStore } from "@/stores/containerStore";
 import type { Container as ContainerType } from "@/types/container";
 import type { WidgetConfig } from "@/types/widget";
 import { cn } from "@/utils/cn";
+
+function generateId() {
+  return "countdown-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function CountdownEventManager() {
+  const [name, setName] = useState("");
+  const [date, setDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
+  const [mode, setMode] = useState("countdown");
+  const [color, setColor] = useState("#3b82f6");
+  const [events, setEvents] = useState<{ id: string; name: string; targetDate: string; mode: string; color: string }[]>([]);
+
+  const fetchEvents = async () => {
+    try {
+      const data = await invoke<{ id: string; name: string; targetDate: string; mode: string; color: string }[]>("get_countdown_events");
+      setEvents(data);
+    } catch {}
+  };
+
+  useEffect(() => {
+    fetchEvents();
+    const unlistenPromise = listen("countdown-events-updated", () => {
+      fetchEvents();
+    });
+    return () => {
+      unlistenPromise.then((unlisten) => unlisten());
+    };
+  }, []);
+
+  const handleAdd = async () => {
+    if (!name.trim() || !date) return;
+    try {
+      await invoke("add_countdown_event", {
+        event: { id: generateId(), name: name.trim(), targetDate: date, mode, color }
+      });
+      setName("");
+      setDate("");
+      await emit("countdown-events-updated");
+    } catch (e) { console.error(e); }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await invoke("delete_countdown_event", { id });
+      await emit("countdown-events-updated");
+    } catch (e) { console.error(e); }
+  };
+
+  return (
+    <div className="space-y-2">
+      {/* 添加表单 */}
+      <div className="flex gap-1.5">
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="事件名称"
+          className="flex-1 bg-black/5 dark:bg-white/5 rounded px-2 py-1 text-[10px] text-[var(--color-text)] outline-none border border-transparent focus:border-[var(--color-accent)]/30"
+        />
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="bg-black/5 dark:bg-white/5 rounded px-1.5 py-1 text-[10px] text-[var(--color-text)] outline-none border border-transparent focus:border-[var(--color-accent)]/30"
+          style={{ colorScheme: "dark" }}
+        />
+      </div>
+      <div className="flex items-center gap-1.5">
+        <div className="flex gap-1">
+          {[
+            { value: "countdown", label: "倒计日" },
+            { value: "anniversary", label: "纪念日" },
+          ].map((m) => (
+            <button
+              key={m.value}
+              onClick={() => setMode(m.value)}
+              className={cn(
+                "px-1.5 py-0.5 rounded text-[9px] transition-all",
+                mode === m.value
+                  ? "bg-[var(--color-accent)] text-white"
+                  : "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)]"
+              )}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-[9px] text-[var(--color-text-secondary)]">颜色:</span>
+          {["#3b82f6", "#ef4444", "#f59e0b", "#22c55e", "#a855f7", "#ec4899"].map((c) => (
+            <button
+              key={c}
+              onClick={() => setColor(c)}
+              className={cn("w-3.5 h-3.5 rounded-full border-2 transition-all", color === c ? "border-[var(--color-text)] scale-110" : "border-transparent")}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </div>
+        <button
+          onClick={handleAdd}
+          disabled={!name.trim() || !date}
+          className="ml-auto px-2 py-0.5 rounded bg-[var(--color-accent)] text-white text-[9px] disabled:opacity-30 hover:opacity-90 transition-opacity"
+        >
+          添加
+        </button>
+      </div>
+
+      {/* 已有事件列表 */}
+      {events.length > 0 && (
+        <div className="space-y-0.5 max-h-32 overflow-y-auto hidden-native-scrollbar">
+          {events.map((ev) => (
+            <div key={ev.id} className="flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-black/[0.02] dark:bg-white/[0.03]">
+              <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: ev.color }} />
+              <span className="flex-1 text-[10px] text-[var(--color-text)] truncate">{ev.name}</span>
+              <span className="text-[9px] text-[var(--color-text-secondary)]">{ev.mode === "anniversary" ? "纪念" : "倒计"}</span>
+              <span className="text-[9px] text-[var(--color-text-secondary)]">{ev.targetDate}</span>
+              <button onClick={() => handleDelete(ev.id)} className="text-[var(--color-text-secondary)] hover:text-red-400 text-[10px]">×</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface WidgetSettingsPanelProps {
   container: ContainerType;
@@ -116,6 +245,43 @@ export function WidgetSettingsPanel({
   const [hitokotoCustomAuthor, setHitokotoCustomAuthor] = useState(widgetConfig.config?.customAuthor || "");
   const [hitokotoCustomFrom, setHitokotoCustomFrom] = useState(widgetConfig.config?.customFrom || "");
 
+  // 6. 倒计日设置
+  const [countdownDisplayMode, setCountdownDisplayMode] = useState(widgetConfig.config?.displayMode || "list");
+  const [countdownFontSizeScale, setCountdownFontSizeScale] = useState(widgetConfig.config?.fontSizeScale ?? 1.0);
+  const [countdownFontColor, setCountdownFontColor] = useState(widgetConfig.config?.fontColor || "theme");
+  const [countdownSortOrder, setCountdownSortOrder] = useState(widgetConfig.config?.sortOrder || "date-asc");
+
+  // 7. 待办设置
+  const [todoSortOrder, setTodoSortOrder] = useState(widgetConfig.config?.sortOrder || "completed-last");
+  const [todoFontSizeScale, setTodoFontSizeScale] = useState(widgetConfig.config?.fontSizeScale ?? 1.0);
+  const [todoShowPriority, setTodoShowPriority] = useState(widgetConfig.config?.showPriority !== false);
+  const [todoShowDueDate] = useState(widgetConfig.config?.showDueDate !== false);
+  const [todoFontColor, setTodoFontColor] = useState(widgetConfig.config?.fontColor || "theme");
+
+  // 8. 日历设置
+  const [calendarShowLunar, setCalendarShowLunar] = useState(widgetConfig.config?.showLunar !== false);
+  const [calendarFontSizeScale, setCalendarFontSizeScale] = useState(widgetConfig.config?.fontSizeScale ?? 1.0);
+  const [calendarFontColor, setCalendarFontColor] = useState(widgetConfig.config?.fontColor || "theme");
+  const [calendarHighlightToday, setCalendarHighlightToday] = useState(widgetConfig.config?.highlightToday !== false);
+  const [calendarStartOfWeek, setCalendarStartOfWeek] = useState(widgetConfig.config?.startOfWeek || "monday");
+  const [calendarShowFestivals, setCalendarShowFestivals] = useState(widgetConfig.config?.showFestivals !== false);
+  const [calendarFestivalColor, setCalendarFestivalColor] = useState(widgetConfig.config?.festivalColor || "#ef4444");
+
+  // 9. 天气设置
+  const [weatherApiKey, setWeatherApiKey] = useState(widgetConfig.config?.apiKey || "");
+  const [weatherLocation, setWeatherLocation] = useState(widgetConfig.config?.location || "");
+  const [weatherFontSizeScale, setWeatherFontSizeScale] = useState(widgetConfig.config?.fontSizeScale ?? 1.0);
+  const [weatherFontColor, setWeatherFontColor] = useState(widgetConfig.config?.fontColor || "theme");
+  const [weatherShowForecast, setWeatherShowForecast] = useState(widgetConfig.config?.showForecast !== false);
+  const [weatherShowDetails, setWeatherShowDetails] = useState(widgetConfig.config?.showDetails !== false);
+  const [weatherStyle, setWeatherStyle] = useState(widgetConfig.config?.weatherStyle || "auto");
+
+  // 10. 音乐设置
+  const [musicFontSizeScale, setMusicFontSizeScale] = useState(widgetConfig.config?.fontSizeScale ?? 1.0);
+  const [musicFontColor, setMusicFontColor] = useState(widgetConfig.config?.fontColor || "theme");
+  const [musicShowProgress, setMusicShowProgress] = useState(widgetConfig.config?.showProgress !== false);
+  const [musicStyle, setMusicStyle] = useState(widgetConfig.config?.musicStyle || "horizontal");
+
   // 备份打开设置面板时的初始样式，以便取消时完美回滚
   const initialStyleRef = useRef<any>(null);
   useEffect(() => {
@@ -181,6 +347,53 @@ export function WidgetSettingsPanel({
           customFrom: hitokotoCustomFrom,
         });
         break;
+      case "countdown":
+        Object.assign(newConfig, {
+          displayMode: countdownDisplayMode,
+          fontSizeScale: countdownFontSizeScale,
+          fontColor: countdownFontColor,
+          sortOrder: countdownSortOrder,
+        });
+        break;
+      case "todo":
+        Object.assign(newConfig, {
+          sortOrder: todoSortOrder,
+          fontSizeScale: todoFontSizeScale,
+          showPriority: todoShowPriority,
+          showDueDate: todoShowDueDate,
+          fontColor: todoFontColor,
+        });
+        break;
+      case "calendar":
+        Object.assign(newConfig, {
+          showLunar: calendarShowLunar,
+          fontSizeScale: calendarFontSizeScale,
+          fontColor: calendarFontColor,
+          highlightToday: calendarHighlightToday,
+          startOfWeek: calendarStartOfWeek,
+          showFestivals: calendarShowFestivals,
+          festivalColor: calendarFestivalColor,
+        });
+        break;
+      case "weather":
+        Object.assign(newConfig, {
+          apiKey: weatherApiKey,
+          location: weatherLocation,
+          fontSizeScale: weatherFontSizeScale,
+          fontColor: weatherFontColor,
+          showForecast: weatherShowForecast,
+          showDetails: weatherShowDetails,
+          weatherStyle,
+        });
+        break;
+      case "music":
+        Object.assign(newConfig, {
+          fontSizeScale: musicFontSizeScale,
+          fontColor: musicFontColor,
+          showProgress: musicShowProgress,
+          musicStyle,
+        });
+        break;
     }
 
     updateContainerStyle(container.id, {
@@ -232,6 +445,33 @@ export function WidgetSettingsPanel({
     hitokotoCustomText,
     hitokotoCustomAuthor,
     hitokotoCustomFrom,
+    countdownDisplayMode,
+    countdownFontSizeScale,
+    countdownFontColor,
+    countdownSortOrder,
+    todoSortOrder,
+    todoFontSizeScale,
+    todoShowPriority,
+    todoShowDueDate,
+    todoFontColor,
+    calendarShowLunar,
+    calendarFontSizeScale,
+    calendarFontColor,
+    calendarHighlightToday,
+    calendarStartOfWeek,
+    calendarShowFestivals,
+    calendarFestivalColor,
+    weatherApiKey,
+    weatherLocation,
+    weatherFontSizeScale,
+    weatherFontColor,
+    weatherShowForecast,
+    weatherShowDetails,
+    weatherStyle,
+    musicFontSizeScale,
+    musicFontColor,
+    musicShowProgress,
+    musicStyle,
   ]);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -718,6 +958,373 @@ export function WidgetSettingsPanel({
                   显示双引号装饰
                 </span>
                 <SwitchToggle checked={hitokotoShowQuotes} onChange={setHitokotoShowQuotes} />
+              </label>
+            </div>
+          </div>
+        );
+
+      case "countdown":
+        return (
+          <div className="space-y-3.5">
+            {/* 预设事件快速添加 */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] text-[var(--color-text-secondary)] font-medium">快速添加预设</span>
+              <div className="flex flex-wrap gap-1">
+                {[
+                  { name: "元旦", date: `${new Date().getFullYear()}-01-01`, color: "#ef4444" },
+                  { name: "春节", date: `${new Date().getFullYear()}-01-29`, color: "#f59e0b" },
+                  { name: "情人节", date: `${new Date().getFullYear()}-02-14`, color: "#ec4899" },
+                  { name: "妇女节", date: `${new Date().getFullYear()}-03-08`, color: "#a855f7" },
+                  { name: "劳动节", date: `${new Date().getFullYear()}-05-01`, color: "#3b82f6" },
+                  { name: "儿童节", date: `${new Date().getFullYear()}-06-01`, color: "#22c55e" },
+                  { name: "建党节", date: `${new Date().getFullYear()}-07-01`, color: "#ef4444" },
+                  { name: "建军节", date: `${new Date().getFullYear()}-08-01`, color: "#6366f1" },
+                  { name: "教师节", date: `${new Date().getFullYear()}-09-10`, color: "#14b8a6" },
+                  { name: "国庆节", date: `${new Date().getFullYear()}-10-01`, color: "#ef4444" },
+                  { name: "平安夜", date: `${new Date().getFullYear()}-12-24`, color: "#22c55e" },
+                  { name: "圣诞节", date: `${new Date().getFullYear()}-12-25`, color: "#ef4444" },
+                ].map((preset) => (
+                  <button
+                    key={preset.name}
+                    onClick={async () => {
+                      try {
+                        let targetDate = preset.date;
+                        const today = new Date();
+                        const pDate = new Date(preset.date + "T00:00:00");
+                        today.setHours(0, 0, 0, 0);
+                        if (pDate < today) {
+                          const [y, m, d] = preset.date.split("-");
+                          targetDate = `${parseInt(y) + 1}-${m}-${d}`;
+                        }
+
+                        const id = "countdown-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+                        await invoke("add_countdown_event", {
+                          event: { id, name: preset.name, targetDate, mode: "countdown", color: preset.color }
+                        });
+                        await emit("countdown-events-updated");
+                      } catch (e) { console.error(e); }
+                    }}
+                    className="px-1.5 py-0.5 rounded text-[9px] bg-black/5 dark:bg-white/5 text-[var(--color-text)] opacity-70 hover:opacity-100 hover:bg-[var(--color-accent)]/10 transition-all"
+                  >
+                    + {preset.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 自定义添加 */}
+            <CountdownEventManager />
+
+            <SettingRow title="显示模式" layout="vertical">
+              <SegmentedControl
+                options={[
+                  { value: "list", label: "列表" },
+                  { value: "cards", label: "卡片" },
+                ]}
+                value={countdownDisplayMode}
+                onChange={setCountdownDisplayMode}
+              />
+            </SettingRow>
+
+            <SettingRow title="排序方式" layout="vertical">
+              <CustomSelect
+                value={countdownSortOrder}
+                onChange={setCountdownSortOrder}
+                options={[
+                  { value: "date-asc", label: "日期升序" },
+                  { value: "date-desc", label: "日期降序" },
+                  { value: "days-asc", label: "天数升序" },
+                  { value: "days-desc", label: "天数降序" },
+                ]}
+              />
+            </SettingRow>
+
+            <SettingRow title="文字颜色" layout="vertical">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <SegmentedControl
+                  options={[
+                    { value: "theme", label: "主题" },
+                    { value: "accent", label: "强调" },
+                  ]}
+                  value={countdownFontColor.startsWith("#") ? "" : countdownFontColor}
+                  onChange={setCountdownFontColor}
+                  variant="accent"
+                />
+                <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded px-1.5 py-0.5 border border-transparent">
+                  <span className="text-[10px] text-[var(--color-text-secondary)] font-medium">自定义</span>
+                  <ColorPicker
+                    size="sm"
+                    value={countdownFontColor.startsWith("#") ? countdownFontColor : "#ffffff"}
+                    onChange={setCountdownFontColor}
+                  />
+                </div>
+              </div>
+            </SettingRow>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] font-medium">
+                <span>文字大小比例</span>
+                <span>{Math.round(countdownFontSizeScale * 100)}%</span>
+              </div>
+              <Slider min={0.6} max={1.8} step={0.1} value={countdownFontSizeScale} onChange={setCountdownFontSizeScale} />
+            </div>
+          </div>
+        );
+
+      case "todo":
+        return (
+          <div className="space-y-3.5">
+            <SettingRow title="排序方式" layout="vertical">
+              <CustomSelect
+                value={todoSortOrder}
+                onChange={setTodoSortOrder}
+                options={[
+                  { value: "manual", label: "手动排序" },
+                  { value: "priority", label: "按优先级" },
+                  { value: "dueDate", label: "按截止日期" },
+                  { value: "completed-last", label: "已完成置底" },
+                ]}
+              />
+            </SettingRow>
+
+            <SettingRow title="文字颜色" layout="vertical">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <SegmentedControl
+                  options={[
+                    { value: "theme", label: "主题" },
+                    { value: "accent", label: "强调" },
+                  ]}
+                  value={todoFontColor.startsWith("#") ? "" : todoFontColor}
+                  onChange={setTodoFontColor}
+                  variant="accent"
+                />
+                <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded px-1.5 py-0.5 border border-transparent">
+                  <span className="text-[10px] text-[var(--color-text-secondary)] font-medium">自定义</span>
+                  <ColorPicker
+                    size="sm"
+                    value={todoFontColor.startsWith("#") ? todoFontColor : "#ffffff"}
+                    onChange={setTodoFontColor}
+                  />
+                </div>
+              </div>
+            </SettingRow>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] font-medium">
+                <span>文字大小比例</span>
+                <span>{Math.round(todoFontSizeScale * 100)}%</span>
+              </div>
+              <Slider min={0.6} max={1.8} step={0.1} value={todoFontSizeScale} onChange={setTodoFontSizeScale} />
+            </div>
+
+            <div className="space-y-2.5 pt-1">
+              {[
+                { label: "显示优先级色条", val: todoShowPriority, set: setTodoShowPriority },
+              ].map((sw) => (
+                <label key={sw.label} className="flex items-center justify-between cursor-pointer group">
+                  <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
+                    {sw.label}
+                  </span>
+                  <SwitchToggle checked={sw.val} onChange={sw.set} />
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+
+      case "calendar":
+        return (
+          <div className="space-y-3.5">
+            <SettingRow title="每周起始日" layout="vertical">
+              <SegmentedControl
+                options={[
+                  { value: "monday", label: "周一" },
+                  { value: "sunday", label: "周日" },
+                ]}
+                value={calendarStartOfWeek}
+                onChange={setCalendarStartOfWeek}
+              />
+            </SettingRow>
+
+            <SettingRow title="文字颜色" layout="vertical">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <SegmentedControl
+                  options={[
+                    { value: "theme", label: "主题" },
+                    { value: "accent", label: "强调" },
+                  ]}
+                  value={calendarFontColor.startsWith("#") ? "" : calendarFontColor}
+                  onChange={setCalendarFontColor}
+                  variant="accent"
+                />
+                <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded px-1.5 py-0.5 border border-transparent">
+                  <span className="text-[10px] text-[var(--color-text-secondary)] font-medium">自定义</span>
+                  <ColorPicker
+                    size="sm"
+                    value={calendarFontColor.startsWith("#") ? calendarFontColor : "#ffffff"}
+                    onChange={setCalendarFontColor}
+                  />
+                </div>
+              </div>
+            </SettingRow>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] font-medium">
+                <span>文字大小比例</span>
+                <span>{Math.round(calendarFontSizeScale * 100)}%</span>
+              </div>
+              <Slider min={0.6} max={1.8} step={0.1} value={calendarFontSizeScale} onChange={setCalendarFontSizeScale} />
+            </div>
+
+            <SettingRow title="节日标记颜色" layout="vertical">
+              <ColorPicker
+                value={calendarFestivalColor}
+                onChange={setCalendarFestivalColor}
+                presets={[
+                  { color: "#ef4444", label: "中国红" },
+                  { color: "#f59e0b", label: "琥珀" },
+                  { color: "#8b5cf6", label: "紫罗兰" },
+                ]}
+              />
+            </SettingRow>
+
+            <div className="space-y-2.5 pt-1">
+              {[
+                { label: "显示农历", val: calendarShowLunar, set: setCalendarShowLunar },
+                { label: "高亮今天", val: calendarHighlightToday, set: setCalendarHighlightToday },
+                { label: "显示节日", val: calendarShowFestivals, set: setCalendarShowFestivals },
+              ].map((sw) => (
+                <label key={sw.label} className="flex items-center justify-between cursor-pointer group">
+                  <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
+                    {sw.label}
+                  </span>
+                  <SwitchToggle checked={sw.val} onChange={sw.set} />
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+
+      case "weather":
+        return (
+          <div className="space-y-3.5">
+            <div className="space-y-2.5">
+              <SettingRow title="组件排版样式" layout="vertical">
+                <SegmentedControl
+                  options={[
+                    { value: "auto", label: "自动响应" },
+                    { value: "horizontal", label: "水平布局" },
+                    { value: "vertical", label: "垂直堆叠" },
+                  ]}
+                  value={weatherStyle}
+                  onChange={(val) => setWeatherStyle(val as any)}
+                />
+              </SettingRow>
+
+              <div className="text-[11px] text-[var(--color-text-secondary)] opacity-80 px-2 py-2 leading-relaxed bg-black/5 dark:bg-white/5 rounded border border-black/5 dark:border-white/5 mt-1">
+                ☁️ 当前天气服务由 <a href="https://wttr.in" target="_blank" rel="noreferrer" className="underline hover:text-[var(--color-accent)]">wttr.in</a> 强力驱动。<br/>
+                系统已自动根据您的网络 IP 智能获取当地天气数据，完全免费且开箱即用。
+              </div>
+            </div>
+
+            <SettingRow title="文字颜色" layout="vertical">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <SegmentedControl
+                  options={[
+                    { value: "theme", label: "主题" },
+                    { value: "accent", label: "强调" },
+                  ]}
+                  value={weatherFontColor.startsWith("#") ? "" : weatherFontColor}
+                  onChange={setWeatherFontColor}
+                  variant="accent"
+                />
+                <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded px-1.5 py-0.5 border border-transparent">
+                  <span className="text-[10px] text-[var(--color-text-secondary)] font-medium">自定义</span>
+                  <ColorPicker
+                    size="sm"
+                    value={weatherFontColor.startsWith("#") ? weatherFontColor : "#ffffff"}
+                    onChange={setWeatherFontColor}
+                  />
+                </div>
+              </div>
+            </SettingRow>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] font-medium">
+                <span>文字大小比例</span>
+                <span>{Math.round(weatherFontSizeScale * 100)}%</span>
+              </div>
+              <Slider min={0.6} max={1.8} step={0.1} value={weatherFontSizeScale} onChange={setWeatherFontSizeScale} />
+            </div>
+
+            <div className="space-y-2.5 pt-1">
+              {[
+                { label: "显示未来预报", val: weatherShowForecast, set: setWeatherShowForecast },
+                { label: "显示详情 (湿度/风力/体感)", val: weatherShowDetails, set: setWeatherShowDetails },
+              ].map((sw) => (
+                <label key={sw.label} className="flex items-center justify-between cursor-pointer group">
+                  <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
+                    {sw.label}
+                  </span>
+                  <SwitchToggle checked={sw.val} onChange={sw.set} />
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+
+      case "music":
+        return (
+          <div className="space-y-3.5">
+            <SettingRow title="显示样式" layout="vertical">
+              <SegmentedControl
+                options={[
+                  { value: "horizontal", label: "水平" },
+                  { value: "vertical", label: "垂直" },
+                  { value: "mini", label: "迷你" },
+                  { value: "terminal", label: "终端" },
+                ]}
+                value={musicStyle}
+                onChange={setMusicStyle}
+              />
+            </SettingRow>
+
+            <SettingRow title="文字颜色" layout="vertical">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <SegmentedControl
+                  options={[
+                    { value: "theme", label: "主题" },
+                    { value: "accent", label: "强调" },
+                  ]}
+                  value={musicFontColor.startsWith("#") ? "" : musicFontColor}
+                  onChange={setMusicFontColor}
+                  variant="accent"
+                />
+                <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 rounded px-1.5 py-0.5 border border-transparent">
+                  <span className="text-[10px] text-[var(--color-text-secondary)] font-medium">自定义</span>
+                  <ColorPicker
+                    size="sm"
+                    value={musicFontColor.startsWith("#") ? musicFontColor : "#ffffff"}
+                    onChange={setMusicFontColor}
+                  />
+                </div>
+              </div>
+            </SettingRow>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] font-medium">
+                <span>文字大小比例</span>
+                <span>{Math.round(musicFontSizeScale * 100)}%</span>
+              </div>
+              <Slider min={0.6} max={1.8} step={0.1} value={musicFontSizeScale} onChange={setMusicFontSizeScale} />
+            </div>
+
+            <div className="space-y-2.5 pt-1">
+              <label className="flex items-center justify-between cursor-pointer group">
+                <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
+                  显示播放进度条
+                </span>
+                <SwitchToggle checked={musicShowProgress} onChange={setMusicShowProgress} />
               </label>
             </div>
           </div>

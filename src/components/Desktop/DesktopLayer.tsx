@@ -130,9 +130,10 @@ export default function DesktopLayer() {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			const isCtrl = e.ctrlKey || e.metaKey;
 			const activeEl = document.activeElement;
+			const target = e.target as HTMLElement;
 			if (
-				activeEl &&
-				(activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.getAttribute("contenteditable") === "true")
+				(activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.getAttribute("contenteditable") === "true")) ||
+				(target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.getAttribute("contenteditable") === "true" || target.closest("input") || target.closest("textarea")))
 			) {
 				return;
 			}
@@ -277,6 +278,14 @@ export default function DesktopLayer() {
 		});
 
 		const handleKeyDown = async (e: KeyboardEvent) => {
+			const activeEl = document.activeElement;
+			const target = e.target as HTMLElement;
+			if (
+				(activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.getAttribute("contenteditable") === "true")) ||
+				(target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.getAttribute("contenteditable") === "true" || target.closest("input") || target.closest("textarea")))
+			) {
+				return;
+			}
 			if (e.ctrlKey && e.key === "c") {
 				e.preventDefault();
 				const selectedIds = useDesktopStore.getState().selectedIds;
@@ -414,9 +423,9 @@ export default function DesktopLayer() {
 	};
 
 	const handleContextMenu = useCallback(async (e: React.MouseEvent) => {
-		e.preventDefault();
 		if ((e.target as HTMLElement).closest(".touch-none")) return;
 		if ((e.target as HTMLElement).closest(".settings-backdrop")) return;
+		e.preventDefault();
 
 		try {
 			const { invoke } = await import("@tauri-apps/api/core");

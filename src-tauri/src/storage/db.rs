@@ -2,9 +2,29 @@ use rusqlite::{Connection, Result};
 use std::fs;
 use std::path::PathBuf;
 
+/// 便携模式：如果 exe 同目录下存在 `portable.mode` 文件，则数据存储在 exe 目录下
+fn is_portable_mode() -> bool {
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            return exe_dir.join("portable.mode").exists();
+        }
+    }
+    false
+}
+
 pub fn get_data_dir() -> PathBuf {
-    let mut path = dirs::data_dir().unwrap_or_else(|| PathBuf::from("."));
-    path.push("DeskZero");
+    let path = if is_portable_mode() {
+        // 便携模式：数据存储在 exe 所在目录
+        std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|d| d.to_path_buf()))
+            .unwrap_or_else(|| PathBuf::from("."))
+    } else {
+        // 标准模式：数据存储在 %APPDATA%/DeskZero
+        let mut p = dirs::data_dir().unwrap_or_else(|| PathBuf::from("."));
+        p.push("DeskZero");
+        p
+    };
     fs::create_dir_all(&path).ok();
     path
 }

@@ -39,11 +39,13 @@ jobs:
         run: node scripts/sync-config.js
 
       - name: Build Tauri app
-        run: npm run tauri build -- --bundles nsis
+        run: npm run tauri build -- --bundles msi
 
       - name: Create Portable Zip
+        shell: pwsh
         run: |
-          Compress-Archive -Path src-tauri/target/release/deskzero.exe -DestinationPath DeskZero-Portable-v${{ env.VERSION }}.zip
+          New-Item -ItemType File -Path "src-tauri/target/release/portable.mode" -Force
+          Compress-Archive -Path "src-tauri/target/release/deskzero.exe","src-tauri/target/release/portable.mode" -DestinationPath DeskZero-Portable-v${{ env.VERSION }}.zip
 
       - name: Publish Release
         uses: softprops/action-gh-release@v2
@@ -55,4 +57,4 @@ jobs:
           generate_release_notes: true
           files: |
             DeskZero-Portable-v${{ env.VERSION }}.zip
-            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/msi/*.msi

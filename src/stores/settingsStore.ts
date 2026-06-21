@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { create } from "zustand";
+import i18n from "@/i18n";
 import type { Settings, Theme } from "@/types/settings";
 
 interface SettingsState {
@@ -35,6 +36,7 @@ const defaultSettings: Settings = {
 	iconGlowIntensity: 0.6,
 	doubleClickHide: true,
 	autoStart: false,
+	language: "zh",
 };
 
 const applyTheme = (theme: Theme) => {
@@ -88,13 +90,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 		set({ loading: true, error: null });
 		try {
 			const settings = await invoke<Settings>("get_settings");
-			set({ settings, loading: false });
-			applyTheme(settings.theme);
-			applyAccentColor(settings.accentColor || "#0078d4");
-			applySelectedBackground(settings.selectedItemBackground);
-			applyGlobalBlur(settings.globalBlur);
+		set({ settings, loading: false });
+		applyTheme(settings.theme);
+		applyAccentColor(settings.accentColor || "#0078d4");
+		applySelectedBackground(settings.selectedItemBackground);
+		applyGlobalBlur(settings.globalBlur);
+		if (settings.language) i18n.changeLanguage(settings.language);
 		} catch (err) {
-			const message = err instanceof Error ? err.message : "加载设置失败";
+			const message = err instanceof Error ? err.message : i18n.t("settings.backup.loadFailed");
 			set({ loading: false, error: message });
 			console.error("加载设置失败:", err);
 		}
@@ -116,6 +119,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 		if (changes.globalBlur !== undefined) {
 			applyGlobalBlur(newSettings.globalBlur);
 		}
+		if (changes.language) {
+			i18n.changeLanguage(changes.language);
+		}
 
 		if (settingsDebounceTimer) clearTimeout(settingsDebounceTimer);
 
@@ -127,7 +133,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 				// 发送设置更新事件，通知其他窗口
 				await emit("settings-updated", latestSettings);
 			} catch (err) {
-				const message = err instanceof Error ? err.message : "保存设置失败";
+				const message = err instanceof Error ? err.message : i18n.t("settings.backup.saveFailed");
 				set({ error: message });
 				console.error("保存设置失败:", err);
 			}
@@ -158,6 +164,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 			applyAccentColor(newSettings.accentColor || "#0078d4");
 			applySelectedBackground(newSettings.selectedItemBackground);
 			applyGlobalBlur(newSettings.globalBlur);
+			if (newSettings.language) i18n.changeLanguage(newSettings.language);
 		});
 
 		return () => {

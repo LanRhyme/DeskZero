@@ -17,6 +17,7 @@ import {
 	Type,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
 import {
 	ContextMenu,
@@ -39,6 +40,7 @@ interface ContainerProps {
 }
 
 export function FolderContainer({ container }: ContainerProps) {
+	const { t } = useTranslation();
 	const {
 		updateContainerPosition,
 		updateContainerSize,
@@ -298,18 +300,18 @@ export function FolderContainer({ container }: ContainerProps) {
 
 	const contextMenuItems: MenuItem[] = [
 		{
-			label: "刷新",
+			label: t("common.refresh"),
 			icon: <RefreshCw size={14} />,
 			onClick: () => fetchFolderItems(),
 		},
 		{ divider: true, onClick: () => {} },
 		{
-			label: "排列方式",
+			label: t("desktop.contextMenu.sortBy"),
 			icon: <ArrowDownUp size={14} />,
 			onClick: () => {},
 			subItems: [
 				{
-					label: `名称 ${sortBy === "name" ? (sortDesc ? "↓" : "↑") : ""}`,
+					label: t("container.nameAZ", { dir: sortBy === "name" ? (sortDesc ? "↓" : "↑") : "" }),
 					icon: <Type size={14} />,
 					onClick: () => {
 						if (sortBy === "name")
@@ -322,7 +324,7 @@ export function FolderContainer({ container }: ContainerProps) {
 					},
 				},
 				{
-					label: `大小 ${sortBy === "size" ? (sortDesc ? "↓" : "↑") : ""}`,
+					label: t("container.sizeSort", { dir: sortBy === "size" ? (sortDesc ? "↓" : "↑") : "" }),
 					icon: <Box size={14} />,
 					onClick: () => {
 						if (sortBy === "size")
@@ -335,7 +337,7 @@ export function FolderContainer({ container }: ContainerProps) {
 					},
 				},
 				{
-					label: `类型 ${sortBy === "type" ? (sortDesc ? "↓" : "↑") : ""}`,
+					label: t("container.typeSort", { dir: sortBy === "type" ? (sortDesc ? "↓" : "↑") : "" }),
 					icon: <Tag size={14} />,
 					onClick: () => {
 						if (sortBy === "type")
@@ -348,7 +350,7 @@ export function FolderContainer({ container }: ContainerProps) {
 					},
 				},
 				{
-					label: `修改日期 ${sortBy === "date" ? (sortDesc ? "↓" : "↑") : ""}`,
+					label: t("container.modifiedSort", { dir: sortBy === "date" ? (sortDesc ? "↓" : "↑") : "" }),
 					icon: <Clock size={14} />,
 					onClick: () => {
 						if (sortBy === "date")
@@ -363,17 +365,17 @@ export function FolderContainer({ container }: ContainerProps) {
 			],
 		},
 		{
-			label: "视图",
+			label: t("container.viewMode"),
 			icon: <Eye size={14} />,
 			onClick: () => {},
 			subItems: [
 				{
-					label: "大图标",
+					label: t("container.largeIcons"),
 					icon: <LayoutGrid size={14} />,
 					onClick: () => updateContainerStyle(container.id, { layout: "grid" }),
 				},
 				{
-					label: "列表",
+					label: t("container.listView"),
 					icon: <List size={14} />,
 					onClick: () => updateContainerStyle(container.id, { layout: "list" }),
 				},
@@ -381,17 +383,17 @@ export function FolderContainer({ container }: ContainerProps) {
 		},
 		{ divider: true, onClick: () => {} },
 		{
-			label: "重命名",
+			label: t("container.rename"),
 			icon: <Edit2 size={14} />,
 			onClick: () => setIsEditingName(true),
 		},
 		{
-			label: "设置",
+			label: t("container.settings"),
 			icon: <Settings size={14} />,
 			onClick: () => setIsSettingsOpen(true),
 		},
 		{
-			label: "移除",
+			label: t("container.remove"),
 			icon: <Trash2 size={14} />,
 			onClick: () => setShowDeleteConfirm(true),
 		},
@@ -540,14 +542,14 @@ export function FolderContainer({ container }: ContainerProps) {
 						onScroll={handleScroll}
 						className="absolute inset-0 overflow-y-auto overflow-x-hidden p-2 hidden-native-scrollbar"
 					>
-						{isLoading ? (
-							<div className="flex items-center justify-center h-full text-sm text-[var(--color-text-secondary)]">
-								加载中...
-							</div>
-						) : sortedItems.length === 0 ? (
-							<div className="flex items-center justify-center h-full text-sm text-[var(--color-text-secondary)]">
-								文件夹为空
-							</div>
+					{isLoading ? (
+						<div className="flex items-center justify-center h-full text-sm text-[var(--color-text-secondary)]">
+							{t("container.loading")}
+						</div>
+					) : sortedItems.length === 0 ? (
+						<div className="flex items-center justify-center h-full text-sm text-[var(--color-text-secondary)]">
+							{t("container.emptyFolder")}
+						</div>
 						) : (
 							<div
 								className={cn(
@@ -650,17 +652,17 @@ export function FolderContainer({ container }: ContainerProps) {
 					onClose={() => setMenuState((prev) => ({ ...prev, visible: false }))}
 				/>
 			)}
-			<ConfirmDialog
-				isOpen={showDeleteConfirm}
-				title="移除目录索引容器"
-				message={`确定要移除「${container.name}」吗？`}
-				confirmLabel="移除"
-				onConfirm={() => {
-					setShowDeleteConfirm(false);
-					useContainerStore.getState().deleteContainer(container.id);
-				}}
-				onCancel={() => setShowDeleteConfirm(false)}
-			/>
+		<ConfirmDialog
+			isOpen={showDeleteConfirm}
+			title={t("container.removeFolderIndex")}
+			message={t("container.removeFolderIndexConfirm", { name: container.name })}
+			confirmLabel={t("common.remove")}
+			onConfirm={() => {
+				setShowDeleteConfirm(false);
+				useContainerStore.getState().deleteContainer(container.id);
+			}}
+			onCancel={() => setShowDeleteConfirm(false)}
+		/>
 		</>
 	);
 }

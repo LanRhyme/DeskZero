@@ -22,10 +22,12 @@
     "@tauri-apps/plugin-http": "^2.5.9",
     "clsx": "^2.1.1",
     "framer-motion": "^12.40.0",
+    "i18next": "^26.3.1",
     "lucide-react": "^1.16.0",
     "lunar-javascript": "^1.7.7",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-i18next": "^17.0.8",
     "tailwind-merge": "^3.6.0",
     "zustand": "^5.0.13"
   },

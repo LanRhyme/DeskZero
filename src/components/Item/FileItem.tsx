@@ -11,6 +11,7 @@ import {
 	Trash2,
 	User,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useDrag } from "@/hooks/useDrag";
 import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
@@ -70,6 +71,7 @@ export function FileItem({
 	isIconShow = false,
 	hoverAnimation,
 }: FileItemProps) {
+	const { t } = useTranslation();
 	const {
 		selectedIds,
 		toggleSelection,
@@ -197,7 +199,7 @@ export function FileItem({
 					}
 					if (targetContainer.type === "game") {
 						if (item.type !== "url" && item.type !== "shortcut") {
-							window.alert("只能放置快捷方式");
+							window.alert(t("item.onlyShortcuts"));
 							return;
 						}
 						if (targetContainer.items.length > 0) {
@@ -724,12 +726,12 @@ export function FileItem({
 									return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${d.getMinutes().toString().padStart(2, "0")}`;
 								})(),
 							item.type === "folder"
-								? "文件夹"
+								? t("item.folder")
 								: item.type === "shortcut"
-									? "快捷方式"
+									? t("item.shortcut")
 									: item.type === "system"
-										? "系统应用"
-										: "文件",
+										? t("item.systemApp")
+										: t("item.file"),
 							item.size && item.type !== "folder" && item.size > 0
 								? item.size > 1048576
 									? `${(item.size / 1048576).toFixed(1)} MB`

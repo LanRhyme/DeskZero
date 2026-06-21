@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import type { WidgetRegistration, WidgetConfig } from "@/types/widget";
 import { ClockWidget } from "./widgets/ClockWidget";
 import { StickyNoteWidget } from "./widgets/StickyNoteWidget";
@@ -30,10 +31,13 @@ export function getDefaultWidgetConfig(
 	return reg ? { ...reg.defaultConfig } : undefined;
 }
 
-// 注册内置小组件
+export function getWidgetName(widgetType: string): string {
+	const reg = registry.get(widgetType);
+	return reg ? i18next.t(reg.name) : widgetType;
+}
 registerWidget({
 	widgetType: "clock",
-	name: "时钟",
+	name: "widget.registry.clock",
 	icon: "Clock", // 由调用方通过 lucide 图标渲染
 	defaultSize: { width: 2, height: 1 },
 	defaultConfig: {
@@ -45,7 +49,7 @@ registerWidget({
 
 registerWidget({
 	widgetType: "stickyNote",
-	name: "便签",
+	name: "widget.registry.stickyNote",
 	icon: "StickyNote",
 	defaultSize: { width: 2, height: 2 },
 	defaultConfig: {
@@ -57,7 +61,7 @@ registerWidget({
 
 registerWidget({
 	widgetType: "systemMonitor",
-	name: "系统监控",
+	name: "widget.registry.systemMonitor",
 	icon: "Activity",
 	defaultSize: { width: 3, height: 2 },
 	defaultConfig: {
@@ -74,7 +78,7 @@ registerWidget({
 
 registerWidget({
 	widgetType: "hitokoto",
-	name: "一言",
+	name: "widget.registry.hitokoto",
 	icon: "Quote",
 	defaultSize: { width: 2, height: 1 },
 	defaultConfig: {
@@ -98,7 +102,7 @@ registerWidget({
 
 registerWidget({
 	widgetType: "countdown",
-	name: "倒计日",
+	name: "widget.registry.countdown",
 	icon: "Timer",
 	defaultSize: { width: 2, height: 2 },
 	defaultConfig: {
@@ -115,7 +119,7 @@ registerWidget({
 
 registerWidget({
 	widgetType: "todo",
-	name: "待办事项",
+	name: "widget.registry.todo",
 	icon: "ListTodo",
 	defaultSize: { width: 2, height: 3 },
 	defaultConfig: {
@@ -133,7 +137,7 @@ registerWidget({
 
 registerWidget({
 	widgetType: "calendar",
-	name: "日历",
+	name: "widget.registry.calendar",
 	icon: "CalendarDays",
 	defaultSize: { width: 3, height: 3 },
 	defaultConfig: {
@@ -154,7 +158,7 @@ registerWidget({
 
 registerWidget({
 	widgetType: "weather",
-	name: "天气",
+	name: "widget.registry.weather",
 	icon: "CloudSun",
 	defaultSize: { width: 3, height: 1.5 },
 	defaultConfig: {
@@ -174,7 +178,7 @@ registerWidget({
 
 registerWidget({
 	widgetType: "music",
-	name: "音乐",
+	name: "widget.registry.music",
 	icon: "Music",
 	defaultSize: { width: 3, height: 1.5 },
 	defaultConfig: {

@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
+import i18next from "i18next";
 import type { Container, Position, Size } from "@/types/container";
 import type { Item } from "@/types/item";
 import { useHistoryStore } from "./historyStore";
@@ -164,7 +165,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 			return updated ?? newContainer;
 		} catch (err: any) {
 			console.error(err);
-			window.alert("创建收纳盒容器失败: " + String(err));
+			window.alert(i18next.t("desktop.contextMenu.containerCreateFailed") + String(err));
 			throw err;
 		}
 	},
@@ -223,7 +224,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 		const updated = get().containers.find((c) => c.id === id);
 		if (updated) {
 			persistContainer(updated);
-			useToastStore.getState().addToast(`已重命名为 "${name}"`, "success");
+			useToastStore.getState().addToast(i18next.t("desktop.renamed", { name }), "success");
 		}
 	},
 
@@ -239,8 +240,8 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 				containers: state.containers.filter((c) => c.id !== id),
 			}));
 
-			const typeText = containerType === "game" ? "游戏容器" : "收纳盒";
-			useToastStore.getState().addToast(`已移除${typeText} ${containerName}`, "success");
+			const typeText = containerType === "game" ? i18next.t("container.gameType") : i18next.t("container.containerType");
+			useToastStore.getState().addToast(i18next.t("container.removed", { type: typeText, name: containerName }), "success");
 
 			const { useDesktopStore } = await import("./desktopStore");
 			await useDesktopStore.getState().fetchDesktopItems();
@@ -273,7 +274,7 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 		if (updated) {
 			persistContainer(updated);
 			if (!silent && items.length > 0) {
-				const msg = items.length === 1 ? `已收纳至 "${updated.name}"` : `已收纳 ${items.length} 个项目至 "${updated.name}"`;
+				const msg = items.length === 1 ? i18next.t("container.organizedTo", { name: updated.name }) : i18next.t("container.organizedMultiple", { count: items.length, name: updated.name });
 				useToastStore.getState().addToast(msg, "success");
 			}
 		}

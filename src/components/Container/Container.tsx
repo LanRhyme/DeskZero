@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ChevronDown, Edit2, Settings, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
 import { useDrag } from "@/hooks/useDrag";
 import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
@@ -40,6 +41,7 @@ export function Container({ container }: ContainerProps) {
 }
 
 function NormalContainer({ container }: ContainerProps) {
+	const { t } = useTranslation();
 	const { updateContainerPosition, updateContainerSize, deleteContainer, updateContainerName, updateContainerStyle } = useContainerStore();
 	const { settings } = useSettingsStore();
 	const { wallpaper } = useDesktopStore();
@@ -142,17 +144,17 @@ function NormalContainer({ container }: ContainerProps) {
 
 	const contextMenuItems: MenuItem[] = [
 		{
-			label: "重命名",
+			label: t("container.rename"),
 			icon: <Edit2 size={14} />,
 			onClick: () => setIsEditingName(true),
 		},
 		{
-			label: "设置",
+			label: t("container.settings"),
 			icon: <Settings size={14} />,
 			onClick: () => setIsSettingsOpen(true),
 		},
 		{
-			label: "移除",
+			label: t("container.remove"),
 			icon: <Trash2 size={14} />,
 			onClick: () => setShowDeleteConfirm(true),
 		},
@@ -503,17 +505,17 @@ function NormalContainer({ container }: ContainerProps) {
 					</div>,
 					document.body,
 				)}
-			<ConfirmDialog
-				isOpen={showDeleteConfirm}
-				title="移除收纳盒"
-				message={`确定要移除「${container.name}」吗？容器内的图标将回到桌面。`}
-				confirmLabel="移除"
-				onConfirm={async () => {
-					setShowDeleteConfirm(false);
-					await handleDelete();
-				}}
-				onCancel={() => setShowDeleteConfirm(false)}
-			/>
+		<ConfirmDialog
+			isOpen={showDeleteConfirm}
+			title={t("container.removeTitle")}
+			message={t("container.removeConfirm", { name: container.name })}
+			confirmLabel={t("common.remove")}
+			onConfirm={async () => {
+				setShowDeleteConfirm(false);
+				await handleDelete();
+			}}
+			onCancel={() => setShowDeleteConfirm(false)}
+		/>
 		</>
 	);
 }

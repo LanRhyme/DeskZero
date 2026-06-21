@@ -13,6 +13,7 @@ import {
 	X,
 } from "lucide-react";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ColorPicker } from "@/components/UI/ColorPicker";
 import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
 import { SegmentedControl } from "@/components/UI/SegmentedControl";
@@ -36,6 +37,7 @@ import { cn } from "@/utils/cn";
 import appConfig from "../../../deskzero.config.json";
 
 export function SettingsPage() {
+	const { t } = useTranslation();
 	const { settings, saveSettings, loading, error } = useSettingsStore();
 	const [syncing, setSyncing] = useState(false);
 	const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
@@ -49,7 +51,7 @@ export function SettingsPage() {
 			
 			// 后端 Rust 会自动广播 settings-updated 和 sync-desktop-layout 事件到所有窗口
 			useToastStore.getState().addToast(
-				"已成功同步 Windows 桌面布局（缩放: " + multiplier.toFixed(2) + "x）",
+				t("settings.general.syncSuccess") + multiplier.toFixed(2) + "x）",
 				"success"
 			);
 		} catch (err: any) {
@@ -104,9 +106,9 @@ export function SettingsPage() {
 			await createBackup(name);
 			setBackupNote("");
 			await loadBackupData();
-			useToastStore.getState().addToast("备份创建成功", "success");
+			useToastStore.getState().addToast(t("settings.backup.backupSuccess"), "success");
 		} catch (err: any) {
-			useToastStore.getState().addToast("备份失败: " + err.toString(), "error");
+			useToastStore.getState().addToast(t("settings.backup.backupFailed") + err.toString(), "error");
 		} finally {
 			setBackupLoading(false);
 		}
@@ -115,8 +117,8 @@ export function SettingsPage() {
 	const handleRestoreBackup = (backup: BackupRecord) => {
 		setConfirmDialog({
 			open: true,
-			title: "还原备份",
-			message: `确定要还原"${backup.name}"吗？当前的桌面布局、容器和设置将被覆盖。`,
+			title: t("settings.backup.restoreTitle"),
+			message: t("settings.backup.restoreConfirm", { name: backup.name }),
 			onConfirm: async () => {
 				try {
 					setBackupLoading(true);
@@ -128,9 +130,9 @@ export function SettingsPage() {
 					const { emit } = await import("@tauri-apps/api/event");
 					await emit("sync-desktop-layout");
 					
-					useToastStore.getState().addToast("备份还原成功", "success");
+					useToastStore.getState().addToast(t("settings.backup.restoreSuccess"), "success");
 				} catch (err: any) {
-					useToastStore.getState().addToast("还原失败: " + err.toString(), "error");
+					useToastStore.getState().addToast(t("settings.backup.restoreFailed") + err.toString(), "error");
 				} finally {
 					setBackupLoading(false);
 					setConfirmDialog((prev) => ({ ...prev, open: false }));
@@ -142,15 +144,15 @@ export function SettingsPage() {
 	const handleDeleteBackup = (backup: BackupRecord) => {
 		setConfirmDialog({
 			open: true,
-			title: "删除备份",
-			message: `确定要删除"${backup.name}"吗？此操作不可撤销。`,
+			title: t("settings.backup.deleteTitle"),
+			message: t("settings.backup.deleteConfirm", { name: backup.name }),
 			onConfirm: async () => {
 				try {
 					await deleteBackup(backup.id);
 					await loadBackupData();
-					useToastStore.getState().addToast("备份已删除", "success");
+					useToastStore.getState().addToast(t("settings.backup.deleteSuccess"), "success");
 				} catch (err: any) {
-					useToastStore.getState().addToast("删除失败: " + err.toString(), "error");
+					useToastStore.getState().addToast(t("settings.backup.deleteFailed") + err.toString(), "error");
 				} finally {
 					setConfirmDialog((prev) => ({ ...prev, open: false }));
 				}
@@ -164,13 +166,14 @@ export function SettingsPage() {
 		try {
 			await saveBackupSettings(changes);
 		} catch (err: any) {
-			useToastStore.getState().addToast("保存设置失败: " + err.toString(), "error");
+			useToastStore.getState().addToast(t("settings.backup.saveFailed") + err.toString(), "error");
 		}
 	};
 
 	const formatBackupTime = (timestamp: number) => {
 		const date = new Date(timestamp);
-		return date.toLocaleString("zh-CN", {
+		const locale = settings.language === "en" ? "en-US" : "zh-CN";
+		return date.toLocaleString(locale, {
 			year: "numeric",
 			month: "2-digit",
 			day: "2-digit",
@@ -212,11 +215,11 @@ export function SettingsPage() {
 		}, 1000);
 	};
 
-	const tabs = [
-		{ id: "general", name: "通用设置", icon: Settings },
-		{ id: "appearance", name: "外观个性化", icon: Palette },
-		{ id: "backup", name: "备份管理", icon: Archive },
-		{ id: "about", name: "关于 DeskZero", icon: Info },
+		const tabs = [
+		{ id: "general", name: t("settings.tabs.general"), icon: Settings },
+		{ id: "appearance", name: t("settings.tabs.appearance"), icon: Palette },
+		{ id: "backup", name: t("settings.tabs.backup"), icon: Archive },
+		{ id: "about", name: t("settings.tabs.about"), icon: Info },
 	];
 
 	return (
@@ -306,16 +309,29 @@ export function SettingsPage() {
 								animate={{ opacity: 1, y: 0 }}
 								transition={{ duration: 0.4 }}
 							>
-								<h2 className="text-3xl font-extrabold mb-8 text-[var(--color-text)] tracking-tight">
-									通用设置
-								</h2>
+							<h2 className="text-3xl font-extrabold mb-8 text-[var(--color-text)] tracking-tight">
+								{t("settings.general.title")}
+							</h2>
 
 								<div className="space-y-6">
-									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
-									<SettingRow
-										title="开机启动"
-										desc="登录 Windows 时自动运行 DeskZero"
-									>
+								<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
+								<SettingRow
+									title={t("settings.general.language")}
+									desc={t("settings.general.languageDesc")}
+								>
+									<SegmentedControl
+										options={[
+											{ value: "zh", label: "中文" },
+											{ value: "en", label: "English" },
+										]}
+										value={settings.language || "zh"}
+										onChange={(v) => saveSettings({ language: v as "zh" | "en" })}
+									/>
+								</SettingRow>
+								<SettingRow
+									title={t("settings.general.autoStart")}
+									desc={t("settings.general.autoStartDesc")}
+								>
 										<SwitchToggle
 											checked={settings.autoStart === true}
 											onChange={async () => {
@@ -326,8 +342,8 @@ export function SettingsPage() {
 													await invoke("set_auto_start", { enable: newValue });
 												} catch (err) {
 													console.error("设置开机自启失败:", err);
-													useToastStore.getState().addToast(
-														"设置开机自启失败: " + (err instanceof Error ? err.message : String(err)),
+												useToastStore.getState().addToast(
+													t("settings.general.autoStartFailed") + (err instanceof Error ? err.message : String(err)),
 														"error"
 													);
 													// 回滚前端状态
@@ -337,10 +353,10 @@ export function SettingsPage() {
 										/>
 									</SettingRow>
 
-										<SettingRow
-											title="隐藏文件后缀名"
-											desc="桌面非快捷方式文件是否隐藏后缀名"
-										>
+									<SettingRow
+										title={t("settings.general.hideFileExt")}
+										desc={t("settings.general.hideFileExtDesc")}
+									>
 											<SwitchToggle
 												checked={settings.hideFileExtensions !== false}
 												onChange={() =>
@@ -353,11 +369,11 @@ export function SettingsPage() {
 											/>
 										</SettingRow>
 
-										<SettingRow
-											title="双击隐藏桌面图标"
-											desc="在桌面空白处双击可快速隐藏或显示所有图标"
-											noBorder
-										>
+									<SettingRow
+										title={t("settings.general.doubleClickHide")}
+										desc={t("settings.general.doubleClickHideDesc")}
+										noBorder
+									>
 											<SwitchToggle
 												checked={settings.doubleClickHide !== false}
 												onChange={() =>
@@ -370,65 +386,65 @@ export function SettingsPage() {
 									</div>
 
 									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
-										<SettingRow
-											title="同步 Windows 桌面布局"
-											desc="获取当前 Windows 桌面的图标位置和网格参数"
-										>
+									<SettingRow
+										title={t("settings.general.syncLayout")}
+										desc={t("settings.general.syncLayoutDesc")}
+									>
 											<button
 												onClick={() => setIsSyncModalOpen(true)}
 												disabled={syncing}
 												className="px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg text-sm font-medium hover:bg-opacity-90 transition-all shadow-sm active:scale-95 disabled:opacity-50"
 											>
-												{syncing ? "同步中..." : "立即同步"}
+												{syncing ? t("settings.general.syncing") : t("settings.general.syncNow")}
 											</button>
 										</SettingRow>
-										<SettingRow
-											title="桌面网格宽度"
-											desc="调整桌面图标的水平对齐间距"
-										>
+									<SettingRow
+										title={t("settings.general.gridWidth")}
+										desc={t("settings.general.gridWidthDesc")}
+									>
 											<div className="flex items-center gap-4 w-48">
 												<Slider value={settings.gridWidth ?? 80} onChange={(v: number) => saveSettings({ gridWidth: v })} min={60} max={150} step={5} className="flex-1" />
 												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridWidth ?? 80}px`}</span>
 											</div>
 										</SettingRow>
-										<SettingRow
-											title="桌面网格高度"
-											desc="调整桌面图标的垂直对齐间距"
-										>
+									<SettingRow
+										title={t("settings.general.gridHeight")}
+										desc={t("settings.general.gridHeightDesc")}
+									>
 											<div className="flex items-center gap-4 w-48">
 												<Slider value={settings.gridHeight ?? 104} onChange={(v: number) => saveSettings({ gridHeight: v })} min={60} max={150} step={5} className="flex-1" />
 												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridHeight ?? 104}px`}</span>
 											</div>
 										</SettingRow>
-										<SettingRow
-											title="水平网格间隙"
-											desc="调整网格之间的水平不可放置区域"
-										>
+									<SettingRow
+										title={t("settings.general.gridGapX")}
+										desc={t("settings.general.gridGapXDesc")}
+									>
 											<div className="flex items-center gap-4 w-48">
 												<Slider value={settings.gridGapX ?? 20} onChange={(v: number) => saveSettings({ gridGapX: v })} min={0} max={100} step={5} className="flex-1" />
 												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridGapX ?? 20}px`}</span>
 											</div>
 										</SettingRow>
-										<SettingRow
-											title="垂直网格间隙"
-											desc="调整网格之间的垂直不可放置区域"
-										>
+									<SettingRow
+										title={t("settings.general.gridGapY")}
+										desc={t("settings.general.gridGapYDesc")}
+									>
 											<div className="flex items-center gap-4 w-48">
 												<Slider value={settings.gridGapY ?? 20} onChange={(v: number) => saveSettings({ gridGapY: v })} min={0} max={100} step={5} className="flex-1" />
 												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridGapY ?? 20}px`}</span>
 											</div>
 										</SettingRow>
-										<SettingRow
-											title="拖拽和缩放时显示网格线"
-											desc="以低不透明度虚化显示鼠标周围的辅助网格线"
-										>
+									<SettingRow
+										title={t("settings.general.showGridOnDrag")}
+										desc={t("settings.general.showGridOnDragDesc")}
+									>
 											<SwitchToggle checked={settings.showGridOnDrag !== false} onChange={(checked: boolean) => saveSettings({ showGridOnDrag: checked })} />
 										</SettingRow>
-										<SettingRow
-											title="软件名称文字大小"
-											desc="调整桌面图标文字的显示大小"
-											noBorder
-										>
+									<SettingRow
+										title={t("settings.general.fontSize")}
+										desc={t("settings.general.fontSizeDesc")}
+										noBorder
+									>
 											<div className="flex items-center gap-4 w-48">
 												<Slider value={settings.fontSize || 12} onChange={(v: number) => saveSettings({ fontSize: v })} min={10} max={24} step={1} className="flex-1" />
 												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.fontSize || 12}px`}</span>
@@ -446,28 +462,28 @@ export function SettingsPage() {
 								animate={{ opacity: 1, y: 0 }}
 								transition={{ duration: 0.4 }}
 							>
-								<h2 className="text-3xl font-extrabold mb-8 text-[var(--color-text)] tracking-tight">
-									外观个性化
-								</h2>
+							<h2 className="text-3xl font-extrabold mb-8 text-[var(--color-text)] tracking-tight">
+								{t("settings.appearance.title")}
+							</h2>
 
 								<div className="space-y-6">
 									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
-									<SettingRow title="主题" desc="选择应用的主题外观风格">
-										<SegmentedControl
-											options={[
-												{ value: "light", label: "浅色" },
-												{ value: "dark", label: "深色" },
-												{ value: "system", label: "跟随系统" },
-											]}
+								<SettingRow title={t("settings.appearance.theme")} desc={t("settings.appearance.themeDesc")}>
+									<SegmentedControl
+										options={[
+											{ value: "light", label: t("settings.appearance.light") },
+											{ value: "dark", label: t("settings.appearance.dark") },
+											{ value: "system", label: t("settings.appearance.systemTheme") },
+										]}
 											value={settings.theme}
 											onChange={(v) => saveSettings({ theme: v as any })}
 										/>
 									</SettingRow>
 
-									<SettingRow
-										title="主题色"
-										desc="设置高亮和焦点控件的强调色"
-									>
+								<SettingRow
+									title={t("settings.appearance.accentColor")}
+									desc={t("settings.appearance.accentColorDesc")}
+								>
 										<ColorPicker
 											value={settings.accentColor || "#0078d4"}
 											onChange={(color) => saveSettings({ accentColor: color })}
@@ -480,24 +496,24 @@ export function SettingsPage() {
 										/>
 									</SettingRow>
 
-									<SettingRow
-										title="选中图标背景"
-										desc="设置图标处于选中状态时的背板颜色"
-									>
-										<SegmentedControl
-											options={[
-												{ value: "white", label: "明亮半透明" },
-												{ value: "black", label: "暗色半透明" },
-											]}
+								<SettingRow
+									title={t("settings.appearance.selectedBg")}
+									desc={t("settings.appearance.selectedBgDesc")}
+								>
+									<SegmentedControl
+										options={[
+											{ value: "white", label: t("settings.appearance.selectedBgLight") },
+											{ value: "black", label: t("settings.appearance.selectedBgDark") },
+										]}
 											value={settings.selectedItemBackground || "white"}
 											onChange={(v) => saveSettings({ selectedItemBackground: v as any })}
 										/>
 									</SettingRow>
 
-										<SettingRow
-											title="选中图标毛玻璃效果"
-											desc="为选中项背板添加高斯模糊效果"
-										>
+									<SettingRow
+										title={t("settings.appearance.selectedBlur")}
+										desc={t("settings.appearance.selectedBlurDesc")}
+									>
 											<SwitchToggle
 												checked={!!settings.selectedItemBlur}
 												onChange={() =>
@@ -508,10 +524,10 @@ export function SettingsPage() {
 											/>
 										</SettingRow>
 
-										<SettingRow
-											title="全局毛玻璃效果"
-											desc="为收纳盒等容器和界面元素添加毛玻璃"
-										>
+									<SettingRow
+										title={t("settings.appearance.globalBlur")}
+										desc={t("settings.appearance.globalBlurDesc")}
+									>
 											<SwitchToggle
 												checked={!!settings.globalBlur}
 												onChange={() =>
@@ -520,10 +536,10 @@ export function SettingsPage() {
 											/>
 										</SettingRow>
 
-										<SettingRow
-											title="壁纸模糊穿透兼容模式"
-											desc="若毛玻璃无法穿透至桌面壁纸，请开启此选项"
-										>
+									<SettingRow
+										title={t("settings.appearance.wallpaperCompat")}
+										desc={t("settings.appearance.wallpaperCompatDesc")}
+									>
 											<SwitchToggle
 												checked={!!settings.wallpaperCompatible}
 												onChange={() =>
@@ -534,11 +550,11 @@ export function SettingsPage() {
 											/>
 										</SettingRow>
 
-										<SettingRow
-											title="隐藏快捷方式角标"
-											desc="隐藏桌面快捷方式左下角的小箭头标识"
-											noBorder
-										>
+									<SettingRow
+										title={t("settings.appearance.hideShortcutBadge")}
+										desc={t("settings.appearance.hideShortcutBadgeDesc")}
+										noBorder
+									>
 											<SwitchToggle
 												checked={!!settings.hideShortcutBadge}
 												onChange={() =>
@@ -551,11 +567,11 @@ export function SettingsPage() {
 									</div>
 
 									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl transition-all duration-500">
-										<SettingRow
-											title="图标发光效果"
-											desc="为桌面图标添加柔和的环境发光效果"
-											noBorder={!settings.iconGlow}
-										>
+									<SettingRow
+										title={t("settings.appearance.iconGlow")}
+										desc={t("settings.appearance.iconGlowDesc")}
+										noBorder={!settings.iconGlow}
+									>
 											<SwitchToggle
 												checked={!!settings.iconGlow}
 												onChange={() =>
@@ -573,20 +589,20 @@ export function SettingsPage() {
 													className="overflow-hidden"
 												>
 													<div className="pl-6 pb-2 relative before:absolute before:left-2 before:top-0 before:bottom-6 before:w-[2px] before:rounded-full before:bg-[var(--color-accent)]/20">
-														<SettingRow
-															title="发光范围"
-															desc="调整图标发光效果的扩散程度"
-														>
+													<SettingRow
+														title={t("settings.appearance.glowRadius")}
+														desc={t("settings.appearance.glowRadiusDesc")}
+													>
 															<div className="flex items-center gap-4 w-48">
 																<Slider value={settings.iconGlowRadius ?? 12} onChange={(v: number) => saveSettings({ iconGlowRadius: v })} min={2} max={30} step={1} className="flex-1" />
 																<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.iconGlowRadius ?? 12}px`}</span>
 															</div>
 														</SettingRow>
-														<SettingRow
-															title="发光强度"
-															desc="调整发光效果的透明度和亮度"
-															noBorder
-														>
+													<SettingRow
+														title={t("settings.appearance.glowIntensity")}
+														desc={t("settings.appearance.glowIntensityDesc")}
+														noBorder
+													>
 															<div className="flex items-center gap-4 w-48">
 																<Slider value={settings.iconGlowIntensity ?? 0.6} onChange={(v: number) => saveSettings({ iconGlowIntensity: v })} min={0.1} max={1.0} step={0.05} className="flex-1" />
 																<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${Math.round((settings.iconGlowIntensity ?? 0.6) * 100)}%`}</span>
@@ -599,20 +615,20 @@ export function SettingsPage() {
 									</div>
 
 									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
-										<SettingRow
-											title="图标不透明度"
-											desc="调整桌面所有图标的整体不透明度"
-										>
+									<SettingRow
+										title={t("settings.appearance.iconOpacity")}
+										desc={t("settings.appearance.iconOpacityDesc")}
+									>
 											<div className="flex items-center gap-4 w-48">
 												<Slider value={settings.iconOpacity ?? 1.0} onChange={(v: number) => saveSettings({ iconOpacity: v })} min={0.1} max={1.0} step={0.05} className="flex-1" />
 												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${Math.round((settings.iconOpacity ?? 1.0) * 100)}%`}</span>
 											</div>
 										</SettingRow>
-										<SettingRow
-											title="字体不透明度"
-											desc="调整桌面图标文字的不透明度"
-											noBorder
-										>
+									<SettingRow
+										title={t("settings.appearance.textOpacity")}
+										desc={t("settings.appearance.textOpacityDesc")}
+										noBorder
+									>
 											<div className="flex items-center gap-4 w-48">
 												<Slider value={settings.textOpacity ?? 1.0} onChange={(v: number) => saveSettings({ textOpacity: v })} min={0.1} max={1.0} step={0.05} className="flex-1" />
 												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${Math.round((settings.textOpacity ?? 1.0) * 100)}%`}</span>
@@ -630,17 +646,17 @@ export function SettingsPage() {
 								animate={{ opacity: 1, y: 0 }}
 								transition={{ duration: 0.4 }}
 							>
-								<h2 className="text-3xl font-extrabold mb-8 text-[var(--color-text)] tracking-tight">
-									备份管理
-								</h2>
+							<h2 className="text-3xl font-extrabold mb-8 text-[var(--color-text)] tracking-tight">
+								{t("settings.backup.title")}
+							</h2>
 
 								<div className="space-y-6">
 									{/* 自动备份设置 */}
 									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
-										<SettingRow
-											title="自动备份"
-											desc="定时自动备份桌面布局、容器和设置"
-										>
+									<SettingRow
+										title={t("settings.backup.autoBackup")}
+										desc={t("settings.backup.autoBackupDesc")}
+									>
 											<SwitchToggle
 												checked={backupSettings.autoBackupEnabled}
 												onChange={() =>
@@ -653,23 +669,23 @@ export function SettingsPage() {
 
 										{backupSettings.autoBackupEnabled && (
 											<>
-												<SettingRow
-													title="备份间隔"
-													desc="每隔多少小时自动备份一次"
-												>
+											<SettingRow
+												title={t("settings.backup.interval")}
+												desc={t("settings.backup.intervalDesc")}
+											>
 													<div className="flex items-center gap-4 w-48">
 														<Slider value={backupSettings.autoBackupHours} onChange={(v: number) => handleSaveBackupSettings({ autoBackupHours: v })} min={1} max={24} step={1} className="flex-1" />
-														<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${backupSettings.autoBackupHours} 小时`}</span>
+														<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{t("settings.backup.hours", { count: backupSettings.autoBackupHours })}</span>
 													</div>
 												</SettingRow>
-												<SettingRow
-													title="最大保留数"
-													desc="超出数量时自动删除最旧的备份"
-													noBorder
-												>
+											<SettingRow
+												title={t("settings.backup.maxBackups")}
+												desc={t("settings.backup.maxBackupsDesc")}
+												noBorder
+											>
 													<div className="flex items-center gap-4 w-48">
 														<Slider value={backupSettings.maxBackups} onChange={(v: number) => handleSaveBackupSettings({ maxBackups: v })} min={5} max={100} step={5} className="flex-1" />
-														<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${backupSettings.maxBackups} 个`}</span>
+														<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{t("settings.backup.count", { count: backupSettings.maxBackups })}</span>
 													</div>
 												</SettingRow>
 											</>
@@ -683,7 +699,7 @@ export function SettingsPage() {
 												type="text"
 												value={backupNote}
 												onChange={(e) => setBackupNote(e.target.value)}
-												placeholder="备份备注（可选）"
+												placeholder={t("settings.backup.notePlaceholder")}
 												className="flex-1 px-3 py-2 bg-black/5 dark:bg-white/5 rounded-lg text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)]/50 outline-none border border-transparent focus:border-[var(--color-accent)]/30 transition-colors"
 											/>
 											<button
@@ -692,7 +708,7 @@ export function SettingsPage() {
 												className="px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg text-sm font-medium hover:bg-opacity-90 transition-all shadow-sm active:scale-95 disabled:opacity-50 flex items-center gap-2"
 											>
 												<Plus size={14} />
-												立即备份
+												{t("settings.backup.backupNow")}
 											</button>
 										</div>
 									</div>
@@ -701,16 +717,16 @@ export function SettingsPage() {
 									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 shadow-sm backdrop-blur-xl overflow-hidden">
 										<div className="px-6 py-3 border-b border-black/5 dark:border-white/5">
 											<div className="text-sm font-medium text-[var(--color-text)]">
-												备份历史
+												{t("settings.backup.history")}
 												<span className="ml-2 text-xs text-[var(--color-text-secondary)]">
-													共 {backupList.length} 个备份
+													{t("settings.backup.totalBackups", { count: backupList.length })}
 												</span>
 											</div>
 										</div>
 
 										{backupList.length === 0 ? (
 											<div className="px-6 py-12 text-center text-sm text-[var(--color-text-secondary)]/60">
-												暂无备份记录
+												{t("settings.backup.noBackups")}
 											</div>
 										) : (
 											<div className="max-h-[400px] overflow-y-auto hidden-native-scrollbar">
@@ -732,7 +748,7 @@ export function SettingsPage() {
 																			: "bg-green-500/10 text-green-500"
 																	)}
 																>
-																	{backup.type === "manual" ? "手动" : "自动"}
+																	{backup.type === "manual" ? t("common.manual") : t("common.auto")}
 																</span>
 															</div>
 															<div className="text-xs text-[var(--color-text-secondary)] mt-0.5">
@@ -743,14 +759,14 @@ export function SettingsPage() {
 															<button
 																onClick={() => handleRestoreBackup(backup)}
 																className="p-1.5 rounded-lg hover:bg-[var(--color-accent)]/10 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors"
-																title="还原"
+																title={t("settings.backup.restore")}
 															>
 																<RotateCcw size={14} />
 															</button>
 															<button
 																onClick={() => handleDeleteBackup(backup)}
 																className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--color-text-secondary)] hover:text-red-500 transition-colors"
-																title="删除"
+																title={t("common.delete")}
 															>
 																<Trash2 size={14} />
 															</button>
@@ -771,9 +787,9 @@ export function SettingsPage() {
 								animate={{ opacity: 1, y: 0 }}
 								transition={{ duration: 0.4 }}
 							>
-								<h2 className="text-3xl font-extrabold mb-8 text-[var(--color-text)] tracking-tight">
-									关于 DeskZero
-								</h2>
+							<h2 className="text-3xl font-extrabold mb-8 text-[var(--color-text)] tracking-tight">
+								{t("settings.about.title")}
+							</h2>
 
 								<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 p-8 shadow-sm backdrop-blur-xl mb-6 flex items-center gap-8">
 									<img
@@ -789,42 +805,40 @@ export function SettingsPage() {
 											Version {appConfig.version}
 										</div>
 										<div className="text-sm text-[var(--color-text-secondary)] mt-3 leading-relaxed">
-											一款现代化的 Windows 桌面整理工具，
-											<br />
-											为您提供毛玻璃质感、丝滑的拖拽动画与高效的分区收纳体验。
+											{t("settings.about.description")}
 										</div>
 									</div>
 								</div>
 
 								<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
-									<SettingRow
-										title="开发者"
-										desc="DeskZero 作者及主要维护者"
-										noBorder={false}
-									>
+								<SettingRow
+									title={t("settings.about.developer")}
+									desc={t("settings.about.developerDesc")}
+									noBorder={false}
+								>
 										<span className="text-sm font-medium text-[var(--color-text)] px-2">
 											LanRhyme
 										</span>
 									</SettingRow>
 
-									<SettingRow
-										title="开源许可"
-										desc="查看 DeskZero 使用的第三方库及授权协议"
-										noBorder={false}
-									>
+								<SettingRow
+									title={t("settings.about.license")}
+									desc={t("settings.about.licenseDesc")}
+									noBorder={false}
+								>
 										<button
 											onClick={() => setIsLicenseDialogOpen(true)}
 											className="px-4 py-1.5 bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 rounded-lg text-sm font-medium transition-colors outline-none cursor-pointer"
 										>
-											查看许可证
+											{t("settings.about.viewLicense")}
 										</button>
 									</SettingRow>
 
-									<SettingRow
-										title="开源仓库"
-										desc="在 GitHub 上查看源码、提交问题或贡献代码"
-										noBorder={true}
-									>
+								<SettingRow
+									title={t("settings.about.github")}
+									desc={t("settings.about.githubDesc")}
+									noBorder={true}
+								>
 										<a
 											href="https://github.com/LanRhyme/DeskZero"
 											target="_blank"
@@ -847,7 +861,7 @@ export function SettingsPage() {
 												}
 											}}
 										>
-											前往 GitHub
+											{t("settings.about.goToGitHub")}
 										</a>
 									</SettingRow>
 								</div>
@@ -891,9 +905,9 @@ export function SettingsPage() {
 							className="relative w-full max-w-2xl max-h-[85vh] bg-[#fafafa] dark:bg-[#1a1a1a] rounded-2xl shadow-2xl border border-black/5 dark:border-white/10 flex flex-col overflow-hidden"
 						>
 							<div className="flex items-center justify-between p-6 border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/20">
-								<h3 className="text-xl font-bold tracking-tight text-[var(--color-text)]">
-									第三方开源库授权
-								</h3>
+							<h3 className="text-xl font-bold tracking-tight text-[var(--color-text)]">
+								{t("settings.about.thirdPartyLicenses")}
+							</h3>
 								<button
 									onClick={() => setIsLicenseDialogOpen(false)}
 									className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors outline-none"
@@ -1168,17 +1182,17 @@ export function SettingsPage() {
 						>
 							<h3 className="text-lg font-bold text-[var(--color-text)] mb-2 flex items-center gap-2">
 								<LayoutGrid className="text-[var(--color-accent)] w-5 h-5" />
-								同步 Windows 桌面布局
+								{t("settings.syncDialog.title")}
 							</h3>
 							<p className="text-xs text-[var(--color-text-secondary)] leading-relaxed mb-5">
-								将根据当前 Windows 系统的图标位置和尺寸一键同步到 DeskZero。如果同步后您的图标显示偏大、偏小或产生了偏移，您可以在下方调节缩放倍数。
+								{t("settings.syncDialog.description")}
 							</p>
 							
 							<div className="mb-6 bg-black/5 dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-xl p-4">
 								<div className="flex justify-between items-center mb-2">
-									<span className="text-xs font-semibold text-[var(--color-text)]">
-										图标网格同步倍数
-									</span>
+								<span className="text-xs font-semibold text-[var(--color-text)]">
+									{t("settings.syncDialog.syncMultiplier")}
+								</span>
 									<span className="text-xs font-bold text-[var(--color-accent)] font-mono">
 										{syncMultiplier.toFixed(2)}x
 									</span>
@@ -1191,9 +1205,9 @@ export function SettingsPage() {
 									step={0.05}
 								/>
 								<div className="flex justify-between text-[9px] text-[var(--color-text-secondary)] mt-1 font-mono">
-									<span>0.50x (更小)</span>
-									<span>1.00x (默认)</span>
-									<span>2.00x (更大)</span>
+								<span>{t("settings.syncDialog.multiplier05")}</span>
+								<span>{t("settings.syncDialog.multiplier1")}</span>
+								<span>{t("settings.syncDialog.multiplier2")}</span>
 								</div>
 							</div>
 
@@ -1202,16 +1216,16 @@ export function SettingsPage() {
 									onClick={() => setIsSyncModalOpen(false)}
 									className="px-4 py-2 border border-black/10 dark:border-white/10 text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/5 rounded-lg text-xs font-medium transition-all"
 								>
-									取消
-								</button>
-								<button
-									onClick={() => {
-										setIsSyncModalOpen(false);
-										handleSyncWindowsLayout(syncMultiplier);
-									}}
-									className="px-4 py-2 bg-[var(--color-accent)] text-white hover:bg-opacity-95 rounded-lg text-xs font-medium transition-all shadow-sm shadow-[var(--color-accent)]/20 active:scale-95"
-								>
-									确认同步
+								{t("common.cancel")}
+							</button>
+							<button
+								onClick={() => {
+									setIsSyncModalOpen(false);
+									handleSyncWindowsLayout(syncMultiplier);
+								}}
+								className="px-4 py-2 bg-[var(--color-accent)] text-white hover:bg-opacity-95 rounded-lg text-xs font-medium transition-all shadow-sm shadow-[var(--color-accent)]/20 active:scale-95"
+							>
+								{t("settings.syncDialog.confirmSync")}
 								</button>
 							</div>
 						</motion.div>

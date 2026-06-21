@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CalendarDays, Timer, PartyPopper } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { useTranslation } from "react-i18next";
 import type { WidgetComponentProps } from "@/types/widget";
 import { cn } from "@/utils/cn";
 
@@ -61,6 +62,7 @@ export function CountdownWidget({
   containerId,
 }: WidgetComponentProps) {
   const c = config.config;
+  const { t } = useTranslation();
   const displayMode = c.displayMode || "list";
   const fontSizeScale = c.fontSizeScale ?? 1.0;
   const fontColor = c.fontColor || "theme";
@@ -130,7 +132,7 @@ export function CountdownWidget({
       <div className="w-full h-full flex flex-col items-center justify-center gap-2 opacity-40 select-none">
         <CalendarDays size={isCompact ? 28 : 40} strokeWidth={1.2} className="text-[var(--color-text)]" />
         <span style={{ fontSize: `${baseFontSize}px` }} className={secondaryColorClass}>
-          点击设置添加倒计日
+          {t("widget.countdown.clickToAdd")}
         </span>
       </div>
     );
@@ -157,12 +159,12 @@ export function CountdownWidget({
 
           const displayDays = isAnniversary ? days!.years : daysUntil!;
           const subText = isAnniversary
-            ? `还有 ${days!.days} 天`
+            ? t("widget.countdown.daysLeft", { count: days!.days })
             : daysUntil! > 0
-              ? `还有 ${daysUntil} 天`
+              ? t("widget.countdown.daysLeft", { count: daysUntil })
               : daysUntil === 0
-                ? "就是今天"
-                : "已过期";
+                ? t("widget.countdown.today")
+                : t("widget.countdown.expired");
 
           const Icon = isAnniversary ? PartyPopper : Timer;
 
@@ -170,7 +172,7 @@ export function CountdownWidget({
             const isToday = isAnniversary ? days!.days === 0 : daysUntil === 0;
             const isExpired = !isAnniversary && daysUntil! < 0;
             const valNum = isAnniversary ? displayDays : Math.abs(displayDays);
-            const cardSubText = isExpired ? `已过 ${valNum} 天` : subText;
+            const cardSubText = isExpired ? t("widget.countdown.daysPassed", { count: valNum }) : subText;
             const cardDisplayDays = isExpired ? `${valNum}` : `${displayDays}`;
 
             const hexToRgba = (hex: string, alpha: number) => {
@@ -231,7 +233,7 @@ export function CountdownWidget({
                 >
                   <span>{isAnniversary ? `${valNum}` : cardDisplayDays}</span>
                   <span className="text-[10px] font-normal opacity-70" style={{ fontSize: `${baseFontSize * 0.7}px` }}>
-                    {isAnniversary ? "年" : "天"}
+                    {isAnniversary ? t("widget.countdown.year") : t("widget.countdown.day")}
                   </span>
                 </div>
                 
@@ -241,7 +243,7 @@ export function CountdownWidget({
                   style={{ fontSize: `${baseFontSize * 0.72}px` }}
                 >
                   {isToday ? (
-                    <span className="text-[var(--color-accent)] font-semibold animate-bounce">🎉 今天！</span>
+                    <span className="text-[var(--color-accent)] font-semibold animate-bounce">{t("widget.countdown.todayLabel")}</span>
                   ) : (
                     <span>{cardSubText}</span>
                   )}
@@ -273,7 +275,7 @@ export function CountdownWidget({
                 </div>
               </div>
               <div className={cn("font-bold tabular-nums flex-shrink-0 tracking-tight", !event.color && fontColorClass)} style={{ fontSize: `${daysFontSize}px`, color: event.color || fontColorStyle.color, ...fontColorStyle }}>
-                {isAnniversary ? `${displayDays}年` : displayDays}
+                {isAnniversary ? t("widget.countdown.yearsDays", { years: displayDays }) : displayDays}
               </div>
             </motion.div>
           );

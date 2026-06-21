@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Trash2, Settings } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useDrag } from "@/hooks/useDrag";
 import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
 import { ContextMenu } from "@/components/ContextMenu/ContextMenu";
@@ -23,6 +24,7 @@ interface WidgetContainerProps {
 }
 
 export function WidgetContainer({ container }: WidgetContainerProps) {
+  const { t } = useTranslation();
   const {
     updateContainerPosition,
     updateContainerSize,
@@ -72,7 +74,7 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
 
   const contextMenuItems: MenuItem[] = [
     {
-      label: "小组件设置",
+      label: t("widget.settings"),
       icon: <Settings size={14} />,
       onClick: () => {
         if (widgetConfig.widgetType !== "custom") {
@@ -82,7 +84,7 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
     },
     { label: "", divider: true },
     {
-      label: "移除",
+      label: t("widget.remove"),
       icon: <Trash2 size={14} />,
       onClick: () => setShowDeleteConfirm(true),
     },
@@ -285,7 +287,7 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-xs opacity-50">
-              未知小组件类型: {widgetConfig.widgetType}
+              {t("widget.unknownType")}{widgetConfig.widgetType}
             </div>
           )}
         </div>
@@ -354,9 +356,9 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
       {/* 删除确认 */}
       <ConfirmDialog
         isOpen={showDeleteConfirm}
-        title="移除小组件"
-        message={`确定要移除「${container.name}」吗？`}
-        confirmLabel="移除"
+        title={t("widget.removeTitle")}
+        message={t("widget.removeConfirm", { name: container.name })}
+        confirmLabel={t("common.remove")}
         onConfirm={async () => {
           setShowDeleteConfirm(false);
           await handleDelete();

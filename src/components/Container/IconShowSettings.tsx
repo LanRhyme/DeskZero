@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Slider } from "@/components/UI/Slider";
 import { SwitchToggle } from "@/components/UI/SwitchToggle";
 import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
@@ -19,6 +20,7 @@ interface IconShowSettingsProps {
 }
 
 export function IconShowSettings({ container, onClose }: IconShowSettingsProps) {
+	const { t } = useTranslation();
 	const { updateContainerStyle, updateContainerSize, deleteContainer } = useContainerStore();
 
 	const grid = getGridSize();
@@ -102,7 +104,7 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 		<>
 		<div ref={containerRef} className="w-full transform overflow-hidden rounded-xl bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-3xl p-3 text-left align-middle shadow-2xl transition-all border border-black/5 dark:border-white/10 ring-1 ring-black/5">
 			<div className="text-sm font-medium leading-5 text-[var(--color-text)] flex justify-between items-center mb-3">
-				<span>展示容器设置</span>
+				<span>{t("container.iconShowSettings")}</span>
 				<button onClick={onClose} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-[var(--color-text-secondary)]">
 					<X size={12} />
 				</button>
@@ -111,10 +113,10 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 			<div className="space-y-3 max-h-[420px] overflow-y-auto hidden-native-scrollbar pr-1 pb-4">
 				{/* Colors */}
 				<div className="space-y-2">
-			<SettingRow title="背景设置" layout="vertical">
-					<div className="flex gap-1.5 mb-2">
-						<button onClick={() => setBgColor("theme")} className={cn("flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200", bgColor === "theme" ? "bg-[var(--color-accent)] text-white" : "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)]")}>跟随主题</button>
-						<button onClick={() => setBgColor(bgColor === "theme" ? "#000000" : bgColor)} className={cn("flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200", bgColor !== "theme" ? "bg-[var(--color-accent)] text-white" : "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)]")}>自定义颜色</button>
+		<SettingRow title={t("container.iconShowBg")} layout="vertical">
+				<div className="flex gap-1.5 mb-2">
+					<button onClick={() => setBgColor("theme")} className={cn("flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200", bgColor === "theme" ? "bg-[var(--color-accent)] text-white" : "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)]")}>{t("container.followThemeBtn")}</button>
+					<button onClick={() => setBgColor(bgColor === "theme" ? "#000000" : bgColor)} className={cn("flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all duration-200", bgColor !== "theme" ? "bg-[var(--color-accent)] text-white" : "bg-black/5 dark:bg-white/5 text-[var(--color-text-secondary)]")}>{t("container.customColor")}</button>
 					</div>
 
 					<div className="flex items-center gap-3">
@@ -126,8 +128,8 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 							/>
 						)}
 						<div className="flex-1">
-							<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
-								<span>不透明度</span>
+						<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
+							<span>{t("container.opacity")}</span>
 								<span>{Math.round(opacity * 100)}%</span>
 							</div>
 							<Slider min={0} max={1} step={0.05} value={opacity} onChange={setOpacity} />
@@ -138,8 +140,8 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 
 				{/* Corner Radius */}
 				<div className="space-y-2">
-					<div className="flex justify-between text-xs font-medium text-[var(--color-text)]">
-						<span>圆角半径</span>
+				<div className="flex justify-between text-xs font-medium text-[var(--color-text)]">
+					<span>{t("container.cornerRadiusLabel")}</span>
 						<span>{cornerRadius}px</span>
 					</div>
 					<Slider min={0} max={64} step={1} value={cornerRadius} onChange={setCornerRadius} />
@@ -149,35 +151,35 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 
 				{/* Grid Size */}
 				<div className="space-y-2">
-					<SettingRow title="网格尺寸 (格数)" layout="vertical">
-					<div className="flex gap-3">
-						<div className="flex-1 space-y-1">
-							<span className="text-[10px] text-[var(--color-text-secondary)] block">列数 (宽)</span>
-							<NumberInput min={1} max={20} value={cols} onChange={setCols} />
-						</div>
-						<div className="flex-1 space-y-1">
-							<span className="text-[10px] text-[var(--color-text-secondary)] block">行数 (高)</span>
-							<NumberInput min={1} max={20} value={rows} onChange={setRows} />
-						</div>
+				<SettingRow title={t("container.gridSizeLabel")} layout="vertical">
+				<div className="flex gap-3">
+					<div className="flex-1 space-y-1">
+						<span className="text-[10px] text-[var(--color-text-secondary)] block">{t("container.columns")}</span>
+						<NumberInput min={1} max={20} value={cols} onChange={setCols} />
 					</div>
-				</SettingRow>
+					<div className="flex-1 space-y-1">
+						<span className="text-[10px] text-[var(--color-text-secondary)] block">{t("container.rows")}</span>
+						<NumberInput min={1} max={20} value={rows} onChange={setRows} />
+					</div>
+				</div>
+			</SettingRow>
 				</div>
 
 				<div className="h-[1px] w-full bg-black/5 dark:bg-white/10 my-1" />
 
 				{/* Feathering */}
 				<div className="space-y-2">
-					<SettingRow title="边缘羽化" layout="vertical">
-					<div>
-						<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
-							<span>X 轴羽化</span>
+				<SettingRow title={t("container.edgeFeather")} layout="vertical">
+				<div>
+					<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
+						<span>{t("container.xFade")}</span>
 							<span>{featherX}px</span>
 						</div>
 						<Slider min={0} max={100} step={1} value={featherX} onChange={setFeatherX} />
 					</div>
 					<div className="pt-1">
 						<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
-							<span>Y 轴羽化</span>
+							<span>{t("container.yFade")}</span>
 							<span>{featherY}px</span>
 						</div>
 						<Slider min={0} max={100} step={1} value={featherY} onChange={setFeatherY} />
@@ -189,28 +191,28 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 
 				{/* Icon Styles */}
 				<div className="space-y-2">
-					<SettingRow title="图标设置" layout="vertical">
-					<div>
-						<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
-							<span>图标大小</span>
+				<SettingRow title={t("container.iconSettings")} layout="vertical">
+				<div>
+					<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
+						<span>{t("container.iconSize")}</span>
 							<span>{iconSizeInside}px</span>
 						</div>
 						<Slider min={24} max={128} step={2} value={iconSizeInside} onChange={setIconSizeInside} />
 					</div>
-					<div className="pt-1">
-						<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
-							<span>图标不透明度</span>
+				<div className="pt-1">
+					<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
+						<span>{t("container.iconOpacity")}</span>
 							<span>{Math.round(iconOpacityInside * 100)}%</span>
 						</div>
 						<Slider min={0.1} max={1} step={0.05} value={iconOpacityInside} onChange={setIconOpacityInside} />
 					</div>
-					<div className="pt-2 flex items-center justify-between">
-						<span className="text-xs text-[var(--color-text)] font-medium">显示图标名称</span>
+				<div className="pt-2 flex items-center justify-between">
+					<span className="text-xs text-[var(--color-text)] font-medium">{t("container.showIconName")}</span>
 						<SwitchToggle checked={showNamesInside} onChange={setShowNamesInside} />
 					</div>
-					<div className="pt-2">
-						<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
-							<span>图标间距比例</span>
+				<div className="pt-2">
+					<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
+						<span>{t("container.iconSpacing")}</span>
 							<span>{Math.round(iconGapRatio * 100)}%</span>
 						</div>
 						<Slider min={0.2} max={1.8} step={0.05} value={iconGapRatio} onChange={setIconGapRatio} />
@@ -220,17 +222,17 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 
 				{/* Hover Animations */}
 				<div className="space-y-2">
-					<SettingRow title="悬停微动画" layout="vertical">
-					<CustomSelect
-						value={hoverAnimation}
-						onChange={setHoverAnimation}
-						options={[
-							{ value: "none", label: "无" },
-							{ value: "scale", label: "放大" },
-							{ value: "lift", label: "上浮" },
-							{ value: "glow", label: "发光" },
-							{ value: "rotate", label: "微旋" },
-						]}
+				<SettingRow title={t("container.hoverAnimation")} layout="vertical">
+				<CustomSelect
+					value={hoverAnimation}
+					onChange={setHoverAnimation}
+					options={[
+						{ value: "none", label: t("container.animNone") },
+						{ value: "scale", label: t("container.animScale") },
+						{ value: "lift", label: t("container.animFloat") },
+						{ value: "glow", label: t("container.animGlow") },
+						{ value: "rotate", label: t("container.animSpin") },
+					]}
 						position="top"
 						size="md"
 					/>
@@ -239,17 +241,17 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 			</div>
 
 			<div className="pt-3 flex gap-2">
-				<button type="button" className="flex-1 justify-center rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/20 transition-colors focus:outline-none" onClick={() => setShowDeleteConfirm(true)}>移除</button>
-				<button type="button" className="flex-1 justify-center rounded-lg border border-transparent bg-black/5 dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[var(--color-text)] hover:bg-black/10 dark:hover:bg-white/10 transition-colors focus:outline-none" onClick={onClose}>取消</button>
-				<button type="button" className="flex-1 justify-center rounded-lg border border-transparent bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-accent)] transition-colors shadow-md shadow-[var(--color-accent)]/25 focus:outline-none" onClick={handleSave}>保存</button>
+			<button type="button" className="flex-1 justify-center rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/20 transition-colors focus:outline-none" onClick={() => setShowDeleteConfirm(true)}>{t("common.remove")}</button>
+			<button type="button" className="flex-1 justify-center rounded-lg border border-transparent bg-black/5 dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[var(--color-text)] hover:bg-black/10 dark:hover:bg-white/10 transition-colors focus:outline-none" onClick={onClose}>{t("common.cancel")}</button>
+			<button type="button" className="flex-1 justify-center rounded-lg border border-transparent bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-accent)] transition-colors shadow-md shadow-[var(--color-accent)]/25 focus:outline-none" onClick={handleSave}>{t("common.save")}</button>
 			</div>
 		</div>
-		<ConfirmDialog
-			isOpen={showDeleteConfirm}
-			title="移除图标展示容器"
-			message={`确定要移除「${container.name}」吗？容器内的图标将回到桌面。`}
-			confirmLabel="移除"
-			onConfirm={async () => {
+	<ConfirmDialog
+		isOpen={showDeleteConfirm}
+		title={t("container.removeIconShow")}
+		message={t("container.removeIconShowConfirm", { name: container.name })}
+		confirmLabel={t("common.remove")}
+		onConfirm={async () => {
 				setShowDeleteConfirm(false);
 				await handleDelete();
 			}}

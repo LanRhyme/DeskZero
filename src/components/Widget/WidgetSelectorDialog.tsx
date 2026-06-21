@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Monitor, Clock, StickyNote, Activity, Plus, X, FileCode, Quote, Timer, ListTodo, CalendarDays, CloudSun, Music } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getAllWidgets } from "./WidgetRegistry";
 
 import { useWidgetStore, type CustomWidgetEntry } from "@/stores/widgetStore";
@@ -36,6 +37,7 @@ export function WidgetSelectorDialog({
 }: WidgetSelectorDialogProps) {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const builtInWidgets = getAllWidgets();
+  const { t } = useTranslation();
 
 
   const { customWidgets, addCustomWidget } = useWidgetStore();
@@ -57,7 +59,7 @@ export function WidgetSelectorDialog({
         const widgetConfig = { ...reg.defaultConfig };
 
         const container = await createContainer(
-          reg.name,
+          t(reg.name),
           "widget",
           position,
         );
@@ -76,10 +78,10 @@ export function WidgetSelectorDialog({
           await invoke("update_container_full", { container: updated });
         }
 
-        useToastStore.getState().addToast(`已创建${reg.name}小组件`, "success");
+        useToastStore.getState().addToast(t("widget.created", { name: t(reg.name) }), "success");
       }
     } catch (e: any) {
-      useToastStore.getState().addToast("创建小组件失败: " + String(e), "error");
+      useToastStore.getState().addToast(t("widget.createFailed") + String(e), "error");
     }
     onClose();
   };
@@ -88,9 +90,9 @@ export function WidgetSelectorDialog({
     try {
       const { open } = await import("@tauri-apps/plugin-dialog");
       const selected = await open({
-        filters: [{ name: "HTML 文件", extensions: ["html", "htm"] }],
+        filters: [{ name: t("widget.htmlFile"), extensions: ["html", "htm"] }],
         multiple: false,
-        title: "选择自定义小组件 HTML 文件",
+        title: t("widget.selectHtml"),
       });
       if (selected) {
         const htmlPath = Array.isArray(selected) ? selected[0] : selected;
@@ -119,10 +121,10 @@ export function WidgetSelectorDialog({
           await invoke("update_container_full", { container: updated });
         }
 
-        useToastStore.getState().addToast(`已添加自定义小组件: ${entry.name}`, "success");
+        useToastStore.getState().addToast(t("widget.addedCustom", { name: entry.name }), "success");
       }
     } catch (e: any) {
-      useToastStore.getState().addToast("添加自定义小组件失败: " + String(e), "error");
+      useToastStore.getState().addToast(t("widget.addCustomFailed") + String(e), "error");
     }
     onClose();
   };
@@ -149,7 +151,7 @@ export function WidgetSelectorDialog({
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-black/5 dark:border-white/5">
-              <h2 className="text-sm font-medium text-[var(--color-text)]">添加小组件</h2>
+              <h2 className="text-sm font-medium text-[var(--color-text)]">{t("widget.addWidget")}</h2>
               <button
                 onClick={onClose}
                 className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-[var(--color-text-secondary)]"
@@ -163,7 +165,7 @@ export function WidgetSelectorDialog({
               {/* 内置小组件 */}
               <div>
                 <div className="text-[10px] font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-2.5">
-                  内置小组件
+                  {t("widget.builtin")}
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {builtInWidgets.map((w) => (
@@ -179,7 +181,7 @@ export function WidgetSelectorDialog({
                       <div className={selectedType === w.widgetType ? "text-white" : "text-[var(--color-text-secondary)] group-hover:text-[var(--color-accent)] transition-colors"}>
                         {iconMap[w.widgetType] || <Monitor size={24} />}
                       </div>
-                      <span className="text-xs font-medium">{w.name}</span>
+                      <span className="text-xs font-medium">{t(w.name)}</span>
                       <span className={`text-[10px] ${selectedType === w.widgetType ? "text-white/70" : "text-[var(--color-text-secondary)] opacity-50"}`}>
                         {w.defaultSize.width}×{w.defaultSize.height}
                       </span>
@@ -191,7 +193,7 @@ export function WidgetSelectorDialog({
               {/* 自定义小组件 */}
               <div>
                 <div className="text-[10px] font-medium text-[var(--color-text-secondary)] uppercase tracking-wider mb-2.5">
-                  自定义小组件
+                  {t("widget.custom")}
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {customWidgets.map((w) => (
@@ -213,7 +215,7 @@ export function WidgetSelectorDialog({
                     className="flex flex-col items-center gap-2 p-3.5 rounded-xl border border-dashed border-black/10 dark:border-white/10 hover:border-[var(--color-accent)]/40 transition-all duration-200 text-[var(--color-text-secondary)]"
                   >
                     <Plus size={24} className="opacity-30" />
-                    <span className="text-xs opacity-50">导入 HTML</span>
+                    <span className="text-xs opacity-50">{t("widget.importHtml")}</span>
                   </button>
                 </div>
               </div>
@@ -226,14 +228,14 @@ export function WidgetSelectorDialog({
                 onClick={onClose}
                 className="px-4 py-1.5 text-xs rounded-lg border border-transparent bg-black/5 dark:bg-white/5 text-[var(--color-text)] hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
-                取消
+                {t("common.cancel")}
               </button>
               <button
                 onClick={handleCreate}
                 disabled={!selectedType}
                 className="px-4 py-1.5 text-xs rounded-lg border border-transparent bg-[var(--color-accent)] text-white disabled:opacity-40 transition-all shadow-md shadow-[var(--color-accent)]/25 hover:shadow-lg"
               >
-                创建
+                {t("common.create")}
               </button>
             </div>
           </motion.div>

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Quote as QuoteIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { WidgetComponentProps } from "@/types/widget";
 import { useToastStore } from "@/stores/toastStore";
 import { cn } from "@/utils/cn";
@@ -35,6 +36,7 @@ export function HitokotoWidget({
   height,
 }: WidgetComponentProps) {
   const c = config.config;
+  const { t } = useTranslation();
   const isCustomMode = c.sourceMode === "custom";
   const customText = c.customText || "";
   const customAuthor = c.customAuthor || "";
@@ -120,9 +122,9 @@ export function HitokotoWidget({
         try {
           const suffix = author || from ? ` —— ${author}${from ? `《${from}》` : ""}` : "";
           await navigator.clipboard.writeText(`${text}${suffix}`);
-          useToastStore.getState().addToast("一言语录已成功复制到剪贴板", "success");
+          useToastStore.getState().addToast(t("widget.hitokoto.copied"), "success");
         } catch (err) {
-          useToastStore.getState().addToast("复制失败，请重试", "error");
+          useToastStore.getState().addToast(t("widget.hitokoto.copyFailed"), "error");
         }
       }
     }
@@ -224,7 +226,7 @@ export function HitokotoWidget({
               ...fontColorStyle,
             }}
           >
-            {loading && text === "" ? "正在加载一言..." : text}
+            {loading && text === "" ? t("widget.hitokoto.loading") : text}
           </div>
 
           {/* 来源作者标注 */}

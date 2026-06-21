@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Settings, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
 import { useDrag } from "@/hooks/useDrag";
 import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
@@ -21,6 +22,7 @@ interface IconShowContainerProps {
 }
 
 export function IconShowContainer({ container }: IconShowContainerProps) {
+	const { t } = useTranslation();
 	const { updateContainerPosition, updateContainerSize, deleteContainer } = useContainerStore();
 	const { settings } = useSettingsStore();
 	const { wallpaper } = useDesktopStore();
@@ -194,18 +196,18 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 
 	// Build context menu items（仅用于容器背景右键）
 	const getContextMenuItems = (): MenuItem[] => {
-		return [
-			{
-				label: "设置",
-				icon: <Settings size={14} />,
-				onClick: () => setIsSettingsOpen(true),
-			},
+	return [
 		{
-			label: "移除",
-			icon: <Trash2 size={14} />,
-			onClick: () => setShowDeleteConfirm(true),
+			label: t("container.settings"),
+			icon: <Settings size={14} />,
+			onClick: () => setIsSettingsOpen(true),
 		},
-		];
+	{
+		label: t("container.remove"),
+		icon: <Trash2 size={14} />,
+		onClick: () => setShowDeleteConfirm(true),
+	},
+	];
 	};
 
 	const contextItems = getContextMenuItems();
@@ -310,9 +312,9 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 							);
 						})}
 						{container.items.length === 0 && (
-							<div className="w-full h-full flex items-center justify-center text-xs text-[var(--color-text-secondary)] opacity-50 pointer-events-none text-center px-4">
-								拖拽图标至此
-							</div>
+						<div className="w-full h-full flex items-center justify-center text-xs text-[var(--color-text-secondary)] opacity-50 pointer-events-none text-center px-4">
+							{t("container.iconShowPlaceholder")}
+						</div>
 						)}
 					</div>
 				</div>
@@ -363,12 +365,12 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 					</div>,
 					document.body,
 				)}
-			<ConfirmDialog
-				isOpen={showDeleteConfirm}
-				title="移除图标展示容器"
-				message={`确定要移除「${container.name}」吗？容器内的图标将回到桌面。`}
-				confirmLabel="移除"
-				onConfirm={async () => {
+		<ConfirmDialog
+			isOpen={showDeleteConfirm}
+			title={t("container.removeIconShow")}
+			message={t("container.removeIconShowConfirm", { name: container.name })}
+			confirmLabel={t("common.remove")}
+			onConfirm={async () => {
 					setShowDeleteConfirm(false);
 					await handleDelete();
 				}}

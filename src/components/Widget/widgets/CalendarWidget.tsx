@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 import { Solar } from "lunar-javascript";
 import type { WidgetComponentProps } from "@/types/widget";
 import { cn } from "@/utils/cn";
@@ -83,6 +85,7 @@ export function CalendarWidget({
   containerId,
 }: WidgetComponentProps) {
   const c = config.config;
+  const { t } = useTranslation();
   const showLunar = c.showLunar !== false;
   const fontSizeScale = c.fontSizeScale ?? 1.0;
   const fontColor = c.fontColor || "theme";
@@ -162,9 +165,10 @@ export function CalendarWidget({
     return map;
   }, [events]);
 
+  const weekHeadersRaw = i18next.t("widget.calendar.weekdays", { returnObjects: true }) as string[];
   const weekHeaders = startOfWeek === "monday"
-    ? ["一", "二", "三", "四", "五", "六", "日"]
-    : ["日", "一", "二", "三", "四", "五", "六"];
+    ? weekHeadersRaw
+    : [weekHeadersRaw[6], ...weekHeadersRaw.slice(0, 6)];
 
   const isToday = (dateStr: string) => {
     const t = new Date();
@@ -208,7 +212,7 @@ export function CalendarWidget({
         </button>
         <button onClick={goToday} className="flex items-center gap-1 hover:bg-black/5 dark:hover:bg-white/10 rounded px-1.5 py-0.5 transition-colors">
           <span className={cn("font-semibold", fontColorClass)} style={{ fontSize: `${headerFontSize}px`, ...fontColorStyle }}>
-            {year}年 {month}月
+            {t("widget.calendar.yearMonth", { year, month })}
           </span>
         </button>
         <button onClick={goNext} className="p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors">

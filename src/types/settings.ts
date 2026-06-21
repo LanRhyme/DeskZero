@@ -30,5 +30,6 @@ export interface Settings {
 	doubleClickHide?: boolean;
 	autoStart?: boolean;
 	showGridOnDrag?: boolean;
+	language?: "zh" | "en";
 	customWidgets?: any[];
 }

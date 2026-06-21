@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { motion } from "framer-motion";
 import { Copy, Settings, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
 import {
 	ContextMenu,
@@ -22,6 +23,7 @@ interface GameContainerProps {
 }
 
 export function GameContainer({ container }: GameContainerProps) {
+	const { t } = useTranslation();
 	const { updateContainerPosition, updateContainerSize, deleteContainer } =
 		useContainerStore();
 
@@ -181,22 +183,22 @@ export function GameContainer({ container }: GameContainerProps) {
 
 	const contextMenuItems: MenuItem[] = [
 		{
-			label: "设置",
+			label: t("container.settings"),
 			icon: <Settings size={14} />,
 			onClick: () => setIsSettingsOpen(true),
 		},
 		{
-			label: "移除",
+			label: t("container.remove"),
 			icon: <Trash2 size={14} />,
 			onClick: () => setShowDeleteConfirm(true),
 		},
 		{
-			label: "复制",
+			label: t("container.copy"),
 			icon: <Copy size={14} />,
 			onClick: async () => {
 				const newContainer = await useContainerStore
 					.getState()
-					.createContainer(container.name + " 副本", "game", {
+					.createContainer(container.name + t("container.copySuffix"), "game", {
 						x: pos.x + 20,
 						y: pos.y + 20,
 					});
@@ -332,7 +334,7 @@ export function GameContainer({ container }: GameContainerProps) {
 					) : (
 						<div className="absolute inset-0 flex items-center justify-center select-none text-white/50 flex-col">
 							<span className="text-3xl mb-2">+</span>
-							<span className="text-xs">拖入游戏快捷方式</span>
+							<span className="text-xs">{t("container.dragPlaceholder")}</span>
 						</div>
 					)}
 				</div>
@@ -369,9 +371,9 @@ export function GameContainer({ container }: GameContainerProps) {
 							}}
 						>
 						<div className="flex justify-between items-center mb-4">
-							<h3 className="font-bold text-[var(--color-text)]">
-								游戏容器设置
-							</h3>
+						<h3 className="font-bold text-[var(--color-text)]">
+							{t("container.gameSettings")}
+						</h3>
 							<button
 								onClick={() => setIsSettingsOpen(false)}
 								className="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
@@ -396,12 +398,12 @@ export function GameContainer({ container }: GameContainerProps) {
 					onClose={() => setMenuState((prev) => ({ ...prev, visible: false }))}
 				/>
 			)}
-			<ConfirmDialog
-				isOpen={showDeleteConfirm}
-				title="移除游戏容器"
-				message={`确定要移除「${container.name}」吗？容器内的图标将回到桌面。`}
-				confirmLabel="移除"
-				onConfirm={async () => {
+		<ConfirmDialog
+			isOpen={showDeleteConfirm}
+			title={t("container.removeGame")}
+			message={t("container.removeGameConfirm", { name: container.name })}
+			confirmLabel={t("common.remove")}
+			onConfirm={async () => {
 					setShowDeleteConfirm(false);
 					const { moveItemsToDesktop } = useDesktopStore.getState();
 					await moveItemsToDesktop(container.items, pos.x, pos.y, true);

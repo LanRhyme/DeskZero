@@ -21,6 +21,7 @@ import {
 	Wand2,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Container } from "@/components/Container/Container";
 import {
 	ContextMenu,
@@ -40,6 +41,7 @@ import { WidgetSelectorDialog } from "@/components/Widget/WidgetSelectorDialog";
 import type { Position } from "@/types/container";
 
 export default function DesktopLayer() {
+	const { t } = useTranslation();
 	const containers = useContainerStore((state) => state.containers);
 	const fetchContainers = useContainerStore((state) => state.fetchContainers);
 	const createContainer = useContainerStore((state) => state.createContainer);
@@ -186,7 +188,7 @@ export default function DesktopLayer() {
 					} else {
 						new WebviewWindow("settings", {
 							url: "/settings",
-							title: "DeskZero 设置",
+							title: t("desktop.settingsTitle"),
 							width: 800,
 							height: 600,
 							resizable: true,
@@ -304,7 +306,7 @@ export default function DesktopLayer() {
 						await invoke("copy_files_to_clipboard", { paths: normalizedPaths });
 						useToastStore
 							.getState()
-							.addToast(`已复制 ${paths.length} 个文件`, "success");
+							.addToast(t("desktop.copiedFiles", { count: paths.length }), "success");
 					}
 				}
 			} else if (e.ctrlKey && e.key === "v") {
@@ -339,7 +341,7 @@ export default function DesktopLayer() {
 							useToastStore
 								.getState()
 								.addToast(
-									`${failed.length} 个文件未找到（已清理引用）`,
+									t("desktop.failedCount", { count: failed.length }),
 									"warning",
 								);
 						}
@@ -348,13 +350,13 @@ export default function DesktopLayer() {
 						if (succeeded > 0) {
 							useToastStore
 								.getState()
-								.addToast(`已删除 ${succeeded} 个文件`, "success");
+								.addToast(t("desktop.deletedFiles", { count: succeeded }), "success");
 						}
 						} catch (err) {
 							console.error("Delete failed:", err);
 							useToastStore
 								.getState()
-								.addToast(`删除失败: ${String(err)}`, "error");
+								.addToast(t("desktop.deleteFailed", { error: String(err) }), "error");
 						}
 					}
 				}
@@ -448,11 +450,11 @@ export default function DesktopLayer() {
 				await useDesktopStore.getState().fetchDesktopItems();
 				useToastStore
 					.getState()
-					.addToast(`已粘贴 ${newFiles.length} 个文件`, "success");
+					.addToast(t("desktop.pastedFiles", { count: newFiles.length }), "success");
 			}
 		} catch (e) {
 			console.error("Paste failed:", e);
-			useToastStore.getState().addToast(`粘贴失败: ${String(e)}`, "error");
+			useToastStore.getState().addToast(t("desktop.pasteFailed", { error: String(e) }), "error");
 		}
 	};
 
@@ -499,7 +501,7 @@ export default function DesktopLayer() {
 			useToastStore
 				.getState()
 				.addToast(
-					`已创建${isFolder ? "文件夹" : "文件"} ${finalName}`,
+					t("desktop.createdItem", { type: isFolder ? t("desktop.folder") : t("desktop.file"), name: finalName }),
 					"success",
 				);
 		} catch (e: any) {
@@ -507,7 +509,7 @@ export default function DesktopLayer() {
 			useToastStore
 				.getState()
 				.addToast(
-					`创建${isFolder ? "文件夹" : "文件"}失败: ${String(e)}`,
+					t("desktop.createItemFailed", { type: isFolder ? t("desktop.folder") : t("desktop.file"), error: String(e) }),
 					"error",
 				);
 		}
@@ -515,62 +517,62 @@ export default function DesktopLayer() {
 
 	const desktopMenuItems: MenuItem[] = [
 		{
-			label: "刷新",
+			label: t("desktop.contextMenu.refresh"),
 			icon: <RefreshCw size={14} />,
 			onClick: () => fetchDesktopItems(),
 		},
 		{
-			label: "查看",
+			label: t("desktop.contextMenu.view"),
 			icon: <Eye size={14} />,
 			onClick: () => {},
 			subItems: [
 				{
-					label: isIconsHidden ? "显示桌面图标" : "隐藏桌面图标",
+					label: isIconsHidden ? t("desktop.contextMenu.showIcons") : t("desktop.contextMenu.hideIcons"),
 					icon: isIconsHidden ? <Eye size={14} /> : <EyeOff size={14} />,
 					onClick: () => setIsIconsHidden(!isIconsHidden),
 				},
 			],
 		},
 		{
-			label: "排序方式",
+			label: t("desktop.contextMenu.sortBy"),
 			icon: <ArrowDownUp size={14} />,
 			onClick: () => {},
 			subItems: [
 				{
-					label: "名称 A-Z",
+					label: t("desktop.contextMenu.nameAZ"),
 					icon: <Type size={14} />,
 					onClick: () => sortDesktopItems("name"),
 				},
 				{
-					label: "大小",
+					label: t("desktop.contextMenu.size"),
 					icon: <Box size={14} />,
 					onClick: () => sortDesktopItems("size"),
 				},
 				{
-					label: "项目类型",
+					label: t("desktop.contextMenu.type"),
 					icon: <Tag size={14} />,
 					onClick: () => sortDesktopItems("type"),
 				},
 				{
-					label: "修改日期",
+					label: t("desktop.contextMenu.modified"),
 					icon: <Clock size={14} />,
 					onClick: () => sortDesktopItems("date"),
 				},
 				{ divider: true },
 				{
-					label: "自动分类排序",
+					label: t("desktop.contextMenu.autoSort"),
 					icon: <Wand2 size={14} />,
 					onClick: () => realignToGrid(),
 				},
 			],
 		},
 		{
-			label: "打开方式",
+			label: t("desktop.contextMenu.openWith"),
 			icon: <Terminal size={14} />,
 			onClick: () => {},
 			subItems: [
 				{
-					label: "在此处打开 powershell 窗口",
+					label: t("desktop.contextMenu.openPowerShell"),
 					icon: <Terminal size={14} />,
 					onClick: async () => {
 						const { invoke } = await import("@tauri-apps/api/core");
@@ -579,7 +581,7 @@ export default function DesktopLayer() {
 					},
 				},
 				{
-					label: "在此处打开 cmd 窗口",
+					label: t("desktop.contextMenu.openCmd"),
 					icon: <Terminal size={14} />,
 					onClick: async () => {
 						const { invoke } = await import("@tauri-apps/api/core");
@@ -590,92 +592,92 @@ export default function DesktopLayer() {
 			],
 		},
 		{
-			label: "新建",
+			label: t("desktop.contextMenu.new"),
 			icon: <Plus size={14} />,
 			onClick: () => {},
 			subItems: [
 				{
-					label: "新建文件夹",
+					label: t("desktop.contextMenu.newFolder"),
 					icon: <FolderPlus size={14} />,
 					onClick: (e) => {
 						setCreatePrompt({
 							visible: true,
 							isFolder: true,
-							defaultName: "新建文件夹",
+							defaultName: t("desktop.contextMenu.newFolderName"),
 							x: e?.clientX ?? menuState.x,
 							y: e?.clientY ?? menuState.y,
 						});
 					},
 				},
 				{
-					label: "新建文件",
+					label: t("desktop.contextMenu.newFile"),
 					icon: <FilePlus size={14} />,
 					onClick: (e) => {
 						setCreatePrompt({
 							visible: true,
 							isFolder: false,
-							defaultName: "新建文本文件.txt",
+							defaultName: t("desktop.contextMenu.newFileName"),
 							x: e?.clientX ?? menuState.x,
 							y: e?.clientY ?? menuState.y,
 						});
 					},
 				},
 				{
-					label: "新建收纳盒容器",
+					label: t("desktop.contextMenu.newContainer"),
 					icon: <LayoutGrid size={14} />,
 					onClick: async () => {
 						try {
-							await createContainer("新建收纳盒", "normal", {
+							await createContainer(t("desktop.contextMenu.newContainerName"), "normal", {
 								x: menuState.x,
 								y: menuState.y,
 							});
 							fetchContainers();
-							useToastStore.getState().addToast("已创建收纳盒", "success");
+							useToastStore.getState().addToast(t("desktop.contextMenu.containerCreated"), "success");
 						} catch (e: any) {
 							useToastStore
 								.getState()
-								.addToast("新建收纳盒失败: " + String(e), "error");
+								.addToast(t("desktop.contextMenu.containerCreateFailed") + String(e), "error");
 						}
 					},
 				},
 				{
-					label: "新建游戏容器",
+					label: t("desktop.contextMenu.newGameContainer"),
 					icon: <Gamepad2 size={14} />,
 					onClick: async () => {
 						try {
-							await createContainer("新建游戏容器", "game", {
+							await createContainer(t("desktop.contextMenu.newGameContainerName"), "game", {
 								x: menuState.x,
 								y: menuState.y,
 							});
 							fetchContainers();
-							useToastStore.getState().addToast("已创建游戏容器", "success");
+							useToastStore.getState().addToast(t("desktop.contextMenu.gameContainerCreated"), "success");
 						} catch (e: any) {
 							useToastStore
 								.getState()
-								.addToast("新建游戏容器失败: " + String(e), "error");
+								.addToast(t("desktop.contextMenu.gameContainerCreateFailed") + String(e), "error");
 						}
 					},
 				},
 				{
-					label: "新建图标展示容器",
+					label: t("desktop.contextMenu.newIconShow"),
 					icon: <Wand2 size={14} />,
 					onClick: async () => {
 						try {
-							await createContainer("新建图标展示容器", "iconShow", {
+							await createContainer(t("desktop.contextMenu.newIconShowName"), "iconShow", {
 								x: menuState.x,
 								y: menuState.y,
 							});
 							fetchContainers();
-							useToastStore.getState().addToast("已创建图标展示容器", "success");
+							useToastStore.getState().addToast(t("desktop.contextMenu.iconShowCreated"), "success");
 						} catch (e: any) {
 							useToastStore
 								.getState()
-								.addToast("新建图标展示容器失败: " + String(e), "error");
+								.addToast(t("desktop.contextMenu.iconShowCreateFailed") + String(e), "error");
 						}
 					},
 				},
 				{
-					label: "新建目录索引容器",
+					label: t("desktop.contextMenu.newFolderIndex"),
 					icon: <FolderSearch size={14} />,
 					onClick: async () => {
 						try {
@@ -683,20 +685,19 @@ export default function DesktopLayer() {
 							const selected = await open({
 								directory: true,
 								multiple: false,
-								title: "选择要在桌面显示的目录",
+								title: t("desktop.contextMenu.selectDirectory"),
 							});
 							if (selected) {
 								const folderPath = Array.isArray(selected)
 									? selected[0]
 									: selected;
-								// Get folder name
 								const folderName =
 									folderPath.substring(
 										Math.max(
 											folderPath.lastIndexOf("\\"),
 											folderPath.lastIndexOf("/"),
 										) + 1,
-									) || "新目录";
+									) || t("desktop.contextMenu.newDirectory");
 								await createContainer(
 									folderName,
 									"folder",
@@ -709,12 +710,12 @@ export default function DesktopLayer() {
 								fetchContainers();
 								useToastStore
 									.getState()
-									.addToast(`已创建目录索引: ${folderName}`, "success");
+									.addToast(t("desktop.contextMenu.folderIndexCreated", { name: folderName }), "success");
 							}
 						} catch (e: any) {
 							useToastStore
 								.getState()
-								.addToast("新建目录索引容器失败: " + String(e), "error");
+								.addToast(t("desktop.contextMenu.folderIndexCreateFailed") + String(e), "error");
 						}
 					},
 				},
@@ -723,7 +724,7 @@ export default function DesktopLayer() {
 					onClick: () => {},
 				},
 				{
-					label: "新建小组件",
+					label: t("desktop.contextMenu.newWidget"),
 					icon: <Puzzle size={14} />,
 					onClick: () => {
 						setWidgetSelectorPos({ x: menuState.x, y: menuState.y });
@@ -734,14 +735,14 @@ export default function DesktopLayer() {
 		},
 		{ divider: true, onClick: () => {} },
 		{
-			label: "粘贴",
+			label: t("desktop.contextMenu.paste"),
 			icon: <ClipboardPaste size={14} />,
 			disabled: !canPaste,
 			onClick: () => handlePaste(menuState.x, menuState.y),
 		},
 		{ divider: true, onClick: () => {} },
 		{
-			label: "DeskZero 设置",
+			label: t("desktop.settingsTitle"),
 			icon: <Settings size={14} />,
 			onClick: async () => {
 				const existing = await WebviewWindow.getByLabel("settings");
@@ -875,7 +876,7 @@ export default function DesktopLayer() {
 					onPointerDown={(e) => e.stopPropagation()}
 				>
 					<div className="text-xs font-medium text-[var(--color-text)] mb-1">
-						请输入{createPrompt.isFolder ? "文件夹" : "文件"}名称：
+						{t("desktop.inputName", { type: createPrompt.isFolder ? t("desktop.folder") : t("desktop.file") })}
 					</div>
 					<input
 						type="text"
@@ -905,7 +906,7 @@ export default function DesktopLayer() {
 					onPointerDown={(e) => e.stopPropagation()}
 				>
 					<div className="text-xs font-medium text-[var(--color-text)] mb-1">
-						重命名：
+						{t("desktop.renameLabel")}
 					</div>
 					<input
 						type="text"
@@ -995,11 +996,11 @@ export default function DesktopLayer() {
 									}, 500);
 									useToastStore
 										.getState()
-										.addToast(`已重命名为 ${newName}`, "success");
+										.addToast(t("desktop.renamed", { name: newName }), "success");
 								} catch (err) {
 									useToastStore
 										.getState()
-										.addToast("重命名失败: " + String(err), "error");
+										.addToast(t("desktop.renameFailed") + String(err), "error");
 								}
 							}
 							setRenamePrompt(null);
@@ -1045,16 +1046,16 @@ export default function DesktopLayer() {
 								}
 								useToastStore
 									.getState()
-									.addToast("成功复制到当前位置", "success");
+									.addToast(t("desktop.copyHereSuccess"), "success");
 							} catch (e) {
 								console.error(e);
 								useToastStore
 									.getState()
-									.addToast("复制失败: " + String(e), "error");
+									.addToast(t("desktop.copyHereFailed") + String(e), "error");
 							}
 						}}
 					>
-						复制到当前位置
+						{t("desktop.copyHere")}
 					</button>
 					<button
 						className="px-3 py-1.5 text-left text-sm text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors whitespace-nowrap"
@@ -1078,23 +1079,23 @@ export default function DesktopLayer() {
 								}
 								useToastStore
 									.getState()
-									.addToast("成功移动到当前位置", "success");
+									.addToast(t("desktop.moveHereSuccess"), "success");
 							} catch (e) {
 								console.error(e);
 								useToastStore
 									.getState()
-									.addToast("移动失败: " + String(e), "error");
+									.addToast(t("desktop.moveHereFailed") + String(e), "error");
 							}
 						}}
 					>
-						移动到当前位置
+						{t("desktop.moveHere")}
 					</button>
 					<div className="h-[1px] bg-black/10 dark:bg-white/10 my-1" />
 					<button
 						className="px-3 py-1.5 text-left text-sm text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors whitespace-nowrap"
 						onClick={() => setDropPrompt(null)}
 					>
-						取消
+						{t("common.cancel")}
 					</button>
 				</div>
 			)}

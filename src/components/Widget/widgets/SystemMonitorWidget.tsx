@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import type { WidgetComponentProps } from "@/types/widget";
 import { Cpu, Layers, HardDrive } from "lucide-react";
 import { cn } from "@/utils/cn";
@@ -17,6 +18,7 @@ interface SystemInfo {
 }
 
 export function SystemMonitorWidget({ config, width, height }: WidgetComponentProps) {
+  const { t } = useTranslation();
   const [info, setInfo] = useState<SystemInfo | null>(null);
   const interval = config.config?.refreshInterval || 2;
   const showCpu = config.config?.showCpu !== false;
@@ -91,7 +93,7 @@ export function SystemMonitorWidget({ config, width, height }: WidgetComponentPr
   if (!info) {
     return (
       <div className="w-full h-full flex items-center justify-center text-xs opacity-50 select-none">
-        加载中...
+        {t("common.loading")}
       </div>
     );
   }
@@ -103,17 +105,17 @@ export function SystemMonitorWidget({ config, width, height }: WidgetComponentPr
   };
 
   const formatUptime = (seconds?: number) => {
-    if (seconds === undefined) return "未知";
+    if (seconds === undefined) return t("common.unknown");
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const d = Math.floor(h / 24);
     if (d > 0) {
-      return `${d}天 ${h % 24}小时`;
+      return t("widget.systemMonitor.uptimeDays", { days: d, hours: h % 24 });
     }
     if (h > 0) {
-      return `${h}小时 ${m}分钟`;
+      return t("widget.systemMonitor.uptimeHours", { hours: h, minutes: m });
     }
-    return `${m}分钟`;
+    return t("widget.systemMonitor.uptimeMinutes", { minutes: m });
   };
 
   const memPercent = (info.memory_used / info.memory_total) * 100;
@@ -145,7 +147,7 @@ export function SystemMonitorWidget({ config, width, height }: WidgetComponentPr
   if (showMemory) {
     metrics.push({
       key: "memory",
-      label: "内存",
+      label: t("widget.systemMonitor.memory"),
       value: `${formatBytes(info.memory_used)}`,
       percent: memPercent,
       icon: <Layers size={iconSize} />,
@@ -156,7 +158,7 @@ export function SystemMonitorWidget({ config, width, height }: WidgetComponentPr
   if (showDisk) {
     metrics.push({
       key: "disk",
-      label: "磁盘",
+      label: t("widget.systemMonitor.disk"),
       value: `${formatBytes(info.disk_used)}`,
       percent: diskPercent,
       icon: <HardDrive size={iconSize} />,

@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { LayoutGrid, List, X } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { NumberInput } from "@/components/UI/NumberInput";
 import { Slider } from "@/components/UI/Slider";
 import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
@@ -22,6 +23,7 @@ export function ContainerSettings({
 	container,
 	onClose,
 }: ContainerSettingsProps) {
+	const { t } = useTranslation();
 	const { updateContainerStyle, updateContainerName, deleteContainer } =
 		useContainerStore();
 
@@ -117,7 +119,7 @@ export function ContainerSettings({
 		<div ref={containerRef} className="w-full transform overflow-hidden rounded-xl bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-3xl p-3 text-left align-middle shadow-2xl transition-all border border-black/5 dark:border-white/10 ring-1 ring-black/5">
 			<div className="text-sm font-medium leading-5 text-[var(--color-text)] flex justify-between items-center mb-3">
 				<span>
-					收纳盒设置{" "}
+					{t("container.settingsTitle")}{" "}
 					{container.name && (
 						<span className="text-[10px] font-normal text-[var(--color-text-secondary)] opacity-70">
 							({container.name})
@@ -134,17 +136,17 @@ export function ContainerSettings({
 
 			<div className="space-y-3">
 				{/* Name */}
-				<SettingRow title="收纳盒名称" layout="vertical">
-					<TextInput value={name} onChange={setName} placeholder="输入收纳盒名称..." />
+			<SettingRow title={t("container.name")} layout="vertical">
+				<TextInput value={name} onChange={setName} placeholder={t("container.namePlaceholder")} />
 				</SettingRow>
 
 				{/* Colors */}
-				<SettingRow title="背景设置" layout="vertical">
-					<SegmentedControl
-						options={[
-							{ value: "theme", label: "跟随主题" },
-							{ value: "custom", label: "自定义" },
-						]}
+			<SettingRow title={t("container.background")} layout="vertical">
+				<SegmentedControl
+					options={[
+						{ value: "theme", label: t("container.followTheme") },
+						{ value: "custom", label: t("common.custom") },
+					]}
 						value={bgColor === "theme" || !bgColor ? "theme" : "custom"}
 						onChange={(v) => setBgColor(v === "theme" ? "theme" : "#000000")}
 						variant="accent"
@@ -159,8 +161,8 @@ export function ContainerSettings({
 							/>
 						)}
 						<div className="flex-1">
-							<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-2">
-								<span>不透明度</span>
+						<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-2">
+							<span>{t("container.opacity")}</span>
 								<span>{Math.round(opacity * 100)}%</span>
 							</div>
 							<Slider
@@ -175,10 +177,10 @@ export function ContainerSettings({
 				</SettingRow>
 
 				{/* Corner Radius */}
-				<SettingRow title="圆角大小" layout="vertical">
-					<div className="flex-1">
-						<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-2">
-							<span>半径</span>
+			<SettingRow title={t("container.cornerRadius")} layout="vertical">
+				<div className="flex-1">
+					<div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-2">
+						<span>{t("container.radius")}</span>
 							<span className="text-[var(--color-text)]">{cornerRadius}px</span>
 						</div>
 						<Slider
@@ -194,12 +196,12 @@ export function ContainerSettings({
 				<div className="h-[1px] w-full bg-black/5 dark:bg-white/10 my-1" />
 
 				{/* Layout */}
-				<SettingRow title="排版方式" layout="vertical">
-					<SegmentedControl
-						options={[
-							{ value: "grid", label: "网格", icon: <LayoutGrid size={14} /> },
-							{ value: "list", label: "列表", icon: <List size={14} /> },
-						]}
+			<SettingRow title={t("container.layout")} layout="vertical">
+				<SegmentedControl
+					options={[
+						{ value: "grid", label: t("container.grid"), icon: <LayoutGrid size={14} /> },
+						{ value: "list", label: t("container.list"), icon: <List size={14} /> },
+					]}
 						value={layout}
 						onChange={(v) => setLayout(v as "grid" | "list")}
 						variant="accent"
@@ -216,7 +218,7 @@ export function ContainerSettings({
 					className="overflow-hidden"
 				>
 					<div className="space-y-2 pt-2">
-						<SettingRow title="网格尺寸" layout="vertical">
+						<SettingRow title={t("container.gridSize")} layout="vertical">
 							<div className="flex gap-2">
 								<NumberInput
 									value={gridWidth}
@@ -238,9 +240,9 @@ export function ContainerSettings({
 					<div className="space-y-3 pt-4">
 						<label className="flex items-center gap-2 cursor-pointer group">
 							<SwitchToggle checked={hideAppNames} onChange={setHideAppNames} />
-							<span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
-								隐藏应用名称
-							</span>
+						<span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
+							{t("container.hideAppName")}
+						</span>
 						</label>
 					</div>
 				</motion.div>
@@ -256,7 +258,7 @@ export function ContainerSettings({
 				>
 					<div className="space-y-3 pt-2">
 						<div className="space-y-2">
-							<SettingRow title="列表项高度" layout="vertical">
+							<SettingRow title={t("container.listHeight")} layout="vertical">
 								<NumberInput
 									value={listHeight}
 									onChange={setListHeight}
@@ -268,9 +270,9 @@ export function ContainerSettings({
 
 						<label className="flex items-center gap-2 cursor-pointer group">
 							<SwitchToggle checked={showDetails} onChange={setShowDetails} />
-							<span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
-								显示详细信息
-							</span>
+						<span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
+							{t("container.showDetails")}
+						</span>
 						</label>
 					</div>
 				</motion.div>
@@ -279,7 +281,7 @@ export function ContainerSettings({
 					<label className="flex items-center gap-2 cursor-pointer group">
 						<SwitchToggle checked={collapsible} onChange={setCollapsible} />
 						<span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
-							点击头部收起内容
+							{t("container.clickHeaderCollapse")}
 						</span>
 					</label>
 				</div>
@@ -290,36 +292,36 @@ export function ContainerSettings({
 						className="flex-1 justify-center rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/20 transition-colors focus:outline-none"
 						onClick={() => setShowDeleteConfirm(true)}
 					>
-						移除
-					</button>
-					<button
-						type="button"
-						className="flex-1 justify-center rounded-lg border border-transparent bg-black/5 dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[var(--color-text)] hover:bg-black/10 dark:hover:bg-white/10 transition-colors focus:outline-none"
-						onClick={onClose}
-					>
-						取消
-					</button>
-					<button
-						type="button"
-						className="flex-1 justify-center rounded-lg border border-transparent bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-accent)] transition-colors shadow-md shadow-[var(--color-accent)]/25 focus:outline-none"
-						onClick={handleSave}
-					>
-						保存
-					</button>
+					{t("common.remove")}
+				</button>
+				<button
+					type="button"
+					className="flex-1 justify-center rounded-lg border border-transparent bg-black/5 dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[var(--color-text)] hover:bg-black/10 dark:hover:bg-white/10 transition-colors focus:outline-none"
+					onClick={onClose}
+				>
+					{t("common.cancel")}
+				</button>
+				<button
+					type="button"
+					className="flex-1 justify-center rounded-lg border border-transparent bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-accent)] transition-colors shadow-md shadow-[var(--color-accent)]/25 focus:outline-none"
+					onClick={handleSave}
+				>
+					{t("common.save")}
+				</button>
 				</div>
 			</div>
 		</div>
-		<ConfirmDialog
-			isOpen={showDeleteConfirm}
-			title="移除收纳盒"
-			message={`确定要移除「${container.name}」吗？容器内的图标将回到桌面。`}
-			confirmLabel="移除"
-			onConfirm={async () => {
-				setShowDeleteConfirm(false);
-				await handleDelete();
-			}}
-			onCancel={() => setShowDeleteConfirm(false)}
-		/>
+	<ConfirmDialog
+		isOpen={showDeleteConfirm}
+		title={t("container.removeTitle")}
+		message={t("container.removeConfirm", { name: container.name })}
+		confirmLabel={t("common.remove")}
+		onConfirm={async () => {
+			setShowDeleteConfirm(false);
+			await handleDelete();
+		}}
+		onCancel={() => setShowDeleteConfirm(false)}
+	/>
 		</>
 	);
 }

@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 interface ConfirmDialogProps {
 	isOpen: boolean;
@@ -15,12 +16,15 @@ export function ConfirmDialog({
 	isOpen,
 	title,
 	message,
-	confirmLabel = "确认",
-	cancelLabel = "取消",
+	confirmLabel: confirmLabelProp,
+	cancelLabel: cancelLabelProp,
 	confirmStyle = "danger",
 	onConfirm,
 	onCancel,
 }: ConfirmDialogProps) {
+	const { t } = useTranslation();
+	const confirmLabel = confirmLabelProp ?? t("common.confirm");
+	const cancelLabel = cancelLabelProp ?? t("common.cancel");
 	return (
 		<AnimatePresence>
 			{isOpen && (

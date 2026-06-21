@@ -1,5 +1,6 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { WidgetConfig, ThemeInfo } from "@/types/widget";
 import { useSettingsStore } from "@/stores/settingsStore";
 
@@ -21,6 +22,7 @@ export function CustomWidgetIframe({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isReady, setIsReady] = useState(false);
   const { settings } = useSettingsStore();
+  const { t } = useTranslation();
 
   const htmlPath = config.customHtmlPath;
 
@@ -112,7 +114,7 @@ export function CustomWidgetIframe({
       className="w-full h-full border-0"
       style={{ background: "transparent", pointerEvents: "auto" }}
       sandbox="allow-scripts allow-same-origin"
-      title="自定义小组件"
+      title={t("widget.custom")}
     />
   );
 }

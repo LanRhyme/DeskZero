@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
+import i18next from "i18next";
 import type { Item } from "@/types/item";
 import { useHistoryStore } from "./historyStore";
 import { useToastStore } from "./toastStore";
@@ -197,7 +198,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 		const isInitialOrForce = forceFromStorage || get().items.length === 0;
 		let loadingToastId: string | undefined;
 		if (isInitialOrForce) {
-			loadingToastId = useToastStore.getState().addToast("正在载入桌面图标...", "loading", 0);
+			loadingToastId = useToastStore.getState().addToast(i18next.t("desktop.loadingIcons"), "loading", 0);
 		}
 
 		try {
@@ -398,7 +399,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 
 			if (loadingToastId) {
 				useToastStore.getState().updateToast(loadingToastId, {
-					message: "桌面图标载入成功",
+					message: i18next.t("desktop.iconsLoaded"),
 					type: "success",
 					duration: 1500,
 				});
@@ -409,7 +410,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 
 			if (loadingToastId) {
 				useToastStore.getState().updateToast(loadingToastId, {
-					message: `载入失败: ${err.toString()}`,
+					message: i18next.t("desktop.loadFailed", { error: err.toString() }),
 					type: "error",
 					duration: 3000,
 				});
@@ -451,7 +452,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 			);
 			saveLayout(newLayout);
 
-			useToastStore.getState().addToast(`"${item.name}" 已移至桌面`, "success");
+			useToastStore.getState().addToast(i18next.t("desktop.movedToDesktop", { name: item.name }), "success");
 
 			return { items: newItems };
 		});
@@ -503,7 +504,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 		localStorage.setItem("deskzero_layout", JSON.stringify(newLayout));
 
 		if (!silent && items.length > 0) {
-			const msg = items.length === 1 ? `"${items[0].name}" 已移至桌面` : `已释放 ${items.length} 个图标至桌面`;
+			const msg = items.length === 1 ? i18next.t("desktop.releasedSingle", { name: items[0].name }) : i18next.t("desktop.releasedMultiple", { count: items.length });
 			useToastStore.getState().addToast(msg, "success");
 		}
 

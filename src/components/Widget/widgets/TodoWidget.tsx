@@ -1,7 +1,9 @@
+import i18next from "i18next";
 import { useEffect, useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Circle, CircleCheckBig, Trash2, ListTodo, Calendar as CalendarIcon, Flag } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
+import { useTranslation } from "react-i18next";
 import type { WidgetComponentProps } from "@/types/widget";
 import { cn } from "@/utils/cn";
 
@@ -22,9 +24,9 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 const PRIORITY_LABELS: Record<string, string> = {
-  high: "高",
-  medium: "中",
-  low: "低",
+  high: i18next.t("widget.todo.priority.high"),
+  medium: i18next.t("widget.todo.priority.medium"),
+  low: i18next.t("widget.todo.priority.low"),
 };
 
 function generateId(): string {
@@ -38,6 +40,7 @@ export function TodoWidget({
   setIsEditing,
 }: WidgetComponentProps) {
   const c = config.config;
+  const { t } = useTranslation();
   const sortOrder = c.sortOrder || "completed-last";
   const fontSizeScale = c.fontSizeScale ?? 1.0;
   const showPriority = c.showPriority !== false;
@@ -166,7 +169,7 @@ export function TodoWidget({
         <div className="flex items-center gap-1.5">
           <ListTodo size={isCompact ? 14 : 16} className="text-[var(--color-text-secondary)]" strokeWidth={1.5} />
           <span className={cn("font-medium", fontColorClass)} style={{ fontSize: `${baseFontSize}px`, ...fontColorStyle }}>
-            待办事项
+            {t("widget.todo.title")}
           </span>
         </div>
         <span className="text-[var(--color-text-secondary)]" style={{ fontSize: `${baseFontSize * 0.75}px` }}>
@@ -207,7 +210,7 @@ export function TodoWidget({
                   }}
                   className="w-1 self-stretch rounded-full flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                   style={{ backgroundColor: PRIORITY_COLORS[item.priority] || PRIORITY_COLORS.medium }}
-                  title={`优先级: ${PRIORITY_LABELS[item.priority] || "中"} (点击切换)`}
+                  title={t("widget.todo.priorityTooltip", { level: PRIORITY_LABELS[item.priority] || t("widget.todo.priority.medium") })}
                 />
               )}
 
@@ -276,7 +279,7 @@ export function TodoWidget({
             {/* 优先级选择 */}
             <div className="flex items-center gap-1">
               <Flag size={10} className="text-[var(--color-text-secondary)]" strokeWidth={1.5} />
-              <span className="text-[var(--color-text-secondary)]" style={{ fontSize: `${baseFontSize * 0.7}px` }}>优先级:</span>
+              <span className="text-[var(--color-text-secondary)]" style={{ fontSize: `${baseFontSize * 0.7}px` }}>{t("widget.todo.priorityLabel")}</span>
               {["high", "medium", "low"].map((p) => (
                 <button
                   key={p}
@@ -297,7 +300,7 @@ export function TodoWidget({
             {/* 截止日期 */}
             <div className="flex items-center gap-1">
               <CalendarIcon size={10} className="text-[var(--color-text-secondary)]" strokeWidth={1.5} />
-              <span className="text-[var(--color-text-secondary)]" style={{ fontSize: `${baseFontSize * 0.7}px` }}>截止日期:</span>
+              <span className="text-[var(--color-text-secondary)]" style={{ fontSize: `${baseFontSize * 0.7}px` }}>{t("widget.todo.dueDateLabel")}</span>
               <input
                 type="date"
                 value={newDueDate}
@@ -306,7 +309,7 @@ export function TodoWidget({
                 style={{ colorScheme: "dark" }}
               />
               {newDueDate && (
-                <button onClick={() => setNewDueDate("")} className="text-[var(--color-text-secondary)] hover:text-red-400 text-[10px]">清除</button>
+                <button onClick={() => setNewDueDate("")} className="text-[var(--color-text-secondary)] hover:text-red-400 text-[10px]">{t("common.cleared")}</button>
               )}
             </div>
           </motion.div>
@@ -334,7 +337,7 @@ export function TodoWidget({
             }}
             onFocus={() => setIsEditing?.(true)}
             onBlur={() => setIsEditing?.(false)}
-            placeholder="添加新待办..."
+            placeholder={t("widget.todo.addPlaceholder")}
             className="flex-1 bg-transparent outline-none text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)] placeholder:opacity-40"
             style={{ fontSize: `${baseFontSize}px` }}
           />
@@ -343,7 +346,7 @@ export function TodoWidget({
               onClick={handleAdd}
               className="flex-shrink-0 px-1.5 py-0.5 rounded bg-[var(--color-accent)] text-white text-[10px] hover:opacity-90 transition-opacity"
             >
-              添加
+              {t("widget.todo.addBtn")}
             </button>
           )}
         </div>

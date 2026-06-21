@@ -1,9 +1,11 @@
+import i18next from "i18next";
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Music, Play, Pause, SkipBack, SkipForward
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
+import { useTranslation } from "react-i18next";
 import type { WidgetComponentProps } from "@/types/widget";
 import { cn } from "@/utils/cn";
 
@@ -91,14 +93,14 @@ function HorizontalStyle({
           className={cn("font-bold truncate leading-tight tracking-tight w-full", fontColorClass)}
           style={{ fontSize: `${titleFontSize}px`, ...fontColorStyle }}
         >
-          {status.title || "未知曲目"}
+          {status.title || i18next.t("widget.music.unknownTrack")}
         </div>
         {/* 歌手 */}
         <div
           className={cn("truncate leading-tight mt-1 w-full opacity-80", secondaryClass)}
           style={{ fontSize: `${baseFontSize * 0.85}px` }}
         >
-          {status.artist || "未知艺术家"}
+          {status.artist || i18next.t("widget.music.unknownArtist")}
         </div>
         {/* 专辑 */}
         {status.album && !isExtremelyCompact && (
@@ -191,10 +193,10 @@ function VerticalStyle({
           className={cn("font-bold truncate leading-tight tracking-tight", fontColorClass)}
           style={{ fontSize: `${titleFontSize}px`, ...fontColorStyle }}
         >
-          {status.title || "未知曲目"}
+          {status.title || i18next.t("widget.music.unknownTrack")}
         </div>
         <div className={cn("truncate mt-0.5 opacity-80", secondaryClass)} style={{ fontSize: `${baseFontSize * 0.8}px` }}>
-          {status.artist || "未知艺术家"}
+          {status.artist || i18next.t("widget.music.unknownArtist")}
         </div>
       </div>
 
@@ -278,7 +280,7 @@ function MiniStyle({
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-1.5 min-w-0">
           <span className={cn("font-semibold truncate", fontColorClass)} style={{ fontSize: `${baseFontSize}px`, ...fontColorStyle }}>
-            {status.title || "未知曲目"}
+            {status.title || i18next.t("widget.music.unknownTrack")}
           </span>
           <span className={cn("truncate flex-shrink opacity-80", secondaryClass)} style={{ fontSize: `${timeFontSize}px` }}>
             {status.artist || ""}
@@ -522,10 +524,10 @@ function CustomStyle({
         align === "center" ? "items-center text-center" : align === "right" ? "items-end text-right" : "items-start text-left"
       )}>
         <div className={cn("font-bold truncate leading-tight w-full", fontColorClass)} style={{ fontSize: `${titleFontSize}px`, ...fontColorStyle }}>
-          {status.title || "未知曲目"}
+          {status.title || i18next.t("widget.music.unknownTrack")}
         </div>
         <div className={cn("truncate opacity-80 w-full mt-0.5", secondaryClass)} style={{ fontSize: `${baseFontSize * 0.85}px` }}>
-          {status.artist || "未知艺术家"}
+          {status.artist || i18next.t("widget.music.unknownArtist")}
         </div>
         {status.album && !isExtremelyCompact && (
           <div className={cn("truncate opacity-40 w-full mt-0.5", secondaryClass)} style={{ fontSize: `${baseFontSize * 0.72}px` }}>
@@ -581,6 +583,7 @@ export function MusicWidget({
   height,
 }: WidgetComponentProps) {
   const c = config.config;
+  const { t } = useTranslation();
   const fontSizeScale = c.fontSizeScale ?? 1.0;
   const fontColor = c.fontColor || "theme";
   const showProgress = c.showProgress !== false;
@@ -655,8 +658,8 @@ export function MusicWidget({
   // 构造 Dummy 状态以支持无媒体时样式一致性
   const dummyStatus: MusicStatusData = {
     isPlaying: false,
-    title: "无媒体播放",
-    artist: "未检测到播放中的音乐",
+    title: t("widget.music.noMedia"),
+    artist: t("widget.music.noMediaDesc"),
     album: "",
     albumArtUrl: null,
     positionMs: 0,

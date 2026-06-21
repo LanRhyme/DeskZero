@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { WidgetComponentProps } from "@/types/widget";
 import { cn } from "@/utils/cn";
 
@@ -9,6 +10,7 @@ export function StickyNoteWidget({
   setIsEditing: propsSetIsEditing,
 }: WidgetComponentProps) {
   const content = config.config?.content || "";
+  const { t } = useTranslation();
 
   // 新增排版配置
   const fontFamily = config.config?.fontFamily || "default"; // "default" | "mono" | "kaiti"
@@ -163,7 +165,7 @@ export function StickyNoteWidget({
         style={{ ...textStyle, ...lineBackgroundStyle }}
       >
         {localContent.trim() || (
-          <span className="opacity-35 italic text-xs">双击此处开始输入...</span>
+          <span className="opacity-35 italic text-xs">{t("widget.stickyNote.doubleClickHint")}</span>
         )}
       </div>
 
@@ -175,7 +177,7 @@ export function StickyNoteWidget({
           isEditing ? "opacity-100 pointer-events-auto z-10" : "opacity-0 pointer-events-none -z-10",
           fontStyleClass
         )}
-        placeholder="输入便签内容..."
+        placeholder={t("widget.stickyNote.placeholder")}
         value={localContent}
         onChange={(e) => handleChange(e.target.value)}
         onBlur={() => setIsEditing(false)}
@@ -193,7 +195,7 @@ export function StickyNoteWidget({
       {/* 编辑快捷键提示 */}
       {isEditing && (
         <div className="absolute bottom-1 right-2 text-[9px] text-gray-800/40 select-none pointer-events-none z-20">
-          Ctrl + Enter 完成编辑
+          {t("widget.stickyNote.editHint")}
         </div>
       )}
 

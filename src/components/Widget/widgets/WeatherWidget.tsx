@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -5,6 +6,7 @@ import {
   Droplets, Wind, Thermometer
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
+import { useTranslation } from "react-i18next";
 import type { WidgetComponentProps } from "@/types/widget";
 import { cn } from "@/utils/cn";
 
@@ -97,12 +99,12 @@ function getWeatherIcon(iconCode: string) {
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
-  const days = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+  const days = i18next.t("widget.weather.weekdays", { returnObjects: true }) as string[];
   const today = new Date();
-  if (d.toDateString() === today.toDateString()) return "今天";
+  if (d.toDateString() === today.toDateString()) return i18next.t("widget.weather.today");
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  if (d.toDateString() === tomorrow.toDateString()) return "明天";
+  if (d.toDateString() === tomorrow.toDateString()) return i18next.t("widget.weather.tomorrow");
   return days[d.getDay()];
 }
 
@@ -112,6 +114,7 @@ export function WeatherWidget({
   height,
 }: WidgetComponentProps) {
   const c = config.config;
+  const { t } = useTranslation();
   const fontSizeScale = c.fontSizeScale ?? 1.0;
   const fontColor = c.fontColor || "theme";
   const showForecast = c.showForecast !== false;
@@ -275,13 +278,13 @@ export function WeatherWidget({
           <div className="flex items-center gap-1 whitespace-nowrap">
             <Wind size={12} className={secondaryClass} strokeWidth={1.5} />
             <span className={secondaryClass} style={{ fontSize: `${forecastFontSize}px` }}>
-              {weather.windDir} {weather.windScale}级
+              {weather.windDir} {t("widget.weather.windScale", { level: weather.windScale })}
             </span>
           </div>
           <div className="flex items-center gap-1 whitespace-nowrap">
             <Thermometer size={12} className={secondaryClass} strokeWidth={1.5} />
             <span className={secondaryClass} style={{ fontSize: `${forecastFontSize}px` }}>
-              体感 {weather.feelsLike}°
+              {t("widget.weather.feelsLike", { temp: weather.feelsLike })}
             </span>
           </div>
         </div>

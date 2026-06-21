@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronRight, Copy, Scissors, Trash2, Type } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -28,6 +29,7 @@ export function ItemContextMenu({
 	onRename,
 	customHeaderItems,
 }: ItemContextMenuProps) {
+	const { t } = useTranslation();
 	const menuRef = useRef<HTMLDivElement>(null);
 	const [activeSubMenu, setActiveSubMenu] = useState<number | null>(null);
 	const { settings } = useSettingsStore();
@@ -73,11 +75,11 @@ export function ItemContextMenu({
 			await invoke("copy_files_to_clipboard", { paths });
 			useToastStore
 				.getState()
-				.addToast(`已复制 ${paths.length} 个文件`, "success");
+				.addToast(t("desktop.copiedFiles", { count: paths.length }), "success");
 			onClose();
 		} catch (e) {
 			console.error(e);
-			useToastStore.getState().addToast(`复制失败: ${String(e)}`, "error");
+			useToastStore.getState().addToast(t("desktop.copyFailed", { error: String(e) }), "error");
 		}
 	};
 
@@ -87,11 +89,11 @@ export function ItemContextMenu({
 			await invoke("copy_files_to_clipboard", { paths });
 			useToastStore
 				.getState()
-				.addToast(`已剪切 ${paths.length} 个文件`, "success");
+				.addToast(t("desktop.cutFiles", { count: paths.length }), "success");
 			onClose();
 		} catch (e) {
 			console.error(e);
-			useToastStore.getState().addToast(`剪切失败: ${String(e)}`, "error");
+			useToastStore.getState().addToast(t("desktop.cutFailed", { error: String(e) }), "error");
 		}
 	};
 
@@ -130,19 +132,19 @@ export function ItemContextMenu({
 			if (failed.length === 0) {
 				useToastStore
 					.getState()
-					.addToast(`已删除 ${succeeded.length} 个文件`, "success");
+					.addToast(t("desktop.deletedFiles", { count: succeeded.length }), "success");
 			} else {
 				useToastStore
 					.getState()
 					.addToast(
-						`${succeeded.length} 个已删除，${failed.length} 个文件未找到（已清理引用）`,
+						t("desktop.deletedPartial", { succeeded: succeeded.length, failed: failed.length }),
 						"warning",
 					);
 			}
 			onClose();
 		} catch (e) {
 			console.error(e);
-			useToastStore.getState().addToast(`删除失败: ${String(e)}`, "error");
+			useToastStore.getState().addToast(t("desktop.deleteFailed", { error: String(e) }), "error");
 		}
 	};
 
@@ -155,39 +157,39 @@ export function ItemContextMenu({
 
 	const menuItems = [
 		{
-			label: "打开",
+			label: t("item.open"),
 			icon: <Icon icon="iconamoon:enter" />,
 			onClick: () => {
 				paths.forEach((p) => invoke("open_file", { path: p }));
 			},
 		},
 		{
-			label: "以管理员身份运行",
+			label: t("item.runAsAdmin"),
 			icon: <Icon icon="iconamoon:shield-yes" />,
 			onClick: () => {
 				paths.forEach((p) => invoke("run_as_admin", { path: p }));
 			},
 		},
 		{
-			label: "打开方式",
+			label: t("item.openWith"),
 			icon: <Icon icon="iconamoon:terminal" />,
 			subItems: [
 				{
-					label: "打开文件所在位置",
+					label: t("item.openFileLocation"),
 					icon: <Icon icon="iconamoon:folder" />,
 					onClick: () => {
 						paths.forEach((p) => invoke("open_file_location", { path: p }));
 					},
 				},
 				{
-					label: "以记事本打开",
+					label: t("item.openWithNotepad"),
 					icon: <Icon icon="iconamoon:file-document" />,
 					onClick: () => {
 						paths.forEach((p) => invoke("open_with_notepad", { path: p }));
 					},
 				},
 				{
-					label: "以 cmd 打开",
+					label: t("item.openWithCmd"),
 					icon: <Icon icon="iconamoon:terminal" />,
 					onClick: () => {
 						if (paths.length > 0) {
@@ -198,7 +200,7 @@ export function ItemContextMenu({
 					},
 				},
 				{
-					label: "以 ps 打开",
+					label: t("item.openWithPowerShell"),
 					icon: <Icon icon="iconamoon:terminal" />,
 					onClick: () => {
 						if (paths.length > 0) {
@@ -209,7 +211,7 @@ export function ItemContextMenu({
 					},
 				},
 				{
-					label: "其他打开方式",
+					label: t("item.otherOpenWith"),
 					icon: <Icon icon="iconamoon:apps" />,
 					onClick: () => {
 						paths.forEach((p) => invoke("show_open_with_dialog", { path: p }));
@@ -218,18 +220,18 @@ export function ItemContextMenu({
 			],
 		},
 		{
-			label: "固定到任务栏",
+			label: t("item.pinToTaskbar"),
 			icon: <Icon icon="iconamoon:bookmark" />,
 			onClick: () => {
 				paths.forEach((p) => invoke("pin_to_taskbar", { path: p }));
 			},
 		},
 		{
-			label: "复制位置属性",
+			label: t("item.copyPath"),
 			icon: <Icon icon="iconamoon:copy" />,
 			subItems: [
 				{
-					label: `复制文件名: ${paths.map((p) => p.substring(p.lastIndexOf("\\") + 1)).join(", ")}`,
+					label: t("item.copyFileName", { name: paths.map((p) => p.substring(p.lastIndexOf("\\") + 1)).join(", ") }),
 					icon: <Icon icon="iconamoon:file" />,
 					onClick: async () => {
 						const names = paths.map((p) =>
@@ -239,14 +241,14 @@ export function ItemContextMenu({
 					},
 				},
 				{
-					label: `复制文件位置(不带引号): ${paths[0] || ""}${paths.length > 1 ? "..." : ""}`,
+					label: t("item.copyPathNoQuote", { path: `${paths[0] || ""}${paths.length > 1 ? "..." : ""}` }),
 					icon: <Icon icon="iconamoon:link" />,
 					onClick: async () => {
 						await navigator.clipboard.writeText(paths.join("\n"));
 					},
 				},
 				{
-					label: `复制文件位置(带双引号): "${paths[0] || ""}"${paths.length > 1 ? "..." : ""}`,
+					label: t("item.copyPathQuoted", { path: `"${paths[0] || ""}"${paths.length > 1 ? "..." : ""}` }),
 					icon: <Icon icon="iconamoon:link" />,
 					onClick: async () => {
 						const quoted = paths.map((p) => `"${p}"`);
@@ -256,7 +258,7 @@ export function ItemContextMenu({
 			],
 		},
 		{
-			label: "创建快捷方式",
+			label: t("item.createShortcut"),
 			icon: <Icon icon="iconamoon:link-external" />,
 			onClick: () => {
 				paths.forEach((p) => invoke("create_shortcut_item", { path: p }));
@@ -264,7 +266,7 @@ export function ItemContextMenu({
 			},
 		},
 		{
-			label: "属性",
+			label: t("item.properties"),
 			icon: <Icon icon="iconamoon:settings" />,
 			onClick: () => {
 				paths.forEach((p) => invoke("show_properties_dialog", { path: p }));
@@ -344,28 +346,28 @@ export function ItemContextMenu({
 					<button
 						onClick={handleCopy}
 						className="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors"
-						title="复制"
-					>
-						<Copy size={16} />
-					</button>
-					<button
-						onClick={handleCut}
-						className="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors"
-						title="剪切"
-					>
-						<Scissors size={16} />
-					</button>
-					<button
-						onClick={handleDelete}
-						className="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors"
-						title="删除"
-					>
-						<Trash2 size={16} />
-					</button>
-					<button
-						onClick={handleRename}
-						className="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors"
-						title="重命名"
+					title={t("common.copy")}
+				>
+					<Copy size={16} />
+				</button>
+				<button
+					onClick={handleCut}
+					className="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors"
+					title={t("common.cut")}
+				>
+					<Scissors size={16} />
+				</button>
+				<button
+					onClick={handleDelete}
+					className="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors"
+					title={t("common.delete")}
+				>
+					<Trash2 size={16} />
+				</button>
+				<button
+					onClick={handleRename}
+					className="p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors"
+					title={t("common.rename")}
 					>
 						<Type size={16} />
 					</button>

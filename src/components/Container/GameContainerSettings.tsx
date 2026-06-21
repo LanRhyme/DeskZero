@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { NumberInput } from "@/components/UI/NumberInput";
 import { SettingRow } from "@/components/UI/SettingRow";
 import { Slider } from "@/components/UI/Slider";
@@ -16,6 +17,7 @@ export function GameContainerSettings({
 	container,
 	onClose,
 }: GameContainerSettingsProps) {
+	const { t } = useTranslation();
 	const { updateContainerStyle, updateContainerSize } = useContainerStore();
 	const { settings } = useSettingsStore();
 
@@ -68,7 +70,7 @@ export function GameContainerSettings({
 
 	return (
 		<div ref={containerRef} className="flex flex-col gap-3 text-sm">
-			<SettingRow title="网格大小 (宽 x 高)" layout="vertical">
+			<SettingRow title={t("container.gameGridSize")} layout="vertical">
 				<div className="flex gap-2 items-center">
 					<NumberInput
 						value={gridW}
@@ -88,7 +90,7 @@ export function GameContainerSettings({
 				</div>
 			</SettingRow>
 
-			<SettingRow title={`不透明度 (${Math.round((container.style.backgroundOpacity ?? 1) * 100)}%)`} layout="vertical">
+			<SettingRow title={`${t("container.opacity")} (${Math.round((container.style.backgroundOpacity ?? 1) * 100)}%)`} layout="vertical">
 				<Slider
 					min={0}
 					max={1}
@@ -100,7 +102,7 @@ export function GameContainerSettings({
 				/>
 			</SettingRow>
 
-			<SettingRow title={`圆角 (${container.style.cornerRadius ?? 16}px)`} layout="vertical">
+			<SettingRow title={`${t("container.cornerRadius")} (${container.style.cornerRadius ?? 16}px)`} layout="vertical">
 				<Slider
 					min={0}
 					max={40}
@@ -112,17 +114,17 @@ export function GameContainerSettings({
 				/>
 			</SettingRow>
 
-			<SettingRow title="封面图片 (URL/路径)" layout="vertical">
-				<TextInput
-					placeholder="可输入自定义图片链接或本地路径"
+		<SettingRow title={t("container.coverImage")} layout="vertical">
+			<TextInput
+				placeholder={t("container.coverPlaceholder")}
 					value={container.style.coverImage || ""}
 					onChange={(val) =>
 						updateContainerStyle(container.id, { coverImage: val })
 					}
 				/>
-				<span className="text-[10px] text-[var(--color-text-secondary)]">
-					自动获取失败时可手动设置，支持本地图片路径或网络链接。
-				</span>
+			<span className="text-[10px] text-[var(--color-text-secondary)]">
+				{t("container.coverHelp")}
+			</span>
 			</SettingRow>
 
 			<div className="flex justify-end pt-1">
@@ -130,7 +132,7 @@ export function GameContainerSettings({
 					onClick={onClose}
 					className="px-3 py-1 text-xs bg-[var(--color-accent)] text-white rounded hover:bg-[var(--color-accent)] transition-colors"
 				>
-					完成
+					{t("common.finish")}
 				</button>
 			</div>
 		</div>

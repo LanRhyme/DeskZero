@@ -263,6 +263,12 @@ pub fn show_properties_dialog(path: String) -> Result<(), String> {
 pub fn check_files_exist(paths: Vec<String>) -> Vec<String> {
     paths
         .into_iter()
-        .filter(|p| !Path::new(p).exists())
+        .filter(|p| {
+            // shell::: 伪路径是 Windows Shell 命名空间对象（此电脑、回收站等），始终视为存在
+            if p.starts_with("shell:::") {
+                return false;
+            }
+            !Path::new(p).exists()
+        })
         .collect()
 }

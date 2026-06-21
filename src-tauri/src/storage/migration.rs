@@ -3,10 +3,11 @@ use std::collections::HashMap;
 use crate::models::container::Container;
 use super::db::{get_connection, get_data_dir};
 
-pub fn run_migrations() {
-    let _ = migrate_settings();
-    let _ = migrate_desktop_layout();
-    let _ = migrate_containers();
+pub fn run_migrations() -> Result<(), String> {
+    migrate_settings()?;
+    migrate_desktop_layout()?;
+    migrate_containers()?;
+    Ok(())
 }
 
 fn migrate_settings() -> Result<(), String> {

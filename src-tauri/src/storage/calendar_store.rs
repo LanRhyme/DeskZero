@@ -1,24 +1,6 @@
 use rusqlite::{Connection, params};
 use crate::models::calendar::CalendarEvent;
 
-pub fn create_calendar_table(conn: &Connection) -> Result<(), rusqlite::Error> {
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS calendar_events (
-            id TEXT PRIMARY KEY,
-            container_id TEXT NOT NULL,
-            date TEXT NOT NULL,
-            title TEXT NOT NULL,
-            color TEXT NOT NULL DEFAULT '#3b82f6'
-        )",
-        [],
-    )?;
-    conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_calendar_events_date ON calendar_events(container_id, date)",
-        [],
-    )?;
-    Ok(())
-}
-
 pub fn get_calendar_events(conn: &Connection, container_id: &str, year: i32, month: u32) -> Result<Vec<CalendarEvent>, String> {
     let start = format!("{:04}-{:02}-01", year, month);
     let (end_year, end_month) = if month == 12 { (year + 1, 1) } else { (year, month + 1) };

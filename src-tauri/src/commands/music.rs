@@ -55,6 +55,7 @@ fn get_music_status_sync() -> Result<MusicStatus, String> {
             album_art_url: None, // 保持为 None，使用前端默认的高颜值唱片封面
             position_ms,
             duration_ms,
+            extra: std::collections::HashMap::new(),
         })
     }
     #[cfg(not(target_os = "windows"))]

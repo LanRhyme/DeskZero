@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -10,4 +11,6 @@ pub struct MusicStatus {
     pub album_art_url: Option<String>, // base64 data URL or null
     pub position_ms: u64,
     pub duration_ms: u64,
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }

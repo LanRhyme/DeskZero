@@ -105,5 +105,46 @@ pub fn init_db() -> Result<()> {
         [],
     )?;
 
+    // Widget tables
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS countdown_events (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            target_date TEXT NOT NULL,
+            mode TEXT NOT NULL DEFAULT 'countdown',
+            color TEXT NOT NULL DEFAULT '#3b82f6'
+        )",
+        [],
+    )?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS todo_items (
+            id TEXT PRIMARY KEY,
+            container_id TEXT NOT NULL,
+            text TEXT NOT NULL,
+            completed INTEGER NOT NULL DEFAULT 0,
+            priority TEXT NOT NULL DEFAULT 'medium',
+            due_date TEXT,
+            order_index INTEGER NOT NULL DEFAULT 0
+        )",
+        [],
+    )?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS calendar_events (
+            id TEXT PRIMARY KEY,
+            container_id TEXT NOT NULL,
+            date TEXT NOT NULL,
+            title TEXT NOT NULL,
+            color TEXT NOT NULL DEFAULT '#3b82f6'
+        )",
+        [],
+    )?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_calendar_events_date ON calendar_events(container_id, date)",
+        [],
+    )?;
+
     Ok(())
 }

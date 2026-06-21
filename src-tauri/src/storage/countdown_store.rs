@@ -1,20 +1,6 @@
 use rusqlite::{Connection, params};
 use crate::models::countdown::CountdownEvent;
 
-pub fn create_countdown_table(conn: &Connection) -> Result<(), rusqlite::Error> {
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS countdown_events (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            target_date TEXT NOT NULL,
-            mode TEXT NOT NULL DEFAULT 'countdown',
-            color TEXT NOT NULL DEFAULT '#3b82f6'
-        )",
-        [],
-    )?;
-    Ok(())
-}
-
 pub fn get_countdown_events(conn: &Connection) -> Result<Vec<CountdownEvent>, String> {
     let mut stmt = conn
         .prepare("SELECT id, name, target_date, mode, color FROM countdown_events ORDER BY target_date")

@@ -29,4 +29,5 @@ export interface Settings {
 	iconGlowIntensity?: number;
 	doubleClickHide?: boolean;
 	showGridOnDrag?: boolean;
+	customWidgets?: any[];
 }

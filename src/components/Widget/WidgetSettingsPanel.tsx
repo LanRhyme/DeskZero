@@ -255,7 +255,7 @@ export function WidgetSettingsPanel({
   const [todoSortOrder, setTodoSortOrder] = useState(widgetConfig.config?.sortOrder || "completed-last");
   const [todoFontSizeScale, setTodoFontSizeScale] = useState(widgetConfig.config?.fontSizeScale ?? 1.0);
   const [todoShowPriority, setTodoShowPriority] = useState(widgetConfig.config?.showPriority !== false);
-  const [todoShowDueDate] = useState(widgetConfig.config?.showDueDate !== false);
+  const [todoShowDueDate, setTodoShowDueDate] = useState(widgetConfig.config?.showDueDate !== false);
   const [todoFontColor, setTodoFontColor] = useState(widgetConfig.config?.fontColor || "theme");
 
   // 8. 日历设置
@@ -1114,6 +1114,7 @@ export function WidgetSettingsPanel({
             <div className="space-y-2.5 pt-1">
               {[
                 { label: "显示优先级色条", val: todoShowPriority, set: setTodoShowPriority },
+                { label: "显示截止日期", val: todoShowDueDate, set: setTodoShowDueDate },
               ].map((sw) => (
                 <label key={sw.label} className="flex items-center justify-between cursor-pointer group">
                   <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">

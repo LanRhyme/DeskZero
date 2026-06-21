@@ -596,7 +596,6 @@ export function MusicWidget({
   const fetchStatus = async () => {
     try {
       const data = await invoke<MusicStatusData>("get_music_status");
-      console.log("[Music] 前端获取状态:", data);
       setStatus(data);
       setError(false);
     } catch (e) {

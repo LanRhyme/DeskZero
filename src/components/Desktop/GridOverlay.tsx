@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useDesktopStore } from "@/stores/desktopStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { motion, useMotionValue, useSpring, useMotionTemplate } from "framer-motion";
@@ -17,6 +17,9 @@ export function GridOverlay() {
 	const smoothX = useSpring(mouseX, { stiffness: 300, damping: 30 });
 	const smoothY = useSpring(mouseY, { stiffness: 300, damping: 30 });
 
+	// 径向渐变遮罩（必须在条件返回之前调用，遵循 Rules of Hooks）
+	const maskImage = useMotionTemplate`radial-gradient(circle 350px at ${smoothX}px ${smoothY}px, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)`;
+
 	useEffect(() => {
 		if (!isGlobalDragging) return;
 
@@ -25,20 +28,9 @@ export function GridOverlay() {
 			mouseY.set(e.clientY);
 		};
 
-		// 初始化鼠标位置
-		const lastEvent = window.event as PointerEvent | undefined;
-		if (lastEvent?.clientX) {
-			mouseX.set(lastEvent.clientX);
-			mouseY.set(lastEvent.clientY);
-		}
-
 		window.addEventListener("pointermove", handlePointerMove);
 		return () => window.removeEventListener("pointermove", handlePointerMove);
 	}, [isGlobalDragging, mouseX, mouseY]);
-
-	if (!settings.gridEnabled || settings.showGridOnDrag === false) {
-		return null;
-	}
 
 	// 网格参数
 	const gw = settings.gridWidth || 80;
@@ -50,40 +42,36 @@ export function GridOverlay() {
 	const stepY = gh + gy;
 	const gridPadding = 10;
 
-	// 屏幕尺寸，生成足够多的线条覆盖整个屏幕
+	// 屏幕尺寸
 	const screenW = window.innerWidth;
 	const screenH = window.innerHeight;
 	const colCount = Math.ceil((screenW - gridPadding) / stepX) + 1;
 	const rowCount = Math.ceil((screenH - gridPadding) / stepY) + 1;
 
-	// 生成主网格线条位置（槽位边界）
-	const verticalLines: number[] = [];
-	const horizontalLines: number[] = [];
+	// 生成网格线条位置（memoize 避免每次渲染重新计算）
+	const { verticalLines, horizontalLines, halfVerticalLines, halfHorizontalLines } = useMemo(() => {
+		const vLines: number[] = [];
+		const hLines: number[] = [];
+		const hvLines: number[] = [];
+		const hhLines: number[] = [];
 
-	for (let i = 0; i <= colCount; i++) {
-		// 左边界线
-		verticalLines.push(gridPadding + i * stepX);
-		// 右边界线（左边界 + 格子宽度）
-		verticalLines.push(gridPadding + i * stepX + gw);
-	}
-	for (let j = 0; j <= rowCount; j++) {
-		horizontalLines.push(gridPadding + j * stepY);
-		horizontalLines.push(gridPadding + j * stepY + gh);
-	}
+		for (let i = 0; i <= colCount; i++) {
+			vLines.push(gridPadding + i * stepX);
+			vLines.push(gridPadding + i * stepX + gw);
+			hvLines.push(gridPadding + i * stepX + gw / 2);
+		}
+		for (let j = 0; j <= rowCount; j++) {
+			hLines.push(gridPadding + j * stepY);
+			hLines.push(gridPadding + j * stepY + gh);
+			hhLines.push(gridPadding + j * stepY + gh / 2);
+		}
 
-	// 半网格线条位置（格子中心线）
-	const halfVerticalLines: number[] = [];
-	const halfHorizontalLines: number[] = [];
+		return { verticalLines: vLines, horizontalLines: hLines, halfVerticalLines: hvLines, halfHorizontalLines: hhLines };
+	}, [colCount, rowCount, stepX, stepY, gw, gh, gridPadding]);
 
-	for (let i = 0; i <= colCount; i++) {
-		halfVerticalLines.push(gridPadding + i * stepX + gw / 2);
+	if (!settings.gridEnabled || settings.showGridOnDrag === false) {
+		return null;
 	}
-	for (let j = 0; j <= rowCount; j++) {
-		halfHorizontalLines.push(gridPadding + j * stepY + gh / 2);
-	}
-
-	// 径向渐变遮罩
-	const maskImage = useMotionTemplate`radial-gradient(circle 350px at ${smoothX}px ${smoothY}px, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)`;
 
 	return (
 		<motion.div

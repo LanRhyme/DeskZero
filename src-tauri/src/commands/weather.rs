@@ -64,6 +64,7 @@ pub async fn get_weather() -> Result<WeatherData, String> {
             temp_min: min_temp,
             text_day: ftext,
             icon_day: map_code(fcode),
+            extra: std::collections::HashMap::new(),
         });
     }
 
@@ -84,6 +85,7 @@ pub async fn get_weather() -> Result<WeatherData, String> {
             .unwrap_or("--".to_string()),
         feels_like: current_condition.get("FeelsLikeC").and_then(|v| v.as_str()).unwrap_or("--").to_string(),
         forecast,
+        extra: std::collections::HashMap::new(),
     })
 }
 
@@ -125,5 +127,6 @@ pub async fn get_location_by_ip(api_key: String) -> Result<LocationInfo, String>
     Ok(LocationInfo {
         name: location.get("name").and_then(|v| v.as_str()).unwrap_or(city).to_string(),
         id: location.get("id").and_then(|v| v.as_str()).unwrap_or("101010100").to_string(),
+        extra: std::collections::HashMap::new(),
     })
 }

@@ -120,10 +120,10 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
         const rawHeight = Math.max(10, startHeight + deltaY);
         const possiblePosX = startPosX + startWidth - Math.max(10, startWidth - deltaX);
         
+        const snapped = snapSize(rawWidth, rawHeight);
+        setSize(snapped);
         if (possiblePosX >= 0) {
-          const snapped = snapSize(rawWidth, rawHeight);
           const targetXOffset = startWidth - snapped.width;
-          setSize(snapped);
           setResizePosOffset({ x: targetXOffset, y: 0 });
           resizeOffsetRef.current = { x: targetXOffset, y: 0 };
         }
@@ -225,7 +225,9 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
         transition={
           isDragging
             ? { duration: 0 }
-            : { type: "spring", stiffness: 400, damping: 30 }
+            : isResizing
+              ? { type: "tween", duration: 0.15, ease: [0.25, 0.1, 0.25, 1] }
+              : { type: "spring", stiffness: 400, damping: 30 }
         }
         className={cn(
           "flex flex-col overflow-hidden select-none relative touch-none",

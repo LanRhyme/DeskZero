@@ -105,15 +105,26 @@ export function ItemContextMenu({
 			// 即使部分文件删除失败（如文件已不存在），也从桌面/容器中移除条目
 			fetchDesktopItems();
 			// 清理容器内的幽灵条目（文件已不存在的引用）
-			const containers = useContainerStore.getState().containers;
-			for (const p of paths) {
-				for (const c of containers) {
-					const ghost = c.items.find((i) => i.path === p);
-					if (ghost) {
-						useContainerStore
-							.getState()
-							.removeItemFromContainer(c.id, ghost.id);
+			// 使用 check_files_exist 验证哪些文件真正不存在，避免误删权限错误的文件
+			const failedPaths = results
+				.map((r, i) => (r.status === "rejected" ? paths[i] : null))
+				.filter(Boolean) as string[];
+			if (failedPaths.length > 0) {
+				try {
+					const missingPaths = await invoke<string[]>("check_files_exist", { paths: failedPaths });
+					const containers = useContainerStore.getState().containers;
+					for (const p of missingPaths) {
+						for (const c of containers) {
+							const ghost = c.items.find((i) => i.path === p);
+							if (ghost) {
+								useContainerStore
+									.getState()
+									.removeItemFromContainer(c.id, ghost.id);
+							}
+						}
 					}
+				} catch (e) {
+					console.warn("[handleDelete] 清理幽灵条目失败:", e);
 				}
 			}
 			if (failed.length === 0) {

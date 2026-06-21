@@ -100,10 +100,10 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 				const rawHeight = Math.max(10, startHeight + deltaY);
 				const possiblePosX = startPosX + startWidth - Math.max(10, startWidth - deltaX);
 
+				const snapped = snapSize(rawWidth, rawHeight);
+				setSize(snapped);
 				if (possiblePosX >= 0) {
-					const snapped = snapSize(rawWidth, rawHeight);
 					const targetXOffset = startWidth - snapped.width;
-					setSize(snapped);
 					setResizePosOffset({ x: targetXOffset, y: 0 });
 					resizeOffsetRef.current = { x: targetXOffset, y: 0 };
 				}
@@ -227,7 +227,13 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 				}}
 				initial={{ opacity: 0, scale: 0.95, x: pos.x, y: pos.y, width: size.width, height: size.height }}
 				animate={{ opacity: isDragging ? 0.9 : 1, scale: 1, x: pos.x + resizePosOffset.x, y: pos.y + resizePosOffset.y, width: size.width, height: size.height }}
-				transition={isDragging ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 30 }}
+				transition={
+					isDragging
+						? { duration: 0 }
+						: isResizing
+							? { type: "tween", duration: 0.15, ease: [0.25, 0.1, 0.25, 1] }
+							: { type: "spring", stiffness: 400, damping: 30 }
+				}
 				className={cn(
 					"flex flex-col overflow-hidden transition-colors border shadow-xl select-none touch-none relative",
 					"border-[var(--color-border)]",

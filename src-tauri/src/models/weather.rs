@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -11,6 +12,8 @@ pub struct WeatherData {
     pub wind_scale: String,
     pub feels_like: String,
     pub forecast: Vec<ForecastDay>,
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -21,6 +24,8 @@ pub struct ForecastDay {
     pub temp_min: String,
     pub text_day: String,
     pub icon_day: String,
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,4 +33,6 @@ pub struct ForecastDay {
 pub struct LocationInfo {
     pub name: String, // city name
     pub id: String,   // city ID for QWeather
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }

@@ -324,37 +324,32 @@ export default function DesktopLayer() {
 					if (paths.length > 0) {
 						const { invoke } = await import("@tauri-apps/api/core");
 					try {
+						let results: PromiseSettledResult<void>[];
 						if (e.shiftKey) {
-							const results = await Promise.allSettled(
-								paths.map((p) => invoke("delete_file", { path: p })),
+							results = await Promise.allSettled(
+								paths.map((p) => invoke<void>("delete_file", { path: p })),
 							);
-							const failed = results.filter((r) => r.status === "rejected");
-							if (failed.length > 0) {
-								useToastStore
-									.getState()
-									.addToast(
-										`${failed.length} 个文件未找到（已清理引用）`,
-										"warning",
-									);
-							}
 						} else {
-							const results = await Promise.allSettled(
-								paths.map((p) => invoke("trash_file", { path: p })),
+							results = await Promise.allSettled(
+								paths.map((p) => invoke<void>("trash_file", { path: p })),
 							);
-							const failed = results.filter((r) => r.status === "rejected");
-							if (failed.length > 0) {
-								useToastStore
-									.getState()
-									.addToast(
-										`${failed.length} 个文件未找到（已清理引用）`,
-										"warning",
-									);
-							}
+						}
+						const failed = results.filter((r) => r.status === "rejected");
+						if (failed.length > 0) {
+							useToastStore
+								.getState()
+								.addToast(
+									`${failed.length} 个文件未找到（已清理引用）`,
+									"warning",
+								);
 						}
 						await useDesktopStore.getState().fetchDesktopItems();
-						useToastStore
-							.getState()
-							.addToast(`已删除 ${paths.length} 个文件`, "success");
+						const succeeded = results.filter((r) => r.status === "fulfilled").length;
+						if (succeeded > 0) {
+							useToastStore
+								.getState()
+								.addToast(`已删除 ${succeeded} 个文件`, "success");
+						}
 						} catch (err) {
 							console.error("Delete failed:", err);
 							useToastStore

@@ -91,31 +91,34 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 			);
 			let containers = await Promise.race([fetchPromise, timeoutPromise]);
 
+			// 先设置容器数据，确保即使清理失败也能加载
+			set({ containers });
+
 			// 自动清理幽灵条目（文件已不存在的引用）
-			const allPaths = containers.flatMap((c) => c.items.map((i) => i.path));
+			// 排除系统图标（此电脑、回收站等），它们的 shell::: 伪路径不会通过文件系统检查
+			const allPaths = containers.flatMap((c) => c.items.filter((i) => i.type !== "system").map((i) => i.path));
 			if (allPaths.length > 0) {
 				try {
 					const missingPaths = await invoke<string[]>("check_files_exist", { paths: allPaths });
 					if (missingPaths.length > 0) {
 						const missingSet = new Set(missingPaths);
-						containers = containers.map((c) => ({
+						const cleanedContainers = containers.map((c) => ({
 							...c,
 							items: c.items.filter((i) => !missingSet.has(i.path)),
 						}));
 						// 持久化被修改的容器
-						for (const c of containers) {
-							const original = get().containers.find((oc) => oc.id === c.id);
+						for (const c of cleanedContainers) {
+							const original = containers.find((oc) => oc.id === c.id);
 							if (original && original.items.length !== c.items.length) {
-								await invoke("save_container", { container: c });
+								await invoke("update_container_full", { container: c });
 							}
 						}
+						set({ containers: cleanedContainers });
 					}
 				} catch (e) {
 					console.warn("[fetchContainers] 清理幽灵条目失败:", e);
 				}
 			}
-
-			set({ containers });
 		} catch (err: any) {
 			console.error("fetchContainers error:", err);
 			set({ error: err.toString() });

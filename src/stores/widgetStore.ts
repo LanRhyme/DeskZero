@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import type { WidgetMeta } from "@/types/widget";
+import { useSettingsStore } from "./settingsStore";
 
 export interface CustomWidgetEntry {
   htmlPath: string;
@@ -24,9 +25,8 @@ const persistCustomWidgets = (widgets: CustomWidgetEntry[]) => {
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(async () => {
     try {
-      const settings = await invoke<any>("get_settings");
-      settings.customWidgets = widgets;
-      await invoke("save_settings", { settings });
+      // 通过 settingsStore 同步更新，避免与 settingsStore 的写入竞态
+      useSettingsStore.getState().saveSettings({ customWidgets: widgets });
     } catch (e) {
       console.error("持久化自定义小组件列表失败:", e);
     }

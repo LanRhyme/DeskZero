@@ -1,22 +1,6 @@
 use rusqlite::{Connection, params};
 use crate::models::todo::TodoItem;
 
-pub fn create_todo_table(conn: &Connection) -> Result<(), rusqlite::Error> {
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS todo_items (
-            id TEXT PRIMARY KEY,
-            container_id TEXT NOT NULL,
-            text TEXT NOT NULL,
-            completed INTEGER NOT NULL DEFAULT 0,
-            priority TEXT NOT NULL DEFAULT 'medium',
-            due_date TEXT,
-            order_index INTEGER NOT NULL DEFAULT 0
-        )",
-        [],
-    )?;
-    Ok(())
-}
-
 pub fn get_todo_items(conn: &Connection, container_id: &str) -> Result<Vec<TodoItem>, String> {
     let mut stmt = conn
         .prepare("SELECT id, container_id, text, completed, priority, due_date, order_index FROM todo_items WHERE container_id=?1 ORDER BY order_index")

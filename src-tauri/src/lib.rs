@@ -254,6 +254,21 @@ pub fn run() {
                 return Err(format!("数据库初始化失败: {}", e).into());
             }
 
+            // 设置进程为高优先级，确保桌面渲染不被其他进程抢占
+            #[cfg(target_os = "windows")]
+            {
+                use windows::Win32::System::Threading::{
+                    GetCurrentProcess, SetPriorityClass, HIGH_PRIORITY_CLASS,
+                };
+                unsafe {
+                    if let Err(e) = SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS) {
+                        eprintln!("[DeskZero] 设置高优先级失败: {:?}", e);
+                    } else {
+                        eprintln!("[DeskZero] 已设置为高优先级 (HIGH_PRIORITY_CLASS)");
+                    }
+                }
+            }
+
             use tauri::Emitter;
 
             let refresh_i = tauri::menu::MenuItem::with_id(app, "refresh", "刷新桌面", true, None::<&str>)?;
@@ -408,6 +423,8 @@ pub fn run() {
             commands::file::check_files_exist,
             commands::system::get_settings,
             commands::system::save_settings,
+            commands::system::set_auto_start,
+            commands::system::get_autostart_status,
             commands::system::close_settings_window,
             commands::system::drag_settings_window,
             commands::system::get_wallpaper_base64,

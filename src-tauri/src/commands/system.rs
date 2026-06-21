@@ -4,6 +4,49 @@ use std::sync::{LazyLock, Mutex};
 use sysinfo::System;
 use tauri::Manager;
 
+/// 注册表中开机自启的键名
+const AUTOSTART_REG_KEY: &str = "DeskZero";
+/// 注册表路径
+const AUTOSTART_REG_PATH: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+
+/// 设置或删除 Windows 开机自启注册表项
+#[cfg(target_os = "windows")]
+fn set_registry_autostart(enable: bool) -> Result<(), String> {
+    use winreg::enums::*;
+    use winreg::RegKey;
+
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let run_key = hkcu
+        .open_subkey_with_flags(AUTOSTART_REG_PATH, KEY_SET_VALUE | KEY_READ)
+        .map_err(|e| format!("无法打开注册表 Run 键: {}", e))?;
+
+    if enable {
+        let exe_path = std::env::current_exe()
+            .map_err(|e| format!("无法获取当前 exe 路径: {}", e))?;
+        let path_str = exe_path.to_string_lossy().to_string();
+        run_key
+            .set_value(AUTOSTART_REG_KEY, &path_str)
+            .map_err(|e| format!("无法写入注册表: {}", e))?;
+    } else {
+        let _ = run_key.delete_value(AUTOSTART_REG_KEY);
+    }
+    Ok(())
+}
+
+/// 读取注册表中当前是否已设置开机自启
+#[cfg(target_os = "windows")]
+fn get_registry_autostart() -> bool {
+    use winreg::enums::*;
+    use winreg::RegKey;
+
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    if let Ok(run_key) = hkcu.open_subkey_with_flags(AUTOSTART_REG_PATH, KEY_READ) {
+        run_key.get_value::<String, _>(AUTOSTART_REG_KEY).is_ok()
+    } else {
+        false
+    }
+}
+
 static SETTINGS_LOCK: Mutex<()> = Mutex::new(());
 
 static SYSTEM: LazyLock<Mutex<System>> = LazyLock::new(|| Mutex::new(System::new_all()));
@@ -17,7 +60,42 @@ pub fn get_settings() -> Result<Settings, String> {
 #[tauri::command]
 pub fn save_settings(settings: Settings) -> Result<(), String> {
     let _lock = SETTINGS_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
-    settings_store::save_settings(&settings)
+
+    // 读取旧设置，检查 auto_start 是否变化
+    let old_settings = settings_store::load_settings().unwrap_or_default();
+    let auto_start_changed = old_settings.auto_start != settings.auto_start;
+
+    settings_store::save_settings(&settings)?;
+
+    // 如果 auto_start 发生变化，同步注册表
+    if auto_start_changed {
+        if let Err(e) = set_registry_autostart(settings.auto_start) {
+            eprintln!("[DeskZero] 同步开机自启注册表失败: {}", e);
+            // 不阻断保存，仅打印警告
+        }
+    }
+
+    Ok(())
+}
+
+/// 独立的开机自启切换命令（前端可直接调用）
+#[tauri::command]
+pub fn set_auto_start(enable: bool) -> Result<(), String> {
+    set_registry_autostart(enable)?;
+
+    // 同步更新设置中的 auto_start 字段
+    let _lock = SETTINGS_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
+    let mut settings = settings_store::load_settings().unwrap_or_default();
+    settings.auto_start = enable;
+    settings_store::save_settings(&settings)?;
+
+    Ok(())
+}
+
+/// 获取当前开机自启状态（注册表实际状态）
+#[tauri::command]
+pub fn get_autostart_status() -> bool {
+    get_registry_autostart()
 }
 
 #[tauri::command]

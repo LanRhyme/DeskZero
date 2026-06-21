@@ -28,6 +28,7 @@ export interface Settings {
 	iconGlowRadius?: number;
 	iconGlowIntensity?: number;
 	doubleClickHide?: boolean;
+	autoStart?: boolean;
 	showGridOnDrag?: boolean;
 	customWidgets?: any[];
 }

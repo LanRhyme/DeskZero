@@ -179,6 +179,8 @@ pub struct Settings {
     pub icon_glow_intensity: f64,
     pub double_click_hide: bool,
     #[serde(default)]
+    pub auto_start: bool,
+    #[serde(default)]
     pub backup_settings: Option<BackupSettings>,
     /// 保留当前版本未定义的设置属性，防止跨版本丢失
     #[serde(flatten)]
@@ -212,6 +214,7 @@ impl Default for Settings {
             icon_glow_radius: 12.0,
             icon_glow_intensity: 0.6,
             double_click_hide: true,
+            auto_start: false,
             backup_settings: None,
             extra: HashMap::new(),
         }

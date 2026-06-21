@@ -312,12 +312,30 @@ export function SettingsPage() {
 
 								<div className="space-y-6">
 									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
-										<SettingRow
-											title="开机启动"
-											desc="登录 Windows 时自动运行 DeskZero（功能开发中）"
-										>
-											<SwitchToggle checked={false} onChange={() => {}} />
-										</SettingRow>
+									<SettingRow
+										title="开机启动"
+										desc="登录 Windows 时自动运行 DeskZero"
+									>
+										<SwitchToggle
+											checked={settings.autoStart === true}
+											onChange={async () => {
+												const newValue = !(settings.autoStart === true);
+												saveSettings({ autoStart: newValue });
+												try {
+													const { invoke } = await import("@tauri-apps/api/core");
+													await invoke("set_auto_start", { enable: newValue });
+												} catch (err) {
+													console.error("设置开机自启失败:", err);
+													useToastStore.getState().addToast(
+														"设置开机自启失败: " + (err instanceof Error ? err.message : String(err)),
+														"error"
+													);
+													// 回滚前端状态
+													saveSettings({ autoStart: !newValue });
+												}
+											}}
+										/>
+									</SettingRow>
 
 										<SettingRow
 											title="隐藏文件后缀名"

@@ -34,6 +34,7 @@ const defaultSettings: Settings = {
 	iconGlowRadius: 12,
 	iconGlowIntensity: 0.6,
 	doubleClickHide: true,
+	autoStart: false,
 };
 
 const applyTheme = (theme: Theme) => {

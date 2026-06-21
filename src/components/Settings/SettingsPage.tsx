@@ -903,45 +903,226 @@ export function SettingsPage() {
 							</div>
 							<div className="flex-1 overflow-y-auto p-6 space-y-6 hidden-native-scrollbar">
 								{[
+									// 前端核心
 									{
 										name: "React",
-										license: "MIT License",
-										desc: "A JavaScript library for building user interfaces",
+										license: "MIT",
+										desc: "用于构建用户界面的 JavaScript 库",
 									},
 									{
-										name: "Tauri",
-										license: "Apache License 2.0 / MIT License",
-										desc: "Build smaller, faster, and more secure desktop applications with a web frontend",
+										name: "React DOM",
+										license: "MIT",
+										desc: "React 的 DOM 渲染器",
 									},
+									{
+										name: "Vite",
+										license: "MIT",
+										desc: "下一代前端构建工具",
+									},
+									{
+										name: "TypeScript",
+										license: "Apache-2.0",
+										desc: "JavaScript 的超集，添加了类型系统",
+									},
+									// UI 框架与样式
 									{
 										name: "Tailwind CSS",
-										license: "MIT License",
-										desc: "A utility-first CSS framework for rapid UI development",
+										license: "MIT",
+										desc: "实用优先的 CSS 框架",
 									},
 									{
-										name: "Framer Motion",
-										license: "MIT License",
-										desc: "Open source, production-ready animation and gesture library for React",
-									},
-									{
-										name: "Zustand",
-										license: "MIT License",
-										desc: "A small, fast and scalable bearbones state-management solution",
-									},
-									{
-										name: "Lucide React",
-										license: "ISC License",
-										desc: "Beautiful & consistent icons",
+										name: "@tailwindcss/vite",
+										license: "MIT",
+										desc: "Tailwind CSS 的 Vite 插件",
 									},
 									{
 										name: "Headless UI",
-										license: "MIT License",
-										desc: "Completely unstyled, fully accessible UI components",
+										license: "MIT",
+										desc: "完全无样式、完全可访问的 UI 组件",
 									},
 									{
-										name: "Rusqlite",
-										license: "MIT License",
-										desc: "Ergonomic bindings to SQLite for Rust",
+										name: "clsx",
+										license: "MIT",
+										desc: "用于构建 className 字符串的微型工具",
+									},
+									{
+										name: "tailwind-merge",
+										license: "MIT",
+										desc: "智能合并 Tailwind CSS 类名",
+									},
+									// 动画与图标
+									{
+										name: "Framer Motion",
+										license: "MIT",
+										desc: "生产级 React 动画和手势库",
+									},
+									{
+										name: "Lucide React",
+										license: "ISC",
+										desc: "精美且一致的开源图标库",
+									},
+									{
+										name: "@iconify/react",
+										license: "MIT",
+										desc: "通用图标组件，支持 150+ 图标集",
+									},
+									{
+										name: "@heroicons/react",
+										license: "MIT",
+										desc: "由 Tailwind CSS 团队制作的 SVG 图标集",
+									},
+									// 状态管理与数据
+									{
+										name: "Zustand",
+										license: "MIT",
+										desc: "轻量级、高性能的 React 状态管理",
+									},
+									{
+										name: "lunar-javascript",
+										license: "MIT",
+										desc: "农历、节假日、星座等日历工具库",
+									},
+									// Tauri 生态
+									{
+										name: "Tauri",
+										license: "MIT / Apache-2.0",
+										desc: "构建轻量、快速、安全的桌面应用框架",
+									},
+									{
+										name: "@tauri-apps/api",
+										license: "MIT / Apache-2.0",
+										desc: "Tauri 前端 JavaScript API",
+									},
+									{
+										name: "@tauri-apps/cli",
+										license: "MIT / Apache-2.0",
+										desc: "Tauri 命令行工具",
+									},
+									{
+										name: "@tauri-apps/plugin-dialog",
+										license: "MIT / Apache-2.0",
+										desc: "Tauri 原生对话框插件",
+									},
+									{
+										name: "@tauri-apps/plugin-http",
+										license: "MIT / Apache-2.0",
+										desc: "Tauri HTTP 客户端插件",
+									},
+									{
+										name: "@crabnebula/tauri-plugin-drag",
+										license: "MIT",
+										desc: "Tauri 文件拖放插件",
+									},
+									// Rust 后端依赖
+									{
+										name: "rusqlite",
+										license: "MIT",
+										desc: "SQLite 的 Rust 封装",
+									},
+									{
+										name: "SQLite",
+										license: "Public Domain",
+										desc: "嵌入式 SQL 数据库引擎",
+									},
+									{
+										name: "serde / serde_json",
+										license: "MIT / Apache-2.0",
+										desc: "Rust 序列化与反序列化框架",
+									},
+									{
+										name: "tokio",
+										license: "MIT",
+										desc: "Rust 异步运行时",
+									},
+									{
+										name: "reqwest",
+										license: "MIT / Apache-2.0",
+										desc: "Rust HTTP 客户端",
+									},
+									{
+										name: "windows-rs",
+										license: "MIT",
+										desc: "Microsoft Windows API 的 Rust 绑定",
+									},
+									{
+										name: "sysinfo",
+										license: "MIT",
+										desc: "跨平台系统信息查询库",
+									},
+									{
+										name: "image",
+										license: "MIT / Apache-2.0",
+										desc: "Rust 图像处理库",
+									},
+									{
+										name: "winreg",
+										license: "MIT",
+										desc: "Windows 注册表访问库",
+									},
+									{
+										name: "notify",
+										license: "MIT",
+										desc: "跨平台文件系统监控库",
+									},
+									{
+										name: "chrono",
+										license: "MIT / Apache-2.0",
+										desc: "Rust 日期时间处理库",
+									},
+									{
+										name: "uuid",
+										license: "MIT / Apache-2.0",
+										desc: "UUID 生成与解析库",
+									},
+									{
+										name: "rayon",
+										license: "MIT / Apache-2.0",
+										desc: "Rust 数据并行计算库",
+									},
+									{
+										name: "trash",
+										license: "MIT",
+										desc: "跨平台文件删除到回收站",
+									},
+									{
+										name: "clipboard-win",
+										license: "MIT",
+										desc: "Windows 剪贴板操作库",
+									},
+									{
+										name: "xcap",
+										license: "MIT",
+										desc: "跨平台屏幕截图库",
+									},
+									{
+										name: "base64",
+										license: "MIT / Apache-2.0",
+										desc: "Base64 编解码库",
+									},
+									{
+										name: "lnk",
+										license: "MIT",
+										desc: "Windows 快捷方式 (.lnk) 解析库",
+									},
+									{
+										name: "opener",
+										license: "MIT / Apache-2.0",
+										desc: "使用系统默认程序打开文件或 URL",
+									},
+									{
+										name: "thiserror",
+										license: "MIT / Apache-2.0",
+										desc: "派生宏简化 Rust 错误类型定义",
+									},
+									{
+										name: "once_cell",
+										license: "MIT / Apache-2.0",
+										desc: "单次初始化的惰性静态值",
+									},
+									{
+										name: "pollster",
+										license: "MIT / Apache-2.0",
+										desc: "轻量级 Rust 异步阻塞执行器",
 									},
 								].map((lib) => (
 									<div

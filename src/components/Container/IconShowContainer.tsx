@@ -90,25 +90,22 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 			const deltaY = moveEvent.clientY - startY;
 
 			if (direction === "br") {
-				const newWidth = Math.max(100, startWidth + deltaX);
-				const newHeight = Math.max(100, startHeight + deltaY);
-				setSize({ width: newWidth, height: newHeight });
+				const rawWidth = Math.max(10, startWidth + deltaX);
+				const rawHeight = Math.max(10, startHeight + deltaY);
+				const snapped = snapSize(rawWidth, rawHeight);
+				setSize(snapped);
 			} else if (direction === "bl") {
-				const newWidth = Math.max(100, startWidth - deltaX);
-				const newHeight = Math.max(100, startHeight + deltaY);
-				const possiblePosX = startPosX + deltaX;
+				const rawWidth = Math.max(10, startWidth - deltaX);
+				const rawHeight = Math.max(10, startHeight + deltaY);
+				const possiblePosX = startPosX + startWidth - Math.max(10, startWidth - deltaX);
 
-				let targetWidth = startWidth - resizeOffsetRef.current.x;
-				let targetXOffset = resizeOffsetRef.current.x;
-
-				if (newWidth > 100 && possiblePosX >= 0) {
-					targetWidth = newWidth;
-					targetXOffset = deltaX;
+				if (possiblePosX >= 0) {
+					const snapped = snapSize(rawWidth, rawHeight);
+					const targetXOffset = startWidth - snapped.width;
+					setSize(snapped);
+					setResizePosOffset({ x: targetXOffset, y: 0 });
+					resizeOffsetRef.current = { x: targetXOffset, y: 0 };
 				}
-
-				setSize({ width: targetWidth, height: newHeight });
-				setResizePosOffset({ x: targetXOffset, y: 0 });
-				resizeOffsetRef.current = { x: targetXOffset, y: 0 };
 			}
 		};
 
@@ -219,8 +216,6 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 					position: "absolute",
 					left: 0,
 					top: 0,
-					width: size.width,
-					height: size.height,
 					borderRadius: cornerRadius,
 					zIndex: isDragging || isResizing ? 40 : 10,
 					backgroundColor: settings.wallpaperCompatible && settings.globalBlur && wallpaper ? "transparent" : customBackground,
@@ -228,9 +223,9 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 					WebkitBackdropFilter: !settings.wallpaperCompatible && settings.globalBlur ? "var(--backdrop-blur)" : "none",
 					...maskStyle,
 				}}
-				initial={{ opacity: 0, scale: 0.95, x: pos.x, y: pos.y }}
-				animate={{ opacity: isDragging ? 0.9 : 1, scale: 1, x: pos.x + resizePosOffset.x, y: pos.y + resizePosOffset.y }}
-				transition={isDragging || isResizing ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 30 }}
+				initial={{ opacity: 0, scale: 0.95, x: pos.x, y: pos.y, width: size.width, height: size.height }}
+				animate={{ opacity: isDragging ? 0.9 : 1, scale: 1, x: pos.x + resizePosOffset.x, y: pos.y + resizePosOffset.y, width: size.width, height: size.height }}
+				transition={isDragging ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 30 }}
 				className={cn(
 					"flex flex-col overflow-hidden transition-colors border shadow-xl select-none touch-none relative",
 					"border-[var(--color-border)]",
@@ -288,6 +283,7 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 										opacity: container.style.iconOpacityInside ?? 1.0,
 									}}
 									onContextMenu={(e) => handleItemContextMenu(e, item.id)}
+									onPointerDown={(e) => e.stopPropagation()}
 									className="relative flex items-center justify-center shrink-0 cursor-default"
 								>
 									<FileItem

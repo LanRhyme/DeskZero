@@ -14,6 +14,7 @@ import { useDesktopStore } from "@/stores/desktopStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import type { Container as ContainerType } from "@/types/container";
 import { cn } from "@/utils/cn";
+import { snapPosition, snapSize } from "@/utils/grid";
 import { GameContainerSettings } from "./GameContainerSettings";
 
 interface GameContainerProps {
@@ -67,18 +68,8 @@ export function GameContainer({ container }: GameContainerProps) {
 
 	const { ref, pos, isDragging, listeners } = useDrag(container.position, {
 		onDragEnd: (newPos) => {
-			// Snap to grid for GameContainer
-			const gw = settings.gridWidth || 80;
-			const gh = settings.gridHeight || 104;
-			const gx = settings.gridGapX ?? 20;
-			const gy = settings.gridGapY ?? 20;
-			const stepX = gw + gx;
-			const stepY = gh + gy;
-
-			const snapX = Math.round(Math.max(0, newPos.x - 10) / stepX) * stepX + 10;
-			const snapY = Math.round(Math.max(0, newPos.y - 10) / stepY) * stepY + 10;
-
-			updateContainerPosition(container.id, { x: snapX, y: snapY });
+			const snapped = snapPosition(newPos.x, newPos.y);
+			updateContainerPosition(container.id, snapped);
 		},
 	});
 
@@ -112,22 +103,8 @@ export function GameContainer({ container }: GameContainerProps) {
 	const sizeRef = useRef(size);
 	sizeRef.current = size;
 	const commitResize = () => {
-		// Snap to grid sizes
-		const gw = settings.gridWidth || 80;
-		const gh = settings.gridHeight || 104;
-		const gx = settings.gridGapX ?? 20;
-		const gy = settings.gridGapY ?? 20;
-		const stepX = gw + gx;
-		const stepY = gh + gy;
-
-		const snapW =
-			Math.max(1, Math.round((sizeRef.current.width + gx) / stepX)) * stepX -
-			gx;
-		const snapH =
-			Math.max(1, Math.round((sizeRef.current.height + gy) / stepY)) * stepY -
-			gy;
-
-		updateContainerSize(container.id, { width: snapW, height: snapH });
+		const snapped = snapSize(sizeRef.current.width, sizeRef.current.height);
+		updateContainerSize(container.id, snapped);
 	};
 
 	const handleResizePointerDown = (
@@ -145,25 +122,23 @@ export function GameContainer({ container }: GameContainerProps) {
 			const deltaX = moveEvent.clientX - startX;
 			const deltaY = moveEvent.clientY - startY;
 
-			let newWidth = startWidth;
-			let offsetX = 0;
-
 			if (direction === "br") {
-				newWidth = Math.max(80, startWidth + deltaX);
+				const rawWidth = Math.max(10, startWidth + deltaX);
+				const rawHeight = Math.max(10, startHeight + deltaY);
+				const snapped = snapSize(rawWidth, rawHeight);
+				setSize(snapped);
 			} else if (direction === "bl") {
-				newWidth = Math.max(80, startWidth - deltaX);
-				if (startWidth - deltaX >= 80) {
-					offsetX = deltaX;
-				} else {
-					offsetX = startWidth - 80;
+				const rawWidth = Math.max(10, startWidth - deltaX);
+				const rawHeight = Math.max(10, startHeight + deltaY);
+				const possiblePosX = startPosX + startWidth - Math.max(10, startWidth - deltaX);
+
+				if (possiblePosX >= 0) {
+					const snapped = snapSize(rawWidth, rawHeight);
+					const targetXOffset = startWidth - snapped.width;
+					setSize(snapped);
+					setResizePosOffset({ x: targetXOffset, y: 0 });
+					resizeOffsetRef.current = { x: targetXOffset, y: 0 };
 				}
-			}
-
-			const newHeight = Math.max(96, startHeight + deltaY);
-			setSize({ width: newWidth, height: newHeight });
-
-			if (direction === "bl") {
-				setResizePosOffset({ x: offsetX, y: 0 });
 			}
 		};
 
@@ -178,14 +153,8 @@ export function GameContainer({ container }: GameContainerProps) {
 			});
 
 			if (finalOffsetX !== 0) {
-				// Snap pos
-				const gw = settings.gridWidth || 80;
-				const gx = settings.gridGapX ?? 20;
-				const stepX = gw + gx;
-				const snapX =
-					Math.round(Math.max(0, pos.x + finalOffsetX - 10) / stepX) * stepX +
-					10;
-				updateContainerPosition(container.id, { x: snapX, y: pos.y });
+				const snappedPos = snapPosition(pos.x + finalOffsetX, pos.y);
+				updateContainerPosition(container.id, { x: snappedPos.x, y: pos.y });
 			}
 
 			window.removeEventListener("pointermove", handlePointerMove);
@@ -252,14 +221,12 @@ export function GameContainer({ container }: GameContainerProps) {
 					position: "absolute",
 					left: 0,
 					top: 0,
-					width: size.width,
-					height: size.height,
 					zIndex: isDragging || isResizing ? 40 : 10,
 					opacity: bgOpacity,
 				}}
-				initial={{ opacity: 0, scale: 0.95, x: pos.x, y: pos.y }}
-				animate={{ opacity: isDragging ? 0.9 : bgOpacity, scale: 1, x: pos.x + resizePosOffset.x, y: pos.y + resizePosOffset.y }}
-				transition={isDragging || isResizing ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 30 }}
+				initial={{ opacity: 0, scale: 0.95, x: pos.x, y: pos.y, width: size.width, height: size.height }}
+				animate={{ opacity: isDragging ? 0.9 : bgOpacity, scale: 1, x: pos.x + resizePosOffset.x, y: pos.y + resizePosOffset.y, width: size.width, height: size.height }}
+				transition={isDragging ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 30 }}
 				className={cn(
 					"flex flex-col transition-shadow select-none touch-none relative bg-transparent",
 					isDragging && "shadow-2xl ring-2 ring-[var(--color-accent)]/50",

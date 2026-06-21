@@ -53,15 +53,8 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
   const { ref, pos, isDragging, listeners } = useDrag(container.position, {
     disabled: isEditing,
     onDragEnd: (newPos) => {
-      const gw = settings.gridWidth || 80;
-      const gh = settings.gridHeight || 104;
-      const gx = settings.gridGapX ?? 20;
-      const gy = settings.gridGapY ?? 20;
-      const stepX = gw + gx;
-      const stepY = gh + gy;
-      const snapX = Math.round(Math.max(0, newPos.x - 10) / stepX) * stepX + 10;
-      const snapY = Math.round(Math.max(0, newPos.y - 10) / stepY) * stepY + 10;
-      updateContainerPosition(container.id, { x: snapX, y: snapY });
+      const snapped = snapPosition(newPos.x, newPos.y);
+      updateContainerPosition(container.id, snapped);
     },
   });
 
@@ -117,25 +110,22 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
       const deltaY = moveEvent.clientY - startY;
 
       if (direction === "br") {
-        const newWidth = Math.max(60, startWidth + deltaX);
-        const newHeight = Math.max(60, startHeight + deltaY);
-        setSize({ width: newWidth, height: newHeight });
+        const rawWidth = Math.max(10, startWidth + deltaX);
+        const rawHeight = Math.max(10, startHeight + deltaY);
+        const snapped = snapSize(rawWidth, rawHeight);
+        setSize(snapped);
       } else if (direction === "bl") {
-        const newWidth = Math.max(60, startWidth - deltaX);
-        const newHeight = Math.max(60, startHeight + deltaY);
-        const possiblePosX = startPosX + deltaX;
+        const rawWidth = Math.max(10, startWidth - deltaX);
+        const rawHeight = Math.max(10, startHeight + deltaY);
+        const possiblePosX = startPosX + startWidth - Math.max(10, startWidth - deltaX);
         
-        let targetWidth = startWidth - resizeOffsetRef.current.x;
-        let targetXOffset = resizeOffsetRef.current.x;
-        
-        if (newWidth > 60 && possiblePosX >= 0) {
-          targetWidth = newWidth;
-          targetXOffset = deltaX;
+        if (possiblePosX >= 0) {
+          const snapped = snapSize(rawWidth, rawHeight);
+          const targetXOffset = startWidth - snapped.width;
+          setSize(snapped);
+          setResizePosOffset({ x: targetXOffset, y: 0 });
+          resizeOffsetRef.current = { x: targetXOffset, y: 0 };
         }
-        
-        setSize({ width: targetWidth, height: newHeight });
-        setResizePosOffset({ x: targetXOffset, y: 0 });
-        resizeOffsetRef.current = { x: targetXOffset, y: 0 };
       }
     };
 
@@ -231,7 +221,7 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
           height: size.height,
         }}
         transition={
-          isDragging || isResizing
+          isDragging
             ? { duration: 0 }
             : { type: "spring", stiffness: 400, damping: 30 }
         }

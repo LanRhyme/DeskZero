@@ -39,7 +39,12 @@ jobs:
         run: node scripts/sync-config.js
 
       - name: Build Tauri app
-        run: npm run tauri build -- --bundles msi
+        run: npm run tauri build -- --no-bundle
+
+      - name: Build Inno Setup Installer
+        shell: pwsh
+        run: |
+          iscc /DMyAppVersion="${{ env.VERSION }}" src-tauri/installer.iss
 
       - name: Create Portable Zip
         shell: pwsh
@@ -57,4 +62,5 @@ jobs:
           generate_release_notes: true
           files: |
             DeskZero-Portable-v${{ env.VERSION }}.zip
-            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/inno/*.exe
+

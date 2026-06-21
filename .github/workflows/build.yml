@@ -35,7 +35,14 @@ jobs:
         run: node scripts/sync-config.js
 
       - name: Build Tauri app
-        run: npm run tauri build -- --bundles msi
+        run: npm run tauri build -- --no-bundle
+
+      - name: Build Inno Setup Installer
+        shell: pwsh
+        run: |
+          $config = Get-Content deskzero.config.json | ConvertFrom-Json
+          $version = $config.version
+          iscc /DMyAppVersion="$version" src-tauri/installer.iss
 
       - name: Create Portable Package
         shell: pwsh
@@ -49,8 +56,9 @@ jobs:
           name: DeskZero-Portable
           path: DeskZero-Portable.zip
 
-      - name: Upload MSI Installer
+      - name: Upload Inno Setup Installer
         uses: actions/upload-artifact@v4
         with:
-          name: DeskZero-MSI-Installer
-          path: src-tauri/target/release/bundle/msi/*.msi
+          name: DeskZero-Installer
+          path: src-tauri/target/release/bundle/inno/*.exe
+

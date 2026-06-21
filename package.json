@@ -8,6 +8,7 @@
     "dev": "vite",
     "prebuild": "node scripts/sync-config.js",
     "build": "tsc -b && vite build",
+    "build:inno": "node scripts/build-inno.js",
     "preview": "vite preview",
     "tauri": "tauri"
   },

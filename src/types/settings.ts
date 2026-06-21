@@ -28,4 +28,5 @@ export interface Settings {
 	iconGlowRadius?: number;
 	iconGlowIntensity?: number;
 	doubleClickHide?: boolean;
+	showGridOnDrag?: boolean;
 }

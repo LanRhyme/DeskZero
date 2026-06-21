@@ -268,8 +268,6 @@ export function WidgetSettingsPanel({
   const [calendarFestivalColor, setCalendarFestivalColor] = useState(widgetConfig.config?.festivalColor || "#ef4444");
 
   // 9. 天气设置
-  const [weatherApiKey, setWeatherApiKey] = useState(widgetConfig.config?.apiKey || "");
-  const [weatherLocation, setWeatherLocation] = useState(widgetConfig.config?.location || "");
   const [weatherFontSizeScale, setWeatherFontSizeScale] = useState(widgetConfig.config?.fontSizeScale ?? 1.0);
   const [weatherFontColor, setWeatherFontColor] = useState(widgetConfig.config?.fontColor || "theme");
   const [weatherShowForecast, setWeatherShowForecast] = useState(widgetConfig.config?.showForecast !== false);
@@ -377,8 +375,6 @@ export function WidgetSettingsPanel({
         break;
       case "weather":
         Object.assign(newConfig, {
-          apiKey: weatherApiKey,
-          location: weatherLocation,
           fontSizeScale: weatherFontSizeScale,
           fontColor: weatherFontColor,
           showForecast: weatherShowForecast,
@@ -461,8 +457,6 @@ export function WidgetSettingsPanel({
     calendarStartOfWeek,
     calendarShowFestivals,
     calendarFestivalColor,
-    weatherApiKey,
-    weatherLocation,
     weatherFontSizeScale,
     weatherFontColor,
     weatherShowForecast,

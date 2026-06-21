@@ -98,6 +98,7 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
     e.stopPropagation();
     e.preventDefault();
     setIsResizing(true);
+    useDesktopStore.getState().setIsGlobalDragging(true);
     const startX = e.clientX;
     const startY = e.clientY;
     const startWidth = size.width;
@@ -131,6 +132,7 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
 
     const handlePointerUp = () => {
       setIsResizing(false);
+      useDesktopStore.getState().setIsGlobalDragging(false);
       const snappedSize = snapSize(sizeRef.current.width, sizeRef.current.height);
       if (direction === "bl") {
         const snappedPos = snapPosition(startPosX + resizeOffsetRef.current.x, startPosY);

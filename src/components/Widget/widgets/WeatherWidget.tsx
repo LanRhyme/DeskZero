@@ -112,8 +112,6 @@ export function WeatherWidget({
   height,
 }: WidgetComponentProps) {
   const c = config.config;
-  const apiKey = c.apiKey || "";
-  const location = c.location || "";
   const fontSizeScale = c.fontSizeScale ?? 1.0;
   const fontColor = c.fontColor || "theme";
   const showForecast = c.showForecast !== false;

@@ -174,6 +174,7 @@ function NormalContainer({ container }: ContainerProps) {
 		e.stopPropagation();
 		e.preventDefault();
 		setIsResizing(true);
+		useDesktopStore.getState().setIsGlobalDragging(true);
 		const startX = e.clientX;
 		const startY = e.clientY;
 		const startWidth = size.width;
@@ -204,6 +205,7 @@ function NormalContainer({ container }: ContainerProps) {
 
 		const handlePointerUp = () => {
 			setIsResizing(false);
+			useDesktopStore.getState().setIsGlobalDragging(false);
 			if (direction === "bl") {
 				const finalX = Math.max(0, startPosX + resizeOffsetRef.current.x);
 				updateContainerPosition(container.id, { x: finalX, y: startPosY });

@@ -57,7 +57,6 @@ function getAnniversaryInfo(dateStr: string): { years: number; days: number } {
 
 export function CountdownWidget({
   config,
-  width,
   height,
   containerId,
 }: WidgetComponentProps) {
@@ -125,8 +124,6 @@ export function CountdownWidget({
 
   const secondaryColorClass = "text-[var(--color-text-secondary)]";
 
-  // 动态自适应列数不再依赖 className，我们将直接在 style 中写 gridTemplateColumns
-  const colsClass = "";
 
   if (sortedEvents.length === 0) {
     return (

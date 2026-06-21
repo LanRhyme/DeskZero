@@ -401,6 +401,12 @@ export function SettingsPage() {
 											</div>
 										</SettingRow>
 										<SettingRow
+											title="拖拽和缩放时显示网格线"
+											desc="以低不透明度虚化显示鼠标周围的辅助网格线"
+										>
+											<SwitchToggle checked={settings.showGridOnDrag !== false} onChange={(checked: boolean) => saveSettings({ showGridOnDrag: checked })} />
+										</SettingRow>
+										<SettingRow
 											title="软件名称文字大小"
 											desc="调整桌面图标文字的显示大小"
 											noBorder

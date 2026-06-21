@@ -1,5 +1,6 @@
 import { startDrag } from "@crabnebula/tauri-plugin-drag";
 import { type RefObject, useRef, useState } from "react";
+import { useDesktopStore } from "@/stores/desktopStore";
 
 interface Position {
 	x: number;
@@ -97,6 +98,7 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 		if (!dragInfo.current.hasMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
 			dragInfo.current.hasMoved = true;
 			setIsDragging(true);
+			useDesktopStore.getState().setIsGlobalDragging(true);
 			options?.onDragStart?.();
 
 			// 确认是拖拽，在这里设置 capture 以防冲突
@@ -147,6 +149,7 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 				) {
 					dragInfo.current.dragging = false;
 					setIsDragging(false);
+					useDesktopStore.getState().setIsGlobalDragging(false);
 					if (rafId.current !== null) {
 						cancelAnimationFrame(rafId.current);
 						rafId.current = null;
@@ -189,6 +192,7 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 		const hasMoved = dragInfo.current.hasMoved;
 		dragInfo.current.dragging = false;
 		setIsDragging(false);
+		useDesktopStore.getState().setIsGlobalDragging(false);
 
 		if (rafId.current !== null) {
 			cancelAnimationFrame(rafId.current);

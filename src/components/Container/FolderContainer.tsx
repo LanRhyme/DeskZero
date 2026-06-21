@@ -168,7 +168,9 @@ export function FolderContainer({ container }: ContainerProps) {
 		direction: "br" | "bl" | "tl" | "tr" | "t" | "b" | "l" | "r",
 	) => {
 		e.stopPropagation();
+		e.preventDefault();
 		setIsResizing(true);
+		useDesktopStore.getState().setIsGlobalDragging(true);
 		const startX = e.clientX;
 		const startY = e.clientY;
 		const startWidth = sizeRef.current.width;
@@ -204,6 +206,7 @@ export function FolderContainer({ container }: ContainerProps) {
 
 		const handlePointerUp = () => {
 			setIsResizing(false);
+			useDesktopStore.getState().setIsGlobalDragging(false);
 			commitResize();
 
 			const finalOffsetX = resizeOffsetRef.current.x;

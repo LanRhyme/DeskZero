@@ -34,6 +34,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useWidgetStore } from "@/stores/widgetStore";
 import { DesktopGrid } from "./DesktopGrid";
+import { GridOverlay } from "./GridOverlay";
 import { useHistoryStore } from "@/stores/historyStore";
 import { WidgetSelectorDialog } from "@/components/Widget/WidgetSelectorDialog";
 import type { Position } from "@/types/container";
@@ -1110,6 +1111,7 @@ export default function DesktopLayer() {
 				}}
 			>
 				<DesktopGrid>
+					<GridOverlay />
 					{/* Render Desktop Items */}
 					{items
 						.filter((i) => !i.isInContainer)

@@ -27,14 +27,16 @@ export function GameContainer({ container }: GameContainerProps) {
 
 	const { settings } = useSettingsStore();
 
-	const [resizePosOffset, setResizePosOffset] = useState({ x: 0, y: 0 });
 	const [menuState, setMenuState] = useState<{
 		visible: boolean;
 		x: number;
 		y: number;
 	}>({ visible: false, x: 0, y: 0 });
-	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 	const [settingsPos, setSettingsPos] = useState({ x: 0, y: 0 });
+	const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+	const [resizePosOffset, setResizePosOffset] = useState({ x: 0, y: 0 });
+	const resizeOffsetRef = useRef({ x: 0, y: 0 });
 
 	// Default size 1x2 grids
 	const defaultWidth = settings.gridWidth || 80;
@@ -112,11 +114,14 @@ export function GameContainer({ container }: GameContainerProps) {
 		direction: "br" | "bl",
 	) => {
 		e.stopPropagation();
+		e.preventDefault();
 		setIsResizing(true);
+		useDesktopStore.getState().setIsGlobalDragging(true);
 		const startX = e.clientX;
 		const startY = e.clientY;
 		const startWidth = sizeRef.current.width;
 		const startHeight = sizeRef.current.height;
+		const startPosX = pos.x;
 
 		const handlePointerMove = (moveEvent: PointerEvent) => {
 			const deltaX = moveEvent.clientX - startX;
@@ -144,6 +149,7 @@ export function GameContainer({ container }: GameContainerProps) {
 
 		const handlePointerUp = () => {
 			setIsResizing(false);
+			useDesktopStore.getState().setIsGlobalDragging(false);
 			commitResize();
 
 			let finalOffsetX = 0;

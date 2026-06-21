@@ -55,6 +55,9 @@ interface DesktopState {
 
 	dragOffset: { dx: number; dy: number } | null;
 	setDragOffset: (offset: { dx: number; dy: number } | null) => void;
+
+	isGlobalDragging: boolean;
+	setIsGlobalDragging: (dragging: boolean) => void;
 }
 
 import { useContainerStore } from "./containerStore";
@@ -176,6 +179,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 	isIconsHidden: localStorage.getItem("deskzero_icons_hidden") === "true",
 	dropPrompt: null,
 	dragOffset: null,
+	isGlobalDragging: false,
 
 	setWallpaper: (wallpaper) => set({ wallpaper }),
 	setIsIconsHidden: (hidden) => {
@@ -184,6 +188,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 	},
 	setDropPrompt: (prompt) => set({ dropPrompt: prompt }),
 	setDragOffset: (offset) => set({ dragOffset: offset }),
+	setIsGlobalDragging: (dragging) => set({ isGlobalDragging: dragging }),
 
 	fetchDesktopItems: async (forceFromStorage?: boolean) => {
 		useHistoryStore.getState().clearHistory();

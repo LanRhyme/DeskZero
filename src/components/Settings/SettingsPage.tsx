@@ -246,6 +246,9 @@ export function SettingsPage() {
 				vertical
 				as="div"
 				className="flex flex-1 overflow-hidden min-h-0 w-full relative"
+				onChange={() => {
+					scrollContainerRef.current?.scrollTo({ top: 0 });
+				}}
 			>
 				{/* Subtle ambient background glow */}
 				<div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[var(--color-accent-subtle)] blur-[120px] rounded-full pointer-events-none" />
@@ -315,6 +318,7 @@ export function SettingsPage() {
 							</h2>
 
 								<div className="space-y-6">
+								{/* 语言与启动 */}
 								<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
 								<SettingRow
 									title={t("settings.general.language")}
@@ -332,6 +336,7 @@ export function SettingsPage() {
 								<SettingRow
 									title={t("settings.general.autoStart")}
 									desc={t("settings.general.autoStartDesc")}
+									noBorder
 								>
 									<div className="flex items-center gap-3">
 										{settings.autoStart && (
@@ -351,7 +356,6 @@ export function SettingsPage() {
 															t("settings.general.autoStartFailed") + (err instanceof Error ? err.message : String(err)),
 															"error"
 														);
-														// 回滚前端状态
 														saveSettings({ autoStartHighPriority: !newValue });
 													}
 												}}
@@ -386,112 +390,116 @@ export function SettingsPage() {
 														t("settings.general.autoStartFailed") + (err instanceof Error ? err.message : String(err)),
 														"error"
 													);
-													// 回滚前端状态
 													saveSettings({ autoStart: !newValue });
 												}
 											}}
 										/>
 									</div>
 								</SettingRow>
+								</div>
 
-									<SettingRow
-										title={t("settings.general.hideFileExt")}
-										desc={t("settings.general.hideFileExtDesc")}
-									>
-											<SwitchToggle
-												checked={settings.hideFileExtensions !== false}
-												onChange={() =>
-													saveSettings({
-														hideFileExtensions: !(
-															settings.hideFileExtensions !== false
-														),
-													})
-												}
-											/>
-										</SettingRow>
+								{/* 桌面行为 */}
+								<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
+								<SettingRow
+									title={t("settings.general.hideFileExt")}
+									desc={t("settings.general.hideFileExtDesc")}
+								>
+										<SwitchToggle
+											checked={settings.hideFileExtensions !== false}
+											onChange={() =>
+												saveSettings({
+													hideFileExtensions: !(
+														settings.hideFileExtensions !== false
+													),
+												})
+											}
+										/>
+									</SettingRow>
 
-									<SettingRow
-										title={t("settings.general.doubleClickHide")}
-										desc={t("settings.general.doubleClickHideDesc")}
-										noBorder
-									>
-											<SwitchToggle
-												checked={settings.doubleClickHide !== false}
-												onChange={() =>
-													saveSettings({
-														doubleClickHide: !settings.doubleClickHide,
-													})
-												}
-											/>
-										</SettingRow>
-									</div>
+								<SettingRow
+									title={t("settings.general.doubleClickHide")}
+									desc={t("settings.general.doubleClickHideDesc")}
+								>
+										<SwitchToggle
+											checked={settings.doubleClickHide !== false}
+											onChange={() =>
+												saveSettings({
+													doubleClickHide: !settings.doubleClickHide,
+												})
+											}
+										/>
+									</SettingRow>
 
-									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
-									<SettingRow
-										title={t("settings.general.syncLayout")}
-										desc={t("settings.general.syncLayoutDesc")}
-									>
-											<button
-												onClick={() => setIsSyncModalOpen(true)}
-												disabled={syncing}
-												className="px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg text-sm font-medium hover:bg-opacity-90 transition-all shadow-sm active:scale-95 disabled:opacity-50"
-											>
-												{syncing ? t("settings.general.syncing") : t("settings.general.syncNow")}
-											</button>
-										</SettingRow>
-									<SettingRow
-										title={t("settings.general.gridWidth")}
-										desc={t("settings.general.gridWidthDesc")}
-									>
-											<div className="flex items-center gap-4 w-48">
-												<Slider value={settings.gridWidth ?? 80} onChange={(v: number) => saveSettings({ gridWidth: v })} min={60} max={150} step={5} className="flex-1" />
-												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridWidth ?? 80}px`}</span>
-											</div>
-										</SettingRow>
-									<SettingRow
-										title={t("settings.general.gridHeight")}
-										desc={t("settings.general.gridHeightDesc")}
-									>
-											<div className="flex items-center gap-4 w-48">
-												<Slider value={settings.gridHeight ?? 104} onChange={(v: number) => saveSettings({ gridHeight: v })} min={60} max={150} step={5} className="flex-1" />
-												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridHeight ?? 104}px`}</span>
-											</div>
-										</SettingRow>
-									<SettingRow
-										title={t("settings.general.gridGapX")}
-										desc={t("settings.general.gridGapXDesc")}
-									>
-											<div className="flex items-center gap-4 w-48">
-												<Slider value={settings.gridGapX ?? 20} onChange={(v: number) => saveSettings({ gridGapX: v })} min={0} max={100} step={5} className="flex-1" />
-												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridGapX ?? 20}px`}</span>
-											</div>
-										</SettingRow>
-									<SettingRow
-										title={t("settings.general.gridGapY")}
-										desc={t("settings.general.gridGapYDesc")}
-									>
-											<div className="flex items-center gap-4 w-48">
-												<Slider value={settings.gridGapY ?? 20} onChange={(v: number) => saveSettings({ gridGapY: v })} min={0} max={100} step={5} className="flex-1" />
-												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridGapY ?? 20}px`}</span>
-											</div>
-										</SettingRow>
-									<SettingRow
-										title={t("settings.general.showGridOnDrag")}
-										desc={t("settings.general.showGridOnDragDesc")}
-									>
-											<SwitchToggle checked={settings.showGridOnDrag !== false} onChange={(checked: boolean) => saveSettings({ showGridOnDrag: checked })} />
-										</SettingRow>
-									<SettingRow
-										title={t("settings.general.fontSize")}
-										desc={t("settings.general.fontSizeDesc")}
-										noBorder
-									>
-											<div className="flex items-center gap-4 w-48">
-												<Slider value={settings.fontSize || 12} onChange={(v: number) => saveSettings({ fontSize: v })} min={10} max={24} step={1} className="flex-1" />
-												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.fontSize || 12}px`}</span>
-											</div>
-										</SettingRow>
-									</div>
+								<SettingRow
+									title={t("settings.general.fontSize")}
+									desc={t("settings.general.fontSizeDesc")}
+									noBorder
+								>
+										<div className="flex items-center gap-4 w-48">
+											<Slider value={settings.fontSize || 12} onChange={(v: number) => saveSettings({ fontSize: v })} min={10} max={24} step={1} className="flex-1" />
+											<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.fontSize || 12}px`}</span>
+										</div>
+									</SettingRow>
+								</div>
+
+								{/* 桌面布局 */}
+								<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
+								<SettingRow
+									title={t("settings.general.syncLayout")}
+									desc={t("settings.general.syncLayoutDesc")}
+								>
+										<button
+											onClick={() => setIsSyncModalOpen(true)}
+											disabled={syncing}
+											className="px-4 py-2 bg-[var(--color-accent)] text-white rounded-lg text-sm font-medium hover:bg-opacity-90 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+										>
+											{syncing ? t("settings.general.syncing") : t("settings.general.syncNow")}
+										</button>
+									</SettingRow>
+								<SettingRow
+									title={t("settings.general.gridWidth")}
+									desc={t("settings.general.gridWidthDesc")}
+								>
+										<div className="flex items-center gap-4 w-48">
+											<Slider value={settings.gridWidth ?? 80} onChange={(v: number) => saveSettings({ gridWidth: v })} min={60} max={150} step={5} className="flex-1" />
+											<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridWidth ?? 80}px`}</span>
+										</div>
+									</SettingRow>
+								<SettingRow
+									title={t("settings.general.gridHeight")}
+									desc={t("settings.general.gridHeightDesc")}
+								>
+										<div className="flex items-center gap-4 w-48">
+											<Slider value={settings.gridHeight ?? 104} onChange={(v: number) => saveSettings({ gridHeight: v })} min={60} max={150} step={5} className="flex-1" />
+											<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridHeight ?? 104}px`}</span>
+										</div>
+									</SettingRow>
+								<SettingRow
+									title={t("settings.general.gridGapX")}
+									desc={t("settings.general.gridGapXDesc")}
+								>
+										<div className="flex items-center gap-4 w-48">
+											<Slider value={settings.gridGapX ?? 20} onChange={(v: number) => saveSettings({ gridGapX: v })} min={0} max={100} step={5} className="flex-1" />
+											<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridGapX ?? 20}px`}</span>
+										</div>
+									</SettingRow>
+								<SettingRow
+									title={t("settings.general.gridGapY")}
+									desc={t("settings.general.gridGapYDesc")}
+								>
+										<div className="flex items-center gap-4 w-48">
+											<Slider value={settings.gridGapY ?? 20} onChange={(v: number) => saveSettings({ gridGapY: v })} min={0} max={100} step={5} className="flex-1" />
+											<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${settings.gridGapY ?? 20}px`}</span>
+										</div>
+									</SettingRow>
+								<SettingRow
+									title={t("settings.general.showGridOnDrag")}
+									desc={t("settings.general.showGridOnDragDesc")}
+									noBorder
+								>
+										<SwitchToggle checked={settings.showGridOnDrag !== false} onChange={(checked: boolean) => saveSettings({ showGridOnDrag: checked })} />
+									</SettingRow>
+								</div>
 								</div>
 							</motion.div>
 						</Tab.Panel>
@@ -508,8 +516,9 @@ export function SettingsPage() {
 							</h2>
 
 								<div className="space-y-6">
+									{/* 主题与颜色 */}
 									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
-								<SettingRow title={t("settings.appearance.theme")} desc={t("settings.appearance.themeDesc")}>
+									<SettingRow title={t("settings.appearance.theme")} desc={t("settings.appearance.themeDesc")}>
 									<SegmentedControl
 										options={[
 											{ value: "light", label: t("settings.appearance.light") },
@@ -540,6 +549,7 @@ export function SettingsPage() {
 								<SettingRow
 									title={t("settings.appearance.selectedBg")}
 									desc={t("settings.appearance.selectedBgDesc")}
+									noBorder
 								>
 									<SegmentedControl
 										options={[
@@ -550,6 +560,21 @@ export function SettingsPage() {
 											onChange={(v) => saveSettings({ selectedItemBackground: v as any })}
 										/>
 									</SettingRow>
+									</div>
+
+									{/* 模糊效果 */}
+									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
+									<SettingRow
+										title={t("settings.appearance.globalBlur")}
+										desc={t("settings.appearance.globalBlurDesc")}
+									>
+											<SwitchToggle
+												checked={!!settings.globalBlur}
+												onChange={() =>
+													saveSettings({ globalBlur: !settings.globalBlur })
+												}
+											/>
+										</SettingRow>
 
 									<SettingRow
 										title={t("settings.appearance.selectedBlur")}
@@ -566,20 +591,9 @@ export function SettingsPage() {
 										</SettingRow>
 
 									<SettingRow
-										title={t("settings.appearance.globalBlur")}
-										desc={t("settings.appearance.globalBlurDesc")}
-									>
-											<SwitchToggle
-												checked={!!settings.globalBlur}
-												onChange={() =>
-													saveSettings({ globalBlur: !settings.globalBlur })
-												}
-											/>
-										</SettingRow>
-
-									<SettingRow
 										title={t("settings.appearance.blurRepair")}
 										desc={t("settings.appearance.blurRepairDesc")}
+										noBorder
 									>
 										<button
 											onClick={async () => {
@@ -593,11 +607,13 @@ export function SettingsPage() {
 											{t("settings.appearance.repair")}
 										</button>
 									</SettingRow>
+									</div>
 
+									{/* 图标外观 */}
+									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
 									<SettingRow
 										title={t("settings.appearance.hideShortcutBadge")}
 										desc={t("settings.appearance.hideShortcutBadgeDesc")}
-										noBorder
 									>
 											<SwitchToggle
 												checked={!!settings.hideShortcutBadge}
@@ -608,9 +624,27 @@ export function SettingsPage() {
 												}
 											/>
 										</SettingRow>
-									</div>
 
-									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl transition-all duration-500">
+									<SettingRow
+										title={t("settings.appearance.iconOpacity")}
+										desc={t("settings.appearance.iconOpacityDesc")}
+									>
+											<div className="flex items-center gap-4 w-48">
+												<Slider value={settings.iconOpacity ?? 1.0} onChange={(v: number) => saveSettings({ iconOpacity: v })} min={0.1} max={1.0} step={0.05} className="flex-1" />
+												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${Math.round((settings.iconOpacity ?? 1.0) * 100)}%`}</span>
+											</div>
+										</SettingRow>
+
+									<SettingRow
+										title={t("settings.appearance.textOpacity")}
+										desc={t("settings.appearance.textOpacityDesc")}
+									>
+											<div className="flex items-center gap-4 w-48">
+												<Slider value={settings.textOpacity ?? 1.0} onChange={(v: number) => saveSettings({ textOpacity: v })} min={0.1} max={1.0} step={0.05} className="flex-1" />
+												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${Math.round((settings.textOpacity ?? 1.0) * 100)}%`}</span>
+											</div>
+										</SettingRow>
+
 									<SettingRow
 										title={t("settings.appearance.iconGlow")}
 										desc={t("settings.appearance.iconGlowDesc")}
@@ -658,28 +692,47 @@ export function SettingsPage() {
 										</AnimatePresence>
 									</div>
 
-									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
+									{/* 视差效果 */}
+									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl transition-all duration-500">
 									<SettingRow
-										title={t("settings.appearance.iconOpacity")}
-										desc={t("settings.appearance.iconOpacityDesc")}
+										title={t("settings.appearance.parallax")}
+										desc={t("settings.appearance.parallaxDesc")}
+										noBorder={!settings.parallaxEnabled}
 									>
-											<div className="flex items-center gap-4 w-48">
-												<Slider value={settings.iconOpacity ?? 1.0} onChange={(v: number) => saveSettings({ iconOpacity: v })} min={0.1} max={1.0} step={0.05} className="flex-1" />
-												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${Math.round((settings.iconOpacity ?? 1.0) * 100)}%`}</span>
-											</div>
+											<SwitchToggle
+												checked={!!settings.parallaxEnabled}
+												onChange={() =>
+													saveSettings({ parallaxEnabled: !settings.parallaxEnabled })
+												}
+											/>
 										</SettingRow>
-									<SettingRow
-										title={t("settings.appearance.textOpacity")}
-										desc={t("settings.appearance.textOpacityDesc")}
-										noBorder
-									>
-											<div className="flex items-center gap-4 w-48">
-												<Slider value={settings.textOpacity ?? 1.0} onChange={(v: number) => saveSettings({ textOpacity: v })} min={0.1} max={1.0} step={0.05} className="flex-1" />
-												<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{`${Math.round((settings.textOpacity ?? 1.0) * 100)}%`}</span>
-											</div>
-										</SettingRow>
+
+										<AnimatePresence>
+											{settings.parallaxEnabled && (
+												<motion.div
+													initial={{ height: 0, opacity: 0 }}
+													animate={{ height: "auto", opacity: 1 }}
+													exit={{ height: 0, opacity: 0 }}
+													className="overflow-hidden"
+												>
+													<div className="pl-6 pb-2 relative before:absolute before:left-2 before:top-0 before:bottom-6 before:w-[2px] before:rounded-full before:bg-[var(--color-accent)]/20">
+													<SettingRow
+														title={t("settings.appearance.parallaxIntensity")}
+														desc={t("settings.appearance.parallaxIntensityDesc")}
+														noBorder
+													>
+															<div className="flex items-center gap-4 w-48">
+																<Slider value={settings.parallaxIntensity ?? 2} onChange={(v: number) => saveSettings({ parallaxIntensity: v })} min={1} max={10} step={1} className="flex-1" />
+																<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{settings.parallaxIntensity ?? 2}</span>
+															</div>
+														</SettingRow>
+													</div>
+												</motion.div>
+											)}
+										</AnimatePresence>
 									</div>
 
+									{/* 性能模式 */}
 									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl transition-all duration-500">
 									<SettingRow
 										title={t("settings.appearance.performanceMode")}
@@ -717,45 +770,6 @@ export function SettingsPage() {
 															onChange={(v) => saveSettings({ fullscreenDetectionMode: v as any })}
 														/>
 													</SettingRow>
-													</div>
-												</motion.div>
-											)}
-										</AnimatePresence>
-									</div>
-
-									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl transition-all duration-500">
-									<SettingRow
-										title={t("settings.appearance.parallax")}
-										desc={t("settings.appearance.parallaxDesc")}
-										noBorder={!settings.parallaxEnabled}
-									>
-											<SwitchToggle
-												checked={!!settings.parallaxEnabled}
-												onChange={() =>
-													saveSettings({ parallaxEnabled: !settings.parallaxEnabled })
-												}
-											/>
-										</SettingRow>
-
-										<AnimatePresence>
-											{settings.parallaxEnabled && (
-												<motion.div
-													initial={{ height: 0, opacity: 0 }}
-													animate={{ height: "auto", opacity: 1 }}
-													exit={{ height: 0, opacity: 0 }}
-													className="overflow-hidden"
-												>
-													<div className="pl-6 pb-2 relative before:absolute before:left-2 before:top-0 before:bottom-6 before:w-[2px] before:rounded-full before:bg-[var(--color-accent)]/20">
-													<SettingRow
-														title={t("settings.appearance.parallaxIntensity")}
-														desc={t("settings.appearance.parallaxIntensityDesc")}
-														noBorder
-													>
-															<div className="flex items-center gap-4 w-48">
-																<Slider value={settings.parallaxIntensity ?? 2} onChange={(v: number) => saveSettings({ parallaxIntensity: v })} min={1} max={10} step={1} className="flex-1" />
-																<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{settings.parallaxIntensity ?? 2}</span>
-															</div>
-														</SettingRow>
 													</div>
 												</motion.div>
 											)}

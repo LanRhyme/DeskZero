@@ -36,6 +36,7 @@ const defaultSettings: Settings = {
 	iconGlowIntensity: 0.6,
 	doubleClickHide: true,
 	autoStart: false,
+	autoStartHighPriority: false,
 	language: "zh",
 };
 

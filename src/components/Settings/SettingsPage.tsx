@@ -9,6 +9,7 @@ import {
 	Plus,
 	RotateCcw,
 	Settings,
+	Shield,
 	Trash2,
 	X,
 } from "lucide-react";
@@ -332,6 +333,42 @@ export function SettingsPage() {
 									title={t("settings.general.autoStart")}
 									desc={t("settings.general.autoStartDesc")}
 								>
+									<div className="flex items-center gap-3">
+										{settings.autoStart && (
+											<button
+												onClick={async () => {
+													const newValue = !(settings.autoStartHighPriority === true);
+													saveSettings({ autoStartHighPriority: newValue });
+													try {
+														const { invoke } = await import("@tauri-apps/api/core");
+														await invoke("set_auto_start", {
+															enable: true,
+															highPriority: newValue,
+														});
+													} catch (err) {
+														console.error("设置高优先级启动失败:", err);
+														useToastStore.getState().addToast(
+															t("settings.general.autoStartFailed") + (err instanceof Error ? err.message : String(err)),
+															"error"
+														);
+														// 回滚前端状态
+														saveSettings({ autoStartHighPriority: !newValue });
+													}
+												}}
+												title={t("settings.general.autoStartHighPriorityDesc")}
+												className={cn(
+													"flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-lg transition-all duration-200 border cursor-pointer select-none",
+													settings.autoStartHighPriority
+														? "bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/15 text-rose-600 dark:text-rose-400"
+														: "bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 text-neutral-600 dark:text-neutral-300"
+												)}
+											>
+												<Shield className="w-3 h-3" />
+												{settings.autoStartHighPriority
+													? t("settings.general.autoStartHighPriorityActive")
+													: t("settings.general.autoStartHighPrioritySetup")}
+											</button>
+										)}
 										<SwitchToggle
 											checked={settings.autoStart === true}
 											onChange={async () => {
@@ -339,11 +376,14 @@ export function SettingsPage() {
 												saveSettings({ autoStart: newValue });
 												try {
 													const { invoke } = await import("@tauri-apps/api/core");
-													await invoke("set_auto_start", { enable: newValue });
+													await invoke("set_auto_start", {
+														enable: newValue,
+														highPriority: settings.autoStartHighPriority === true,
+													});
 												} catch (err) {
 													console.error("设置开机自启失败:", err);
-												useToastStore.getState().addToast(
-													t("settings.general.autoStartFailed") + (err instanceof Error ? err.message : String(err)),
+													useToastStore.getState().addToast(
+														t("settings.general.autoStartFailed") + (err instanceof Error ? err.message : String(err)),
 														"error"
 													);
 													// 回滚前端状态
@@ -351,7 +391,8 @@ export function SettingsPage() {
 												}
 											}}
 										/>
-									</SettingRow>
+									</div>
+								</SettingRow>
 
 									<SettingRow
 										title={t("settings.general.hideFileExt")}

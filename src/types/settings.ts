@@ -29,6 +29,7 @@ export interface Settings {
 	iconGlowIntensity?: number;
 	doubleClickHide?: boolean;
 	autoStart?: boolean;
+	autoStartHighPriority?: boolean;
 	showGridOnDrag?: boolean;
 	language?: "zh" | "en";
 	customWidgets?: any[];

@@ -181,6 +181,8 @@ pub struct Settings {
     #[serde(default)]
     pub auto_start: bool,
     #[serde(default)]
+    pub auto_start_high_priority: bool,
+    #[serde(default)]
     pub language: String,
     #[serde(default)]
     pub backup_settings: Option<BackupSettings>,
@@ -217,6 +219,7 @@ impl Default for Settings {
             icon_glow_intensity: 0.6,
             double_click_hide: true,
             auto_start: false,
+            auto_start_high_priority: false,
             language: "zh".to_string(),
             backup_settings: None,
             extra: HashMap::new(),

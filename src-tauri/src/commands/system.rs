@@ -11,7 +11,7 @@ const AUTOSTART_REG_PATH: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\
 
 /// 设置或删除 Windows 开机自启注册表项
 #[cfg(target_os = "windows")]
-fn set_registry_autostart(enable: bool) -> Result<(), String> {
+fn set_registry_autostart_raw(enable: bool) -> Result<(), String> {
     use winreg::enums::*;
     use winreg::RegKey;
 
@@ -47,6 +47,98 @@ fn get_registry_autostart() -> bool {
     }
 }
 
+/// 判断当前是否注册了 Windows 服务
+#[cfg(target_os = "windows")]
+fn has_service_registered() -> bool {
+    let output = std::process::Command::new("sc.exe")
+        .args(&["query", "DeskZeroService"])
+        .output();
+    if let Ok(out) = output {
+        out.status.success()
+    } else {
+        false
+    }
+}
+
+/// 安装或卸载 Windows 服务
+#[cfg(target_os = "windows")]
+fn set_service_autostart(enable: bool) -> Result<(), String> {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+    let exe_path = std::env::current_exe()
+        .map_err(|e| format!("无法获取当前 exe 路径: {}", e))?;
+    let path_str = exe_path.to_string_lossy().to_string();
+
+    if enable {
+        // 创建并启动服务
+        let script = format!(
+            "Start-Process sc.exe -ArgumentList 'create DeskZeroService binPath= \"\\\"{}\\\" run-service\" start= auto displayName= \"DeskZero Autostart Service\"' -Verb RunAs -WindowStyle Hidden -Wait; Start-Process sc.exe -ArgumentList 'start DeskZeroService' -Verb RunAs -WindowStyle Hidden -Wait",
+            path_str
+        );
+        let mut cmd = std::process::Command::new("powershell");
+        cmd.args(&["-NoProfile", "-WindowStyle", "Hidden", "-Command", &script]);
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        let output = cmd.output().map_err(|e| format!("执行 PowerShell 失败: {}", e))?;
+        if !output.status.success() {
+            return Err("创建或启动高优先级自启动服务失败，可能用户拒绝了管理员授权。".to_string());
+        }
+    } else {
+        if !has_service_registered() {
+            return Ok(());
+        }
+        // 停止并删除服务
+        let script = "Start-Process sc.exe -ArgumentList 'stop DeskZeroService' -Verb RunAs -WindowStyle Hidden -Wait; Start-Process sc.exe -ArgumentList 'delete DeskZeroService' -Verb RunAs -WindowStyle Hidden -Wait";
+        let mut cmd = std::process::Command::new("powershell");
+        cmd.args(&["-NoProfile", "-WindowStyle", "Hidden", "-Command", &script]);
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        let _ = cmd.output();
+    }
+    Ok(())
+}
+
+/// 同步自启动配置状态
+#[cfg(target_os = "windows")]
+fn sync_autostart_config(enable: bool, high_priority: bool) -> Result<(), String> {
+    if enable {
+        if high_priority {
+            // 启用高优先级启动：开启服务，关闭注册表项
+            set_service_autostart(true)?;
+            let _ = set_registry_autostart_raw(false);
+        } else {
+            // 启用普通自启动：开启注册表，卸载服务
+            set_registry_autostart_raw(true)?;
+            let _ = set_service_autostart(false);
+        }
+    } else {
+        // 关闭自启动：清理两者
+        let _ = set_registry_autostart_raw(false);
+        let _ = set_service_autostart(false);
+    }
+    Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+fn set_registry_autostart_raw(_enable: bool) -> Result<(), String> {
+    Ok(())
+}
+#[cfg(not(target_os = "windows"))]
+fn get_registry_autostart() -> bool {
+    false
+}
+#[cfg(not(target_os = "windows"))]
+fn has_service_registered() -> bool {
+    false
+}
+#[cfg(not(target_os = "windows"))]
+fn set_service_autostart(_enable: bool) -> Result<(), String> {
+    Ok(())
+}
+#[cfg(not(target_os = "windows"))]
+fn sync_autostart_config(_enable: bool, _high_priority: bool) -> Result<(), String> {
+    Ok(())
+}
+
 static SETTINGS_LOCK: Mutex<()> = Mutex::new(());
 
 static SYSTEM: LazyLock<Mutex<System>> = LazyLock::new(|| Mutex::new(System::new_all()));
@@ -61,17 +153,18 @@ pub fn get_settings() -> Result<Settings, String> {
 pub fn save_settings(settings: Settings) -> Result<(), String> {
     let _lock = SETTINGS_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
 
-    // 读取旧设置，检查 auto_start 是否变化
+    // 读取旧设置，检查 auto_start 或 auto_start_high_priority 是否变化
     let old_settings = settings_store::load_settings().unwrap_or_default();
-    let auto_start_changed = old_settings.auto_start != settings.auto_start;
+    let auto_start_changed = old_settings.auto_start != settings.auto_start
+        || old_settings.auto_start_high_priority != settings.auto_start_high_priority;
 
     settings_store::save_settings(&settings)?;
 
-    // 如果 auto_start 发生变化，同步注册表
+    // 如果自启动配置发生变化，同步系统设置
     if auto_start_changed {
-        if let Err(e) = set_registry_autostart(settings.auto_start) {
-            eprintln!("[DeskZero] 同步开机自启注册表失败: {}", e);
-            // 不阻断保存，仅打印警告
+        if let Err(e) = sync_autostart_config(settings.auto_start, settings.auto_start_high_priority) {
+            eprintln!("[DeskZero] 同步开机自启系统设置失败: {}", e);
+            return Err(e);
         }
     }
 
@@ -80,22 +173,34 @@ pub fn save_settings(settings: Settings) -> Result<(), String> {
 
 /// 独立的开机自启切换命令（前端可直接调用）
 #[tauri::command]
-pub fn set_auto_start(enable: bool) -> Result<(), String> {
-    set_registry_autostart(enable)?;
+pub fn set_auto_start(enable: bool, high_priority: bool) -> Result<(), String> {
+    sync_autostart_config(enable, high_priority)?;
 
-    // 同步更新设置中的 auto_start 字段
+    // 同步更新设置中的 auto_start 和 auto_start_high_priority 字段
     let _lock = SETTINGS_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
     let mut settings = settings_store::load_settings().unwrap_or_default();
     settings.auto_start = enable;
+    settings.auto_start_high_priority = high_priority;
     settings_store::save_settings(&settings)?;
 
     Ok(())
 }
 
-/// 获取当前开机自启状态（注册表实际状态）
+#[derive(serde::Serialize)]
+pub struct AutostartStatus {
+    pub enabled: bool,
+    pub high_priority: bool,
+}
+
+/// 获取当前开机自启状态（系统实际状态）
 #[tauri::command]
-pub fn get_autostart_status() -> bool {
-    get_registry_autostart()
+pub fn get_autostart_status() -> AutostartStatus {
+    let reg_ok = get_registry_autostart();
+    let service_ok = has_service_registered();
+    AutostartStatus {
+        enabled: reg_ok || service_ok,
+        high_priority: service_ok,
+    }
 }
 
 #[tauri::command]

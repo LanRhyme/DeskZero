@@ -5,6 +5,7 @@ mod context_menu;
 pub mod desktop;
 mod models;
 mod storage;
+pub mod service;
 
 use tauri::Manager;
 

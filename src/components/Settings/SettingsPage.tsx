@@ -21,6 +21,7 @@ import { SegmentedControl } from "@/components/UI/SegmentedControl";
 import { SettingRow } from "@/components/UI/SettingRow";
 import { Slider } from "@/components/UI/Slider";
 import { SwitchToggle } from "@/components/UI/SwitchToggle";
+import { TextArea } from "@/components/UI/TextInput";
 import { useContainerStore } from "@/stores/containerStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useToastStore } from "@/stores/toastStore";
@@ -43,6 +44,8 @@ export function SettingsPage() {
 	const [syncing, setSyncing] = useState(false);
 	const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 	const [syncMultiplier, setSyncMultiplier] = useState(1.0);
+	const [isCssDialogOpen, setIsCssDialogOpen] = useState(false);
+	const [cssDraft, setCssDraft] = useState(settings.customCss || "");
 
 	const handleSyncWindowsLayout = async (multiplier: number) => {
 		try {
@@ -257,8 +260,7 @@ export function SettingsPage() {
 				{/* Sidebar */}
 				<Tab.List className="w-64 p-6 border-r border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/20 backdrop-blur-2xl flex flex-col gap-2 z-10 shadow-[1px_0_10px_rgba(0,0,0,0.02)]">
 					<div className="mb-8 px-2 pt-2">
-						<div className="text-2xl font-extrabold text-[var(--color-accent)] inline-flex items-center gap-3 tracking-tight">
-							<LayoutGrid className="text-[var(--color-accent)] w-7 h-7" />
+						<div className="text-2xl font-extrabold text-[var(--color-accent)] tracking-tight">
 							DeskZero
 						</div>
 					</div>
@@ -774,6 +776,25 @@ export function SettingsPage() {
 												</motion.div>
 											)}
 										</AnimatePresence>
+									</div>
+
+									{/* 自定义 CSS */}
+									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
+										<SettingRow
+											title={t("settings.appearance.customCss")}
+											desc={t("settings.appearance.customCssDesc")}
+											noBorder
+										>
+											<button
+												onClick={() => {
+													setCssDraft(settings.customCss || "");
+													setIsCssDialogOpen(true);
+												}}
+												className="px-4 py-1.5 bg-[var(--color-accent)] text-white rounded-lg text-sm font-medium hover:bg-opacity-90 active:scale-95 transition-all shadow-sm"
+											>
+												{t("settings.appearance.customCssEdit")}
+											</button>
+										</SettingRow>
 									</div>
 								</div>
 							</motion.div>
@@ -1380,6 +1401,62 @@ export function SettingsPage() {
 				onConfirm={confirmDialog.onConfirm}
 				onCancel={() => setConfirmDialog((prev) => ({ ...prev, open: false }))}
 			/>
+
+			<AnimatePresence>
+				{isCssDialogOpen && (
+					<div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+							onClick={() => setIsCssDialogOpen(false)}
+							className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+						/>
+						<motion.div
+							initial={{ opacity: 0, scale: 0.95, y: 10 }}
+							animate={{ opacity: 1, scale: 1, y: 0 }}
+							exit={{ opacity: 0, scale: 0.95, y: 10 }}
+							transition={{ type: "spring", duration: 0.4, bounce: 0 }}
+							className="relative w-full max-w-lg bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-xl rounded-xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden"
+						>
+							<div className="p-5">
+								<h3 className="text-sm font-semibold text-[var(--color-text)] mb-1">
+									{t("settings.appearance.customCss")}
+								</h3>
+								<p className="text-xs text-[var(--color-text-secondary)] mb-4">
+									{t("settings.appearance.customCssDesc")}
+								</p>
+								<TextArea
+									value={cssDraft}
+									onChange={setCssDraft}
+									placeholder={t("settings.appearance.customCssPlaceholder")}
+									rows={12}
+									className="font-mono text-xs"
+								/>
+							</div>
+							<div className="flex gap-2 px-5 pb-4">
+								<button
+									type="button"
+									className="flex-1 justify-center rounded-lg border border-transparent bg-black/5 dark:bg-white/5 px-3 py-1.5 text-xs font-medium text-[var(--color-text)] hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+									onClick={() => setIsCssDialogOpen(false)}
+								>
+									{t("common.cancel")}
+								</button>
+								<button
+									type="button"
+									className="flex-1 justify-center rounded-lg border border-transparent bg-[var(--color-accent)] px-3 py-1.5 text-xs font-medium text-white transition-colors shadow-md hover:opacity-90"
+									onClick={() => {
+										saveSettings({ customCss: cssDraft });
+										setIsCssDialogOpen(false);
+									}}
+								>
+									{t("common.save")}
+								</button>
+							</div>
+						</motion.div>
+					</div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }

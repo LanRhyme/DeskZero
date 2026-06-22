@@ -230,6 +230,9 @@ pub struct Settings {
     /// 全屏检测模式
     #[serde(default)]
     pub fullscreen_detection_mode: FullscreenDetectionMode,
+    /// 用户自定义 CSS
+    #[serde(default)]
+    pub custom_css: String,
     /// 保留当前版本未定义的设置属性，防止跨版本丢失
     #[serde(flatten)]
     pub extra: HashMap<String, serde_json::Value>,
@@ -270,6 +273,7 @@ impl Default for Settings {
             backup_settings: None,
             performance_mode_enabled: true,
             fullscreen_detection_mode: FullscreenDetectionMode::FullscreenAndMaximized,
+            custom_css: String::new(),
             extra: HashMap::new(),
         }
     }

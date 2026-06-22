@@ -44,6 +44,7 @@ const defaultSettings: Settings = {
 	language: "zh",
 	performanceModeEnabled: true,
 	fullscreenDetectionMode: "fullscreenAndMaximized",
+	customCss: "",
 };
 
 const applyTheme = (theme: Theme) => {
@@ -86,6 +87,20 @@ const applyGlobalBlur = (enabled: boolean) => {
 	document.documentElement.setAttribute("data-global-blur", String(enabled));
 };
 
+const applyCustomCss = (css: string) => {
+	let el = document.getElementById("deskzero-custom-css");
+	if (!css) {
+		if (el) el.remove();
+		return;
+	}
+	if (!el) {
+		el = document.createElement("style");
+		el.id = "deskzero-custom-css";
+		document.head.appendChild(el);
+	}
+	el.textContent = css;
+};
+
 let settingsDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
@@ -103,6 +118,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 		applyAccentColor(settings.accentColor || "#0078d4");
 		applySelectedBackground(settings.selectedItemBackground);
 		applyGlobalBlur(settings.globalBlur);
+		applyCustomCss(settings.customCss || "");
 		if (settings.language) i18n.changeLanguage(settings.language);
 		} catch (err) {
 			const message = err instanceof Error ? err.message : i18n.t("settings.backup.loadFailed");
@@ -127,6 +143,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 		}
 		if (changes.globalBlur !== undefined) {
 			applyGlobalBlur(newSettings.globalBlur);
+		}
+		if (changes.customCss !== undefined) {
+			applyCustomCss(newSettings.customCss || "");
 		}
 		if (changes.language) {
 			i18n.changeLanguage(changes.language);
@@ -177,6 +196,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 			applyAccentColor(newSettings.accentColor || "#0078d4");
 			applySelectedBackground(newSettings.selectedItemBackground);
 			applyGlobalBlur(newSettings.globalBlur);
+			applyCustomCss(newSettings.customCss || "");
 			if (newSettings.language) i18n.changeLanguage(newSettings.language);
 		});
 

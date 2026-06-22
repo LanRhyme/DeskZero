@@ -565,7 +565,11 @@
       "parallax": "Parallax Floating Effect",
       "parallaxDesc": "Containers and widgets float smoothly with mouse movements, creating a 3D parallax effect (does not affect desktop icons)",
       "parallaxIntensity": "Parallax Intensity",
-      "parallaxIntensityDesc": "Adjust the shift distance of containers and widgets, default intensity is 2"
+      "parallaxIntensityDesc": "Adjust the shift distance of containers and widgets, default intensity is 2",
+      "customCss": "Custom CSS",
+      "customCssDesc": "Inject custom styles to override the default appearance, applied immediately",
+      "customCssEdit": "Edit CSS",
+      "customCssPlaceholder": "/* Enter custom CSS here */\n.container {\n  border-radius: 16px;\n}"
     },
     "backup": {
       "title": "Backup",

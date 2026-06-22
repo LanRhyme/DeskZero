@@ -37,5 +37,6 @@ export interface Settings {
 	language?: "zh" | "en";
 	performanceModeEnabled?: boolean;
 	fullscreenDetectionMode?: FullscreenDetectionMode;
+	customCss?: string;
 	customWidgets?: any[];
 }

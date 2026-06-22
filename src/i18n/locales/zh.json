@@ -565,7 +565,11 @@
       "parallax": "浮动视差效果",
       "parallaxDesc": "开启后，收纳盒与小组件将随鼠标指针平滑微动，营造立体视差效果（不影响桌面图标）",
       "parallaxIntensity": "视差移动强度",
-      "parallaxIntensityDesc": "调整收纳盒与小组件随鼠标移动的偏移幅度，默认强度为 2"
+      "parallaxIntensityDesc": "调整收纳盒与小组件随鼠标移动的偏移幅度，默认强度为 2",
+      "customCss": "自定义 CSS",
+      "customCssDesc": "注入自定义样式覆盖默认外观，修改后立即生效",
+      "customCssEdit": "编辑 CSS",
+      "customCssPlaceholder": "/* 在此输入自定义 CSS */\n.container {\n  border-radius: 16px;\n}"
     },
     "backup": {
       "title": "备份管理",

@@ -1,4 +1,4 @@
-use crate::models::monitor::Monitor;
+use crate::models::monitor::{Monitor, WorkArea};
 use std::collections::HashMap;
 
 use super::db::get_connection;
@@ -11,15 +11,23 @@ pub fn load_monitors() -> Result<Vec<Monitor>, String> {
 
     let monitors = stmt
         .query_map([], |row| {
+            let width: u32 = row.get(4)?;
+            let height: u32 = row.get(5)?;
             Ok(Monitor {
                 id: row.get(0)?,
                 name: row.get(1)?,
                 x: row.get(2)?,
                 y: row.get(3)?,
-                width: row.get(4)?,
-                height: row.get(5)?,
+                width,
+                height,
                 is_primary: row.get::<_, i32>(6)? != 0,
                 scale_factor: row.get(7)?,
+                work_area: WorkArea {
+                    x: row.get(2)?,
+                    y: row.get(3)?,
+                    width,
+                    height: height.saturating_sub(48),
+                },
                 extra: HashMap::new(),
             })
         })

@@ -124,6 +124,8 @@ export function GameContainer({ container }: GameContainerProps) {
 		const startWidth = sizeRef.current.width;
 		const startHeight = sizeRef.current.height;
 		const startPosX = pos.x;
+		const target = e.currentTarget as HTMLElement;
+		try { target.setPointerCapture(e.pointerId); } catch {}
 
 		const handlePointerMove = (moveEvent: PointerEvent) => {
 			const deltaX = moveEvent.clientX - startX;

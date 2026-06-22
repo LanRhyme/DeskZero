@@ -1,3 +1,10 @@
+export interface WorkArea {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+}
+
 export interface Monitor {
 	id: string;
 	name: string;
@@ -7,4 +14,5 @@ export interface Monitor {
 	height: number;
 	isPrimary: boolean;
 	scaleFactor: number;
+	workArea: WorkArea;
 }

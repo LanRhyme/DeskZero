@@ -63,6 +63,7 @@ interface DesktopState {
 
 import { useContainerStore } from "./containerStore";
 import { useSettingsStore } from "./settingsStore";
+import { useMonitorStore } from "./monitorStore";
 
 // 桌面布局保存防抖定时器
 let layoutDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -93,6 +94,24 @@ function getGridSize() {
 	};
 }
 
+// 获取主显示器工作区域（排除任务栏）
+function getWorkAreaBounds() {
+	const monitors = useMonitorStore.getState().monitors;
+	const primary = monitors.find((m) => m.isPrimary) ?? monitors[0];
+	if (primary?.workArea) {
+		return {
+			x: primary.workArea.x,
+			y: primary.workArea.y,
+			w: primary.workArea.width,
+			h: primary.workArea.height,
+		};
+	}
+	// 降级：使用全屏高度减去典型任务栏高度
+	const screenW = window?.screen?.width ?? 1920;
+	const screenH = window?.screen?.height ?? 1080;
+	return { x: 0, y: 0, w: screenW, h: screenH - 48 };
+}
+
 // Find nearest empty slot using a spiral search
 function findEmptySlot(
 	x: number,
@@ -108,8 +127,9 @@ function findEmptySlot(
 	const grid = getGridSize();
 	const stepX = grid.w + grid.gapX;
 	const stepY = grid.h + grid.gapY;
-	const screenW = window?.screen?.width ?? window?.innerWidth ?? 1920;
-	const screenH = window?.screen?.height ?? window?.innerHeight ?? 1080;
+	const bounds = getWorkAreaBounds();
+	const screenW = bounds.w;
+	const screenH = bounds.h;
 
 	// Snap to grid first (with 10px padding from top/left)
 	let targetX = Math.round(Math.max(0, x - 10) / stepX) * stepX + 10;
@@ -207,7 +227,8 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 
 				let currentX = 10;
 				let currentY = 10;
-				const screenH = window?.screen?.height ?? window?.innerHeight ?? 1080;
+				const bounds = getWorkAreaBounds();
+				const screenH = bounds.h;
 				const grid = getGridSize();
 				const stepX = grid.w + grid.gapX;
 				const stepY = grid.h + grid.gapY;
@@ -700,7 +721,8 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 			});
 
 			const grid = getGridSize();
-			const screenH = window?.screen?.height ?? window?.innerHeight ?? 1080;
+			const bounds = getWorkAreaBounds();
+			const screenH = bounds.h;
 			const stepX = grid.w + grid.gapX;
 			const stepY = grid.h + grid.gapY;
 

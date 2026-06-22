@@ -49,6 +49,13 @@ mod winapi {
             hMonitor: HMONITOR,
             lpmi: *mut MONITORINFOEXW,
         ) -> BOOL;
+
+        pub fn GetDpiForMonitor(
+            hmonitor: HMONITOR,
+            dpiType: u32,
+            dpiX: *mut u32,
+            dpiY: *mut u32,
+        ) -> i32;
     }
 }
 
@@ -67,16 +74,30 @@ unsafe extern "system" fn enum_monitor_proc(
 
     if unsafe { winapi::GetMonitorInfoW(hmonitor, &mut info as *mut winapi::MONITORINFOEXW as *mut _) } != 0 {
         let rect = info.rcMonitor;
-        let width = (rect.right - rect.left) as u32;
-        let height = (rect.bottom - rect.top) as u32;
+        let work = info.rcWork;
+
+        // 获取 DPI 缩放因子（MDT_EFFECTIVE_DPI = 0）
+        let mut dpi_x: u32 = 96;
+        let mut dpi_y: u32 = 96;
+        let scale_factor = unsafe {
+            let hr = winapi::GetDpiForMonitor(hmonitor, 0, &mut dpi_x, &mut dpi_y);
+            if hr == 0 { dpi_x as f64 / 96.0 } else { 1.0 }
+        };
+
+        // 将物理像素转换为逻辑像素（CSS 像素），与浏览器坐标系一致
+        let to_logical = |v: i32| (v as f64 / scale_factor).round() as i32;
+        let to_logical_u = |v: i32| (v as f64 / scale_factor).round() as u32;
+
+        let width = to_logical_u(rect.right - rect.left);
+        let height = to_logical_u(rect.bottom - rect.top);
         let is_primary = (info.dwFlags & 1) != 0;
 
-        // 生成稳定的显示器 ID（基于位置和尺寸）
+        // 生成稳定的显示器 ID（基于物理像素位置和尺寸，避免缩放导致 ID 变化）
         let mut hasher = DefaultHasher::new();
         rect.left.hash(&mut hasher);
         rect.top.hash(&mut hasher);
-        width.hash(&mut hasher);
-        height.hash(&mut hasher);
+        (rect.right - rect.left).hash(&mut hasher);
+        (rect.bottom - rect.top).hash(&mut hasher);
         let id = format!("monitor_{:x}", hasher.finish());
 
         // 获取显示器名称
@@ -85,15 +106,23 @@ unsafe extern "system" fn enum_monitor_proc(
             &name_raw[..name_raw.iter().position(|&c| c == 0).unwrap_or(name_raw.len())],
         );
 
+        let work_area = crate::models::monitor::WorkArea {
+            x: to_logical(work.left),
+            y: to_logical(work.top),
+            width: to_logical_u(work.right - work.left),
+            height: to_logical_u(work.bottom - work.top),
+        };
+
         let monitor = Monitor {
             id,
             name,
-            x: rect.left,
-            y: rect.top,
+            x: to_logical(rect.left),
+            y: to_logical(rect.top),
             width,
             height,
             is_primary,
-            scale_factor: 1.0,
+            scale_factor,
+            work_area,
             extra: std::collections::HashMap::new(),
         };
 
@@ -145,6 +174,12 @@ pub fn enumerate_monitors() -> Result<Vec<Monitor>, String> {
         height: 1080,
         is_primary: true,
         scale_factor: 1.0,
+        work_area: crate::models::monitor::WorkArea {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1040,
+        },
         extra: std::collections::HashMap::new(),
     }])
 }

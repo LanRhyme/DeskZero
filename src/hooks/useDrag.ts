@@ -1,6 +1,7 @@
 import { startDrag } from "@crabnebula/tauri-plugin-drag";
 import { type RefObject, useRef, useState } from "react";
 import { useDesktopStore } from "@/stores/desktopStore";
+import { useMonitorStore } from "@/stores/monitorStore";
 
 interface Position {
 	x: number;
@@ -113,10 +114,15 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 		let nextX = dragInfo.current.elemStartX + dx;
 		let nextY = dragInfo.current.elemStartY + dy;
 
-		// 限制范围在屏幕边界内（如果 clampToBounds 不为 false）
+		// 限制范围在屏幕工作区域内（排除任务栏）
 		if (options?.clampToBounds !== false) {
-			nextX = Math.max(0, Math.min(nextX, window.innerWidth - 80));
-			nextY = Math.max(0, Math.min(nextY, window.innerHeight - 96));
+			const monitors = useMonitorStore.getState().monitors;
+			const primary = monitors.find((m) => m.isPrimary) ?? monitors[0];
+			const workArea = primary?.workArea;
+			const maxX = workArea ? workArea.x + workArea.width : window.innerWidth;
+			const maxY = workArea ? workArea.y + workArea.height : window.innerHeight;
+			nextX = Math.max(0, Math.min(nextX, maxX - 80));
+			nextY = Math.max(0, Math.min(nextY, maxY - 96));
 		}
 
 		setDragPos({ x: nextX, y: nextY });
@@ -130,11 +136,16 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 			options.nativeDragItemPaths.length > 0
 		) {
 			const threshold = 10;
+			const monitors = useMonitorStore.getState().monitors;
+			const primary = monitors.find((m) => m.isPrimary) ?? monitors[0];
+			const workArea = primary?.workArea;
+			const edgeX = workArea ? workArea.x + workArea.width : window.innerWidth;
+			const edgeY = workArea ? workArea.y + workArea.height : window.innerHeight;
 			if (
 				e.clientX < threshold ||
 				e.clientY < threshold ||
-				e.clientX > window.innerWidth - threshold ||
-				e.clientY > window.innerHeight - threshold
+				e.clientX > edgeX - threshold ||
+				e.clientY > edgeY - threshold
 			) {
 				dragInfo.current.dragging = false;
 				setIsDragging(false);

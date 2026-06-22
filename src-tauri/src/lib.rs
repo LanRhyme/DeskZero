@@ -214,19 +214,39 @@ mod win_layer {
             let v_height = GetSystemMetrics(sm_cyvirtualscreen);
 
             let gwl_style = -16;
+            let gwl_exstyle = -20;
             let ws_popup: isize = 0x80000000_u32 as isize;
             let ws_child: isize = 0x40000000;
             let ws_caption: isize = 0x00C00000;
             let ws_thickframe: isize = 0x00040000;
             let ws_sysmenu: isize = 0x00080000;
-            
+            let ws_visible: isize = 0x10000000;
+
+            // 修复常规样式
             let mut style = get_window_long(hwnd as HWND, gwl_style);
             style &= !ws_popup;
             style &= !ws_caption;
             style &= !ws_thickframe;
             style &= !ws_sysmenu;
             style |= ws_child;
+            style |= ws_visible;
             set_window_long(hwnd as HWND, gwl_style, style);
+
+            // 修复扩展样式：清除 WS_EX_LAYERED 和 WS_EX_TRANSPARENT
+            // transparent: true 会导致 WS_EX_LAYERED，嵌入桌面层后会阻止所有输入事件
+            let ws_ex_layered: isize = 0x00080000;
+            let ws_ex_transparent: isize = 0x00000020;
+            let ws_ex_noactivate: isize = 0x08000000_u32 as isize;
+            let ws_ex_toolwindow: isize = 0x00000080;
+            let ws_ex_appwindow: isize = 0x00040000;
+
+            let mut ex_style = get_window_long(hwnd as HWND, gwl_exstyle);
+            ex_style &= !ws_ex_layered;
+            ex_style &= !ws_ex_transparent;
+            ex_style &= !ws_ex_noactivate;
+            ex_style &= !ws_ex_toolwindow;
+            ex_style &= !ws_ex_appwindow;
+            set_window_long(hwnd as HWND, gwl_exstyle, ex_style);
 
             let swp_framechanged: UINT = 0x0020;
             SetWindowPos(
@@ -235,7 +255,7 @@ mod win_layer {
                 v_x,
                 v_y,
                 v_width,
-                v_height - 1, // 关键：利用 Tauri 的全屏模式消除 8px 边框，但手动削减 1 像素以绕过壁纸引擎检测
+                v_height - 1,
                 SWP_SHOWWINDOW | swp_framechanged,
             );
         }

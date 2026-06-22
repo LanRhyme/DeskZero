@@ -60,6 +60,9 @@ export default function DesktopLayer() {
 		setDropPrompt,
 	} = useDesktopStore();
 	const { settings } = useSettingsStore();
+	const isFullscreenActive = useSettingsStore((s) => s.isFullscreenActive);
+	const performanceModeEnabled = useSettingsStore((s) => s.settings.performanceModeEnabled);
+	const effectiveParallaxEnabled = (performanceModeEnabled && isFullscreenActive) ? false : (settings.parallaxEnabled ?? false);
 	const fetchCustomWidgets = useWidgetStore((s) => s.fetchCustomWidgets);
 	useEffect(() => { fetchCustomWidgets(); }, []);
 	const [menuState, setMenuState] = useState<{
@@ -419,7 +422,7 @@ export default function DesktopLayer() {
 			targetY = 0;
 		};
 
-		if (settings.parallaxEnabled) {
+		if (effectiveParallaxEnabled) {
 			window.addEventListener("pointermove", handlePointerMove);
 			document.addEventListener("pointerleave", handlePointerLeave);
 			document.addEventListener("mouseleave", handlePointerLeave);
@@ -433,7 +436,7 @@ export default function DesktopLayer() {
 			currentYRef.current += (targetY - currentYRef.current) * 0.04;
 
 			if (desktopRef.current) {
-				if (!settings.parallaxEnabled && Math.abs(currentXRef.current) < 0.05 && Math.abs(currentYRef.current) < 0.05) {
+				if (!effectiveParallaxEnabled && Math.abs(currentXRef.current) < 0.05 && Math.abs(currentYRef.current) < 0.05) {
 					desktopRef.current.style.removeProperty("--container-parallax-x");
 					desktopRef.current.style.removeProperty("--container-parallax-y");
 					currentXRef.current = 0;
@@ -456,7 +459,7 @@ export default function DesktopLayer() {
 			document.removeEventListener("mouseleave", handlePointerLeave);
 			cancelAnimationFrame(rafId);
 		};
-	}, [settings.parallaxEnabled, settings.parallaxIntensity]);
+	}, [effectiveParallaxEnabled, settings.parallaxIntensity]);
 
 	const placeNewFiles = async (
 		newFileNames: string[],

@@ -682,6 +682,49 @@ export function SettingsPage() {
 
 									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl transition-all duration-500">
 									<SettingRow
+										title={t("settings.appearance.performanceMode")}
+										desc={t("settings.appearance.performanceModeDesc")}
+										noBorder={!settings.performanceModeEnabled}
+									>
+											<SwitchToggle
+												checked={!!settings.performanceModeEnabled}
+												onChange={() =>
+													saveSettings({ performanceModeEnabled: !settings.performanceModeEnabled })
+												}
+											/>
+										</SettingRow>
+
+										<AnimatePresence>
+											{settings.performanceModeEnabled && (
+												<motion.div
+													initial={{ height: 0, opacity: 0 }}
+													animate={{ height: "auto", opacity: 1 }}
+													exit={{ height: 0, opacity: 0 }}
+													className="overflow-hidden"
+												>
+													<div className="pl-6 pb-2 relative before:absolute before:left-2 before:top-0 before:bottom-6 before:w-[2px] before:rounded-full before:bg-[var(--color-accent)]/20">
+													<SettingRow
+														title={t("settings.appearance.detectionMode")}
+														desc={t("settings.appearance.detectionModeDesc")}
+														noBorder
+													>
+														<SegmentedControl
+															options={[
+																{ value: "fullscreenOnly", label: t("settings.appearance.detectionFullscreenOnly") },
+																{ value: "fullscreenAndMaximized", label: t("settings.appearance.detectionFullscreenMaximized") },
+															]}
+															value={settings.fullscreenDetectionMode || "fullscreenAndMaximized"}
+															onChange={(v) => saveSettings({ fullscreenDetectionMode: v as any })}
+														/>
+													</SettingRow>
+													</div>
+												</motion.div>
+											)}
+										</AnimatePresence>
+									</div>
+
+									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl transition-all duration-500">
+									<SettingRow
 										title={t("settings.appearance.parallax")}
 										desc={t("settings.appearance.parallaxDesc")}
 										noBorder={!settings.parallaxEnabled}

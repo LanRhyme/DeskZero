@@ -12,6 +12,8 @@ interface SettingsState {
 	saveSettings: (settings: Partial<Settings>) => Promise<void>;
 	applyTheme: (theme: Theme) => void;
 	initThemeListener: () => () => void;
+	isFullscreenActive: boolean;
+	setFullscreenActive: (active: boolean) => void;
 }
 
 const defaultSettings: Settings = {
@@ -40,6 +42,8 @@ const defaultSettings: Settings = {
 	parallaxEnabled: false,
 	parallaxIntensity: 2,
 	language: "zh",
+	performanceModeEnabled: true,
+	fullscreenDetectionMode: "fullscreenAndMaximized",
 };
 
 const applyTheme = (theme: Theme) => {
@@ -88,6 +92,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 	settings: defaultSettings,
 	loading: false,
 	error: null,
+	isFullscreenActive: false,
 
 	loadSettings: async () => {
 		set({ loading: true, error: null });
@@ -148,6 +153,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 		applyTheme(theme);
 	},
 
+	setFullscreenActive: (active) => {
+		set({ isFullscreenActive: active });
+	},
+
 	initThemeListener: () => {
 		const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
@@ -171,9 +180,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 			if (newSettings.language) i18n.changeLanguage(newSettings.language);
 		});
 
+		// 监听全屏状态变化事件
+		const unlistenFullscreen = listen<boolean>("fullscreen-state-changed", (event) => {
+			set({ isFullscreenActive: event.payload });
+		});
+
 		return () => {
 			mediaQuery.removeEventListener("change", handleChange);
 			unlisten.then((fn) => fn());
+			unlistenFullscreen.then((fn) => fn());
 		};
 	},
 }));

@@ -144,6 +144,40 @@ impl Default for SelectedItemBackground {
     fn default() -> Self { SelectedItemBackground::White }
 }
 
+/// 全屏检测模式 — 控制性能模式何时激活
+#[derive(Debug, Clone, PartialEq)]
+pub enum FullscreenDetectionMode {
+    FullscreenOnly,
+    FullscreenAndMaximized,
+    Other(String),
+}
+
+impl Serialize for FullscreenDetectionMode {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let s = match self {
+            FullscreenDetectionMode::FullscreenOnly => "fullscreenOnly",
+            FullscreenDetectionMode::FullscreenAndMaximized => "fullscreenAndMaximized",
+            FullscreenDetectionMode::Other(raw) => raw.as_str(),
+        };
+        serializer.serialize_str(s)
+    }
+}
+
+impl<'de> Deserialize<'de> for FullscreenDetectionMode {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "fullscreenOnly" => FullscreenDetectionMode::FullscreenOnly,
+            "fullscreenAndMaximized" => FullscreenDetectionMode::FullscreenAndMaximized,
+            _ => FullscreenDetectionMode::Other(s),
+        })
+    }
+}
+
+impl Default for FullscreenDetectionMode {
+    fn default() -> Self { FullscreenDetectionMode::FullscreenAndMaximized }
+}
+
 /// 全局设置 — 使用 `extra` 字段（`#[serde(flatten)]`）保留当前版本不认识的设置属性，
 /// 确保新版本写入的设置配置不会在老版本读写后丢失。
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -190,6 +224,12 @@ pub struct Settings {
     pub language: String,
     #[serde(default)]
     pub backup_settings: Option<BackupSettings>,
+    /// 性能模式：全屏应用时自动暂停桌面特效
+    #[serde(default)]
+    pub performance_mode_enabled: bool,
+    /// 全屏检测模式
+    #[serde(default)]
+    pub fullscreen_detection_mode: FullscreenDetectionMode,
     /// 保留当前版本未定义的设置属性，防止跨版本丢失
     #[serde(flatten)]
     pub extra: HashMap<String, serde_json::Value>,
@@ -228,6 +268,8 @@ impl Default for Settings {
             parallax_intensity: 2,
             language: "zh".to_string(),
             backup_settings: None,
+            performance_mode_enabled: true,
+            fullscreen_detection_mode: FullscreenDetectionMode::FullscreenAndMaximized,
             extra: HashMap::new(),
         }
     }

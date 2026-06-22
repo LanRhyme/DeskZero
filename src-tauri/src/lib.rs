@@ -311,6 +311,9 @@ pub fn run() {
             let app_handle = app.handle().clone();
             crate::desktop::watcher::start_desktop_watcher(app_handle);
 
+            // 启动全屏检测器
+            crate::desktop::fullscreen_detector::start_fullscreen_detector(app.handle().clone());
+
             let Some(window) = app.get_webview_window("main") else {
                 eprintln!("[DeskZero] ERROR: main window not found");
                 return Ok(());

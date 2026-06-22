@@ -111,6 +111,10 @@ export function FileItem({
 		wallpaper,
 	} = useDesktopStore();
 	const { settings } = useSettingsStore();
+	const isFullscreenActive = useSettingsStore((s) => s.isFullscreenActive);
+	const performanceModeEnabled = useSettingsStore((s) => s.settings.performanceModeEnabled);
+	const effectiveSelectedItemBlur = (performanceModeEnabled && isFullscreenActive) ? false : (settings.selectedItemBlur ?? false);
+	const effectiveIconGlow = (performanceModeEnabled && isFullscreenActive) ? false : (settings.iconGlow ?? false);
 
 	// Get container specific settings if inside a container
 	let cWidth = settings.gridWidth;
@@ -650,8 +654,8 @@ export function FileItem({
 						: { type: "spring", stiffness: 400, damping: 30 }
 			}
 			{...listeners}
-			whileHover={isIconShow ? (hoverMotion.whileHover || {}) : (isSelected && settings.selectedItemBlur ? {} : { scale: 1.05 })}
-			whileTap={isIconShow ? (clickMotion.whileTap || {}) : (isSelected && settings.selectedItemBlur ? {} : { scale: 0.95 })}
+			whileHover={isIconShow ? (hoverMotion.whileHover || {}) : (isSelected && effectiveSelectedItemBlur ? {} : { scale: 1.05 })}
+			whileTap={isIconShow ? (clickMotion.whileTap || {}) : (isSelected && effectiveSelectedItemBlur ? {} : { scale: 0.95 })}
 			onClick={handleClick}
 			onDoubleClick={handleDoubleClick}
 			onContextMenu={handleContextMenu}
@@ -670,7 +674,7 @@ export function FileItem({
 				className,
 			)}
 		>
-			{isSelected && !isIconShow && settings.selectedItemBlur && wallpaper && (
+			{isSelected && !isIconShow && effectiveSelectedItemBlur && wallpaper && (
 					<div
 						className="absolute inset-0 pointer-events-none overflow-hidden"
 						style={{
@@ -691,7 +695,7 @@ export function FileItem({
 				}}
 				className="flex items-center justify-center relative pointer-events-none shrink-0"
 			>
-				{settings.iconGlow && (
+				{effectiveIconGlow && (
 					<div
 						className="absolute inset-0 flex items-center justify-center"
 						style={{

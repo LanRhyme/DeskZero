@@ -2,6 +2,7 @@ export type Theme = "light" | "dark" | "system";
 export type IconSize = "small" | "medium" | "large";
 export type ItemBackground = "transparent" | "subtle" | "visible";
 export type SelectedItemBackground = "white" | "black";
+export type FullscreenDetectionMode = "fullscreenOnly" | "fullscreenAndMaximized";
 
 export interface Settings {
 	theme: Theme;
@@ -34,5 +35,7 @@ export interface Settings {
 	parallaxIntensity?: number;
 	showGridOnDrag?: boolean;
 	language?: "zh" | "en";
+	performanceModeEnabled?: boolean;
+	fullscreenDetectionMode?: FullscreenDetectionMode;
 	customWidgets?: any[];
 }

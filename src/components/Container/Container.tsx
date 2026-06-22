@@ -44,6 +44,11 @@ function NormalContainer({ container }: ContainerProps) {
 	const { t } = useTranslation();
 	const { updateContainerPosition, updateContainerSize, deleteContainer, updateContainerName, updateContainerStyle } = useContainerStore();
 	const { settings } = useSettingsStore();
+	const isFullscreenActive = useSettingsStore((s) => s.isFullscreenActive);
+	const performanceModeEnabled = useSettingsStore((s) => s.settings.performanceModeEnabled);
+	const effectiveGlobalBlur = (performanceModeEnabled && isFullscreenActive) ? false : (settings.globalBlur ?? true);
+	const effectiveSelectedItemBlur = (performanceModeEnabled && isFullscreenActive) ? false : (settings.selectedItemBlur ?? false);
+	const effectiveWallpaperCompatible = (performanceModeEnabled && isFullscreenActive) ? false : (settings.wallpaperCompatible ?? false);
 	const { wallpaper } = useDesktopStore();
 	const dragHandleRef = useRef<HTMLDivElement>(null);
 
@@ -281,18 +286,18 @@ function NormalContainer({ container }: ContainerProps) {
 					borderRadius: cornerRadius,
 					zIndex: isDragging || isResizing ? 40 : 10,
 					translate: "var(--container-parallax-x, 0px) var(--container-parallax-y, 0px)",
-					backgroundColor:
-						settings.wallpaperCompatible && settings.globalBlur && wallpaper
-							? "transparent"
-							: customBackground,
-					backdropFilter:
-						(!settings.wallpaperCompatible || !wallpaper) && settings.globalBlur
-							? "var(--backdrop-blur)"
-							: "none",
-					WebkitBackdropFilter:
-						(!settings.wallpaperCompatible || !wallpaper) && settings.globalBlur
-							? "var(--backdrop-blur)"
-							: "none",
+				backgroundColor:
+					effectiveWallpaperCompatible && effectiveGlobalBlur && wallpaper
+						? "transparent"
+						: customBackground,
+				backdropFilter:
+					(!effectiveWallpaperCompatible || !wallpaper) && effectiveGlobalBlur
+						? "var(--backdrop-blur)"
+						: "none",
+				WebkitBackdropFilter:
+					(!effectiveWallpaperCompatible || !wallpaper) && effectiveGlobalBlur
+						? "var(--backdrop-blur)"
+						: "none",
 				}}
 				initial={{ opacity: 0, scale: 0.95 }}
 				animate={{ opacity: isDragging ? 0.9 : 1, scale: 1 }}
@@ -305,7 +310,7 @@ function NormalContainer({ container }: ContainerProps) {
 				onContextMenu={handleContextMenu}
 			>
 				{/* Fake Blur Layer for Dynamic Wallpaper Mode */}
-				{settings.wallpaperCompatible && settings.globalBlur && wallpaper && (
+				{effectiveWallpaperCompatible && effectiveGlobalBlur && wallpaper && (
 					<div
 						className="absolute inset-0 pointer-events-none overflow-hidden"
 						style={{ zIndex: -1, borderRadius: "inherit" }}

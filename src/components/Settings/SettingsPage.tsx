@@ -578,18 +578,21 @@ export function SettingsPage() {
 										</SettingRow>
 
 									<SettingRow
-										title={t("settings.appearance.wallpaperCompat")}
-										desc={t("settings.appearance.wallpaperCompatDesc")}
+										title={t("settings.appearance.blurRepair")}
+										desc={t("settings.appearance.blurRepairDesc")}
 									>
-											<SwitchToggle
-												checked={!!settings.wallpaperCompatible}
-												onChange={() =>
-													saveSettings({
-														wallpaperCompatible: !settings.wallpaperCompatible,
-													})
-												}
-											/>
-										</SettingRow>
+										<button
+											onClick={async () => {
+												const { emit } = await import("@tauri-apps/api/event");
+												const { useToastStore } = await import("@/stores/toastStore");
+												await emit("re-capture-wallpaper");
+												useToastStore.getState().addToast(t("settings.appearance.blurRepairTriggered"), "success");
+											}}
+											className="px-4 py-1.5 bg-[var(--color-accent)] text-white rounded-lg text-sm font-medium hover:bg-opacity-90 active:scale-95 transition-all shadow-sm"
+										>
+											{t("settings.appearance.repair")}
+										</button>
+									</SettingRow>
 
 									<SettingRow
 										title={t("settings.appearance.hideShortcutBadge")}

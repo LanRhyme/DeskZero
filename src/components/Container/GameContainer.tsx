@@ -232,7 +232,6 @@ export function GameContainer({ container }: GameContainerProps) {
 					zIndex: isDragging || isResizing ? 40 : 10,
 					opacity: bgOpacity,
 					translate: "var(--container-parallax-x, 0px) var(--container-parallax-y, 0px)",
-					transition: "translate 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
 				}}
 				initial={{ opacity: 0, scale: 0.95, x: pos.x, y: pos.y, width: size.width, height: size.height }}
 				animate={{ opacity: isDragging ? 0.9 : bgOpacity, scale: 1, x: pos.x + resizePosOffset.x, y: pos.y + resizePosOffset.y, width: size.width, height: size.height }}

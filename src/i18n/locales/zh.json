@@ -95,7 +95,9 @@
     "loadFailed": "载入失败: {{error}}",
     "movedToDesktop": "{{name}} 已移至桌面",
     "releasedSingle": "{{name}} 已移至桌面",
-    "releasedMultiple": "已释放 {{count}} 个图标至桌面"
+    "releasedMultiple": "已释放 {{count}} 个图标至桌面",
+    "blurRepairSuccess": "毛玻璃壁纸修复成功",
+    "blurRepairFailed": "毛玻璃壁纸修复失败：{{error}}"
   },
   "item": {
     "open": "打开",
@@ -533,8 +535,10 @@
       "selectedBlurDesc": "为选中项背板添加高斯模糊效果",
       "globalBlur": "全局毛玻璃效果",
       "globalBlurDesc": "为收纳盒等容器和界面元素添加毛玻璃",
-      "wallpaperCompat": "壁纸模糊穿透兼容模式",
-      "wallpaperCompatDesc": "若毛玻璃无法穿透至桌面壁纸，请开启此选项",
+      "blurRepair": "毛玻璃背景修复",
+      "blurRepairDesc": "当收纳盒的毛玻璃背景模糊与桌面当前壁纸不一致时，可点击此按钮重新获取并修复",
+      "repair": "重新截取修复",
+      "blurRepairTriggered": "已发送修复请求，请等待重新截取",
       "hideShortcutBadge": "隐藏快捷方式角标",
       "hideShortcutBadgeDesc": "隐藏桌面快捷方式左下角的小箭头标识",
       "iconGlow": "图标发光效果",
@@ -548,9 +552,9 @@
       "textOpacity": "字体不透明度",
       "textOpacityDesc": "调整桌面图标文字的不透明度",
       "parallax": "浮动视差效果",
-      "parallaxDesc": "使收纳盒和挂件随着鼠标移动产生立体漂浮感，营造丝滑的视差交互效果",
+      "parallaxDesc": "开启后，收纳盒与小组件将随鼠标指针平滑微动，营造立体视差效果（不影响桌面图标）",
       "parallaxIntensity": "视差移动强度",
-      "parallaxIntensityDesc": "调整鼠标移动时桌面元素的位移幅度"
+      "parallaxIntensityDesc": "调整收纳盒与小组件随鼠标移动的偏移幅度，默认强度为 2"
     },
     "backup": {
       "title": "备份管理",

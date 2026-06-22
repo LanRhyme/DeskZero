@@ -108,6 +108,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
 	saveSettings: async (changes) => {
 		const newSettings = { ...get().settings, ...changes };
+		newSettings.wallpaperCompatible = !!(newSettings.selectedItemBlur || newSettings.globalBlur);
 		set({ settings: newSettings, error: null });
 
 		if (changes.theme) {

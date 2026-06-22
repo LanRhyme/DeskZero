@@ -97,6 +97,8 @@ export default function DesktopLayer() {
 	const prevGridGapX = useRef(settings.gridGapX);
 	const prevGridGapY = useRef(settings.gridGapY);
 	const desktopRef = useRef<HTMLDivElement>(null);
+	const currentXRef = useRef(0);
+	const currentYRef = useRef(0);
 
 	// Marquee state
 	const [marquee, setMarquee] = useState<{
@@ -229,6 +231,23 @@ export default function DesktopLayer() {
 
 			listen("open-settings", () => {
 				openSettingsWindow();
+			}).then((u) => {
+				if (isCancelled) u();
+				else unlistenFns.push(u);
+			});
+
+			listen("re-capture-wallpaper", () => {
+				import("@tauri-apps/api/core").then(({ invoke }) => {
+					invoke<string>("capture_desktop_background")
+						.then((res) => {
+							setWallpaper(res);
+							useToastStore.getState().addToast(t("desktop.blurRepairSuccess"), "success");
+						})
+						.catch((err) => {
+							console.error("Failed to capture desktop:", err);
+							useToastStore.getState().addToast(t("desktop.blurRepairFailed") + String(err), "error");
+						});
+				});
 			}).then((u) => {
 				if (isCancelled) u();
 				else unlistenFns.push(u);
@@ -386,47 +405,59 @@ export default function DesktopLayer() {
 	}, [settings.wallpaperCompatible]);
 
 	useEffect(() => {
-		if (!settings.parallaxEnabled) {
-			if (desktopRef.current) {
-				desktopRef.current.style.removeProperty("--container-parallax-x");
-				desktopRef.current.style.removeProperty("--container-parallax-y");
-			}
-			return;
-		}
-
 		let targetX = 0;
 		let targetY = 0;
-		let currentX = 0;
-		let currentY = 0;
 		let rafId: number;
+		const intensity = settings.parallaxIntensity ?? 2;
 
 		const handlePointerMove = (e: PointerEvent) => {
 			const { clientX, clientY } = e;
 			const dx = clientX - window.innerWidth / 2;
 			const dy = clientY - window.innerHeight / 2;
-			const intensity = settings.parallaxIntensity ?? 2;
-
-			targetX = dx * 0.015 * (intensity / 5);
-			targetY = dy * 0.015 * (intensity / 5);
+			targetX = dx * 0.012 * (intensity / 5);
+			targetY = dy * 0.012 * (intensity / 5);
 		};
 
+		const handlePointerLeave = () => {
+			targetX = 0;
+			targetY = 0;
+		};
+
+		if (settings.parallaxEnabled) {
+			window.addEventListener("pointermove", handlePointerMove);
+			document.addEventListener("pointerleave", handlePointerLeave);
+			document.addEventListener("mouseleave", handlePointerLeave);
+		} else {
+			targetX = 0;
+			targetY = 0;
+		}
+
 		const updateParallax = () => {
-			currentX += (targetX - currentX) * 0.05;
-			currentY += (targetY - currentY) * 0.05;
+			currentXRef.current += (targetX - currentXRef.current) * 0.04;
+			currentYRef.current += (targetY - currentYRef.current) * 0.04;
 
 			if (desktopRef.current) {
-				desktopRef.current.style.setProperty("--container-parallax-x", `${currentX}px`);
-				desktopRef.current.style.setProperty("--container-parallax-y", `${currentY}px`);
+				if (!settings.parallaxEnabled && Math.abs(currentXRef.current) < 0.05 && Math.abs(currentYRef.current) < 0.05) {
+					desktopRef.current.style.removeProperty("--container-parallax-x");
+					desktopRef.current.style.removeProperty("--container-parallax-y");
+					currentXRef.current = 0;
+					currentYRef.current = 0;
+					return; // Stop RAF loop
+				}
+
+				desktopRef.current.style.setProperty("--container-parallax-x", `${currentXRef.current}px`);
+				desktopRef.current.style.setProperty("--container-parallax-y", `${currentYRef.current}px`);
 			}
 
 			rafId = requestAnimationFrame(updateParallax);
 		};
 
-		window.addEventListener("pointermove", handlePointerMove);
 		rafId = requestAnimationFrame(updateParallax);
 
 		return () => {
 			window.removeEventListener("pointermove", handlePointerMove);
+			document.removeEventListener("pointerleave", handlePointerLeave);
+			document.removeEventListener("mouseleave", handlePointerLeave);
 			cancelAnimationFrame(rafId);
 		};
 	}, [settings.parallaxEnabled, settings.parallaxIntensity]);

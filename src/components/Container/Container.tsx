@@ -281,17 +281,16 @@ function NormalContainer({ container }: ContainerProps) {
 					borderRadius: cornerRadius,
 					zIndex: isDragging || isResizing ? 40 : 10,
 					translate: "var(--container-parallax-x, 0px) var(--container-parallax-y, 0px)",
-					transition: "translate 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
 					backgroundColor:
 						settings.wallpaperCompatible && settings.globalBlur && wallpaper
 							? "transparent"
 							: customBackground,
 					backdropFilter:
-						!settings.wallpaperCompatible && settings.globalBlur
+						(!settings.wallpaperCompatible || !wallpaper) && settings.globalBlur
 							? "var(--backdrop-blur)"
 							: "none",
 					WebkitBackdropFilter:
-						!settings.wallpaperCompatible && settings.globalBlur
+						(!settings.wallpaperCompatible || !wallpaper) && settings.globalBlur
 							? "var(--backdrop-blur)"
 							: "none",
 				}}

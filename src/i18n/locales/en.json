@@ -95,7 +95,9 @@
     "loadFailed": "Load failed: {{error}}",
     "movedToDesktop": "{{name}} moved to desktop",
     "releasedSingle": "{{name}} moved to desktop",
-    "releasedMultiple": "{{count}} icons released to desktop"
+    "releasedMultiple": "{{count}} icons released to desktop",
+    "blurRepairSuccess": "Glassmorphism background repaired successfully",
+    "blurRepairFailed": "Glassmorphism background repair failed: {{error}}"
   },
   "item": {
     "open": "Open",
@@ -533,8 +535,10 @@
       "selectedBlurDesc": "Add Gaussian blur to the selected item background",
       "globalBlur": "Global blur effect",
       "globalBlurDesc": "Add frosted glass effect to containers and UI elements",
-      "wallpaperCompat": "Wallpaper blur compatibility mode",
-      "wallpaperCompatDesc": "Enable this if blur effect doesn't show through to the desktop wallpaper",
+      "blurRepair": "Glassmorphism Repair",
+      "blurRepairDesc": "If the glassmorphism blur background does not match your current desktop wallpaper, click this button to capture and repair it",
+      "repair": "Repair Now",
+      "blurRepairTriggered": "Repair request sent, waiting for recapture",
       "hideShortcutBadge": "Hide shortcut arrow",
       "hideShortcutBadgeDesc": "Hide the small arrow indicator in the bottom-left corner of shortcuts",
       "iconGlow": "Icon glow effect",
@@ -548,9 +552,9 @@
       "textOpacity": "Text opacity",
       "textOpacityDesc": "Adjust the opacity of desktop icon text",
       "parallax": "Parallax Floating Effect",
-      "parallaxDesc": "Make containers and widgets float smoothly with mouse movement, creating a silky parallax interactive effect",
+      "parallaxDesc": "Containers and widgets float smoothly with mouse movements, creating a 3D parallax effect (does not affect desktop icons)",
       "parallaxIntensity": "Parallax Intensity",
-      "parallaxIntensityDesc": "Adjust the shift distance when moving the mouse"
+      "parallaxIntensityDesc": "Adjust the shift distance of containers and widgets, default intensity is 2"
     },
     "backup": {
       "title": "Backup",

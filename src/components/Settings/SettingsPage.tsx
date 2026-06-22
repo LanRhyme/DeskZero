@@ -676,6 +676,45 @@ export function SettingsPage() {
 											</div>
 										</SettingRow>
 									</div>
+
+									<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl transition-all duration-500">
+									<SettingRow
+										title={t("settings.appearance.parallax")}
+										desc={t("settings.appearance.parallaxDesc")}
+										noBorder={!settings.parallaxEnabled}
+									>
+											<SwitchToggle
+												checked={!!settings.parallaxEnabled}
+												onChange={() =>
+													saveSettings({ parallaxEnabled: !settings.parallaxEnabled })
+												}
+											/>
+										</SettingRow>
+
+										<AnimatePresence>
+											{settings.parallaxEnabled && (
+												<motion.div
+													initial={{ height: 0, opacity: 0 }}
+													animate={{ height: "auto", opacity: 1 }}
+													exit={{ height: 0, opacity: 0 }}
+													className="overflow-hidden"
+												>
+													<div className="pl-6 pb-2 relative before:absolute before:left-2 before:top-0 before:bottom-6 before:w-[2px] before:rounded-full before:bg-[var(--color-accent)]/20">
+													<SettingRow
+														title={t("settings.appearance.parallaxIntensity")}
+														desc={t("settings.appearance.parallaxIntensityDesc")}
+														noBorder
+													>
+															<div className="flex items-center gap-4 w-48">
+																<Slider value={settings.parallaxIntensity ?? 2} onChange={(v: number) => saveSettings({ parallaxIntensity: v })} min={1} max={10} step={1} className="flex-1" />
+																<span className="w-12 text-right text-xs font-medium text-[var(--color-text-secondary)]">{settings.parallaxIntensity ?? 2}</span>
+															</div>
+														</SettingRow>
+													</div>
+												</motion.div>
+											)}
+										</AnimatePresence>
+									</div>
 								</div>
 							</motion.div>
 						</Tab.Panel>

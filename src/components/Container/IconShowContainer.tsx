@@ -225,6 +225,8 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 					backgroundColor: settings.wallpaperCompatible && settings.globalBlur && wallpaper ? "transparent" : customBackground,
 					backdropFilter: !settings.wallpaperCompatible && settings.globalBlur ? "var(--backdrop-blur)" : "none",
 					WebkitBackdropFilter: !settings.wallpaperCompatible && settings.globalBlur ? "var(--backdrop-blur)" : "none",
+					translate: "var(--container-parallax-x, 0px) var(--container-parallax-y, 0px)",
+					transition: "translate 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
 					...maskStyle,
 				}}
 				initial={{ opacity: 0, scale: 0.95, x: pos.x, y: pos.y, width: size.width, height: size.height }}

@@ -30,6 +30,8 @@ export interface Settings {
 	doubleClickHide?: boolean;
 	autoStart?: boolean;
 	autoStartHighPriority?: boolean;
+	parallaxEnabled?: boolean;
+	parallaxIntensity?: number;
 	showGridOnDrag?: boolean;
 	language?: "zh" | "en";
 	customWidgets?: any[];

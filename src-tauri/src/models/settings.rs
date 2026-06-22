@@ -183,6 +183,10 @@ pub struct Settings {
     #[serde(default)]
     pub auto_start_high_priority: bool,
     #[serde(default)]
+    pub parallax_enabled: bool,
+    #[serde(default)]
+    pub parallax_intensity: u32,
+    #[serde(default)]
     pub language: String,
     #[serde(default)]
     pub backup_settings: Option<BackupSettings>,
@@ -220,6 +224,8 @@ impl Default for Settings {
             double_click_hide: true,
             auto_start: false,
             auto_start_high_priority: false,
+            parallax_enabled: false,
+            parallax_intensity: 2,
             language: "zh".to_string(),
             backup_settings: None,
             extra: HashMap::new(),

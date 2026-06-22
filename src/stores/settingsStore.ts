@@ -37,6 +37,8 @@ const defaultSettings: Settings = {
 	doubleClickHide: true,
 	autoStart: false,
 	autoStartHighPriority: false,
+	parallaxEnabled: false,
+	parallaxIntensity: 2,
 	language: "zh",
 };
 

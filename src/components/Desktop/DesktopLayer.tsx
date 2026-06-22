@@ -96,6 +96,7 @@ export default function DesktopLayer() {
 	const prevGridHeight = useRef(settings.gridHeight);
 	const prevGridGapX = useRef(settings.gridGapX);
 	const prevGridGapY = useRef(settings.gridGapY);
+	const desktopRef = useRef<HTMLDivElement>(null);
 
 	// Marquee state
 	const [marquee, setMarquee] = useState<{
@@ -383,6 +384,52 @@ export default function DesktopLayer() {
 			window.removeEventListener("show-item-context-menu", handleShowItemMenu);
 		};
 	}, [settings.wallpaperCompatible]);
+
+	useEffect(() => {
+		if (!settings.parallaxEnabled) {
+			if (desktopRef.current) {
+				desktopRef.current.style.removeProperty("--container-parallax-x");
+				desktopRef.current.style.removeProperty("--container-parallax-y");
+			}
+			return;
+		}
+
+		let targetX = 0;
+		let targetY = 0;
+		let currentX = 0;
+		let currentY = 0;
+		let rafId: number;
+
+		const handlePointerMove = (e: PointerEvent) => {
+			const { clientX, clientY } = e;
+			const dx = clientX - window.innerWidth / 2;
+			const dy = clientY - window.innerHeight / 2;
+			const intensity = settings.parallaxIntensity ?? 2;
+
+			targetX = dx * 0.015 * (intensity / 5);
+			targetY = dy * 0.015 * (intensity / 5);
+		};
+
+		const updateParallax = () => {
+			currentX += (targetX - currentX) * 0.05;
+			currentY += (targetY - currentY) * 0.05;
+
+			if (desktopRef.current) {
+				desktopRef.current.style.setProperty("--container-parallax-x", `${currentX}px`);
+				desktopRef.current.style.setProperty("--container-parallax-y", `${currentY}px`);
+			}
+
+			rafId = requestAnimationFrame(updateParallax);
+		};
+
+		window.addEventListener("pointermove", handlePointerMove);
+		rafId = requestAnimationFrame(updateParallax);
+
+		return () => {
+			window.removeEventListener("pointermove", handlePointerMove);
+			cancelAnimationFrame(rafId);
+		};
+	}, [settings.parallaxEnabled, settings.parallaxIntensity]);
 
 	const placeNewFiles = async (
 		newFileNames: string[],
@@ -1101,6 +1148,7 @@ export default function DesktopLayer() {
 			)}
 
 			<div
+				ref={desktopRef}
 				className={`w-full h-full transition-opacity duration-300 ${isIconsHidden && settings.doubleClickHide !== false ? "opacity-0 pointer-events-none" : "opacity-100"}`}
 				onClick={() => {
 					if (dropPrompt) setDropPrompt(null);

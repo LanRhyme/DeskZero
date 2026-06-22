@@ -546,7 +546,11 @@
       "iconOpacity": "Icon opacity",
       "iconOpacityDesc": "Adjust the overall opacity of all desktop icons",
       "textOpacity": "Text opacity",
-      "textOpacityDesc": "Adjust the opacity of desktop icon text"
+      "textOpacityDesc": "Adjust the opacity of desktop icon text",
+      "parallax": "Parallax Floating Effect",
+      "parallaxDesc": "Make containers and widgets float smoothly with mouse movement, creating a silky parallax interactive effect",
+      "parallaxIntensity": "Parallax Intensity",
+      "parallaxIntensityDesc": "Adjust the shift distance when moving the mouse"
     },
     "backup": {
       "title": "Backup",

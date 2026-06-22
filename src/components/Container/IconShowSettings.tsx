@@ -38,6 +38,8 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 	const [iconOpacityInside, setIconOpacityInside] = useState(container.style.iconOpacityInside ?? 1.0);
 	const [iconSizeInside, setIconSizeInside] = useState(container.style.iconSizeInside ?? 64);
 	const [hoverAnimation, setHoverAnimation] = useState(container.style.hoverAnimation || "scale");
+	const [clickAnimation, setClickAnimation] = useState(container.style.clickAnimation || "pop");
+	const [singleClickLaunch, setSingleClickLaunch] = useState(container.style.singleClickLaunch ?? false);
 	const [showNamesInside, setShowNamesInside] = useState(container.style.showNamesInside ?? false);
 	const [iconGapRatio, setIconGapRatio] = useState(container.style.iconGapRatio ?? 1.0);
 
@@ -85,6 +87,8 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 			iconOpacityInside,
 			iconSizeInside,
 			hoverAnimation,
+			clickAnimation,
+			singleClickLaunch,
 			showNamesInside,
 			iconGapRatio,
 		});
@@ -220,23 +224,43 @@ export function IconShowSettings({ container, onClose }: IconShowSettingsProps) 
 				</SettingRow>
 				</div>
 
-				{/* Hover Animations */}
+				{/* Hover & Click Animations */}
 				<div className="space-y-2">
-				<SettingRow title={t("container.hoverAnimation")} layout="vertical">
-				<CustomSelect
-					value={hoverAnimation}
-					onChange={setHoverAnimation}
-					options={[
-						{ value: "none", label: t("container.animNone") },
-						{ value: "scale", label: t("container.animScale") },
-						{ value: "lift", label: t("container.animFloat") },
-						{ value: "glow", label: t("container.animGlow") },
-						{ value: "rotate", label: t("container.animSpin") },
-					]}
-						position="top"
-						size="md"
-					/>
-				</SettingRow>
+					<SettingRow title={t("container.hoverAnimation")} layout="vertical">
+						<CustomSelect
+							value={hoverAnimation}
+							onChange={setHoverAnimation}
+							options={[
+								{ value: "none", label: t("container.animNone") },
+								{ value: "scale", label: t("container.animScale") },
+								{ value: "lift", label: t("container.animFloat") },
+								{ value: "glow", label: t("container.animGlow") },
+								{ value: "rotate", label: t("container.animSpin") },
+							]}
+							position="top"
+							size="md"
+						/>
+					</SettingRow>
+
+					<SettingRow title={t("container.clickAnimation")} layout="vertical">
+						<CustomSelect
+							value={clickAnimation}
+							onChange={setClickAnimation}
+							options={[
+								{ value: "none", label: t("container.animNone") },
+								{ value: "pop", label: t("container.animPop") },
+								{ value: "rotate", label: t("container.clickAnimRotate") },
+								{ value: "bounce", label: t("container.clickAnimBounce") },
+							]}
+							position="top"
+							size="md"
+						/>
+					</SettingRow>
+
+					<div className="pt-2 flex items-center justify-between">
+						<span className="text-xs text-[var(--color-text)] font-medium">{t("container.singleClickLaunch")}</span>
+						<SwitchToggle checked={singleClickLaunch} onChange={setSingleClickLaunch} />
+					</div>
 				</div>
 			</div>
 

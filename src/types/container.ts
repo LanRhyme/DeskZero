@@ -37,6 +37,8 @@ export interface ContainerStyle {
 	iconOpacityInside?: number;
 	iconSizeInside?: number;
 	hoverAnimation?: string;
+	clickAnimation?: string;
+	singleClickLaunch?: boolean;
 	showNamesInside?: boolean;
 	iconGapRatio?: number;
 	collapsible?: boolean;

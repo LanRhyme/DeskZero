@@ -61,6 +61,37 @@ const getHoverAnimationProps = (animType?: string) => {
 	}
 };
 
+const getClickAnimationProps = (clickAnimType?: string) => {
+	switch (clickAnimType) {
+		case "pop":
+			return {
+				whileTap: { scale: 0.92 },
+				transition: { type: "spring" as const, stiffness: 400, damping: 10 },
+			};
+		case "rotate":
+			return {
+				whileTap: { rotate: 8, scale: 0.95 },
+				transition: { type: "spring" as const, stiffness: 400, damping: 15 },
+			};
+		case "bounce":
+			return {
+				whileTap: { y: -6 },
+				transition: { type: "spring" as const, stiffness: 500, damping: 12 },
+			};
+		case "none":
+			return {
+				whileTap: {},
+				transition: { duration: 0 },
+			};
+		default:
+			// Default animation is pop
+			return {
+				whileTap: { scale: 0.92 },
+				transition: { type: "spring" as const, stiffness: 400, damping: 10 },
+			};
+	}
+};
+
 export function FileItem({
 	item,
 	className,
@@ -525,6 +556,10 @@ export function FileItem({
 
 	const handleClick = (e: React.MouseEvent) => {
 		e.stopPropagation();
+		if (isIconShow && containerStyle?.singleClickLaunch) {
+			invoke("open_file", { path: item.path });
+			return;
+		}
 		if (onClick) {
 			onClick(e);
 		} else {
@@ -534,6 +569,9 @@ export function FileItem({
 
 	const handleDoubleClick = (e: React.MouseEvent) => {
 		e.stopPropagation();
+		if (isIconShow && containerStyle?.singleClickLaunch) {
+			return;
+		}
 		if (onDoubleClick) {
 			onDoubleClick(e);
 		} else {
@@ -574,7 +612,8 @@ export function FileItem({
 		}
 	}
 
-	const motionProps = isIconShow ? getHoverAnimationProps(hoverAnimation) : {};
+	const hoverMotion = isIconShow ? getHoverAnimationProps(hoverAnimation) : {};
+	const clickMotion = isIconShow ? getClickAnimationProps(containerStyle?.clickAnimation || "pop") : {};
 
 	return (
 		<motion.div
@@ -595,13 +634,13 @@ export function FileItem({
 			transition={
 				isDragging || (isSelected && dragOffset)
 					? { duration: 0 }
-					: isIconShow && motionProps.transition
-						? motionProps.transition
+					: isIconShow
+						? { ...hoverMotion.transition, ...clickMotion.transition }
 						: { type: "spring", stiffness: 400, damping: 30 }
 			}
 			{...listeners}
-			whileHover={isIconShow ? (motionProps.whileHover || {}) : (isSelected && settings.selectedItemBlur ? {} : { scale: 1.05 })}
-			whileTap={isIconShow ? {} : (isSelected && settings.selectedItemBlur ? {} : { scale: 0.95 })}
+			whileHover={isIconShow ? (hoverMotion.whileHover || {}) : (isSelected && settings.selectedItemBlur ? {} : { scale: 1.05 })}
+			whileTap={isIconShow ? (clickMotion.whileTap || {}) : (isSelected && settings.selectedItemBlur ? {} : { scale: 0.95 })}
 			onClick={handleClick}
 			onDoubleClick={handleDoubleClick}
 			onContextMenu={handleContextMenu}

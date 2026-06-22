@@ -32,8 +32,7 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 		hasMoved: false,
 	});
 
-	const rafId = useRef<number | null>(null);
-	const latestOffset = useRef<Position | null>(null);
+	const activeCaptureElem = useRef<HTMLElement | null>(null);
 
 	const pos =
 		(dragInfo.current.dragging || isDragging) && dragPos ? dragPos : initialPos;
@@ -76,8 +75,6 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 			return;
 		}
 
-		// 允许 pointer down 事件正常冒泡，不执行 stopPropagation 和 setPointerCapture
-
 		dragInfo.current = {
 			startX: e.clientX,
 			startY: e.clientY,
@@ -86,6 +83,15 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 			dragging: true,
 			hasMoved: false,
 		};
+
+		// 同步设置指针捕获到绑定监听器的元素，确保即使鼠标快速移出元素仍能捕获 move/up 事件
+		const captureElem = e.currentTarget as HTMLElement;
+		activeCaptureElem.current = captureElem;
+		try {
+			captureElem.setPointerCapture(e.pointerId);
+		} catch (err) {
+			console.warn("[useDrag] SetPointerCapture failed in onPointerDown:", err);
+		}
 	};
 
 	const onPointerMove = (e: React.PointerEvent) => {
@@ -94,89 +100,69 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 		const dx = e.clientX - dragInfo.current.startX;
 		const dy = e.clientY - dragInfo.current.startY;
 
-		// Only set isDragging true if moved more than a few pixels to distinguish from click
+		// 只有在鼠标移动超过 3 像素时才确认是拖拽，以区分点击
 		if (!dragInfo.current.hasMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
 			dragInfo.current.hasMoved = true;
 			setIsDragging(true);
 			useDesktopStore.getState().setIsGlobalDragging(true);
 			options?.onDragStart?.();
-
-			// 确认是拖拽，在这里设置 capture 以防冲突
-			const elem = e.currentTarget as HTMLElement;
-			try {
-				elem.setPointerCapture(e.pointerId);
-			} catch (err) {
-				console.warn("[useDrag] SetPointerCapture failed:", err);
-			}
 		}
 
-		if (dragInfo.current.hasMoved) {
-			let nextX = dragInfo.current.elemStartX + dx;
-			let nextY = dragInfo.current.elemStartY + dy;
+		if (!dragInfo.current.hasMoved) return;
 
-			// Constrain to screen bounds if clampToBounds is true (default true)
-			if (options?.clampToBounds !== false) {
-				nextX = Math.max(0, Math.min(nextX, window.innerWidth - 80));
-				nextY = Math.max(0, Math.min(nextY, window.innerHeight - 96));
-			}
+		let nextX = dragInfo.current.elemStartX + dx;
+		let nextY = dragInfo.current.elemStartY + dy;
 
-			const newPos = {
-				x: nextX,
-				y: nextY,
-			};
-			setDragPos(newPos);
+		// 限制范围在屏幕边界内（如果 clampToBounds 不为 false）
+		if (options?.clampToBounds !== false) {
+			nextX = Math.max(0, Math.min(nextX, window.innerWidth - 80));
+			nextY = Math.max(0, Math.min(nextY, window.innerHeight - 96));
+		}
 
-			latestOffset.current = { x: dx, y: dy };
-			if (rafId.current === null) {
-				rafId.current = requestAnimationFrame(() => {
-					rafId.current = null;
-					if (latestOffset.current) {
-						options?.onDrag?.(latestOffset.current.x, latestOffset.current.y);
-					}
-				});
-			}
+		setDragPos({ x: nextX, y: nextY });
 
+		// 同步触发外部 onDrag 回调
+		options?.onDrag?.(dx, dy);
+
+		// 边缘触发原生拖拽（拖出窗口外到资源管理器）
+		if (
+			options?.nativeDragItemPaths &&
+			options.nativeDragItemPaths.length > 0
+		) {
+			const threshold = 10;
 			if (
-				options?.nativeDragItemPaths &&
-				options.nativeDragItemPaths.length > 0
+				e.clientX < threshold ||
+				e.clientY < threshold ||
+				e.clientX > window.innerWidth - threshold ||
+				e.clientY > window.innerHeight - threshold
 			) {
-				const threshold = 10;
-				if (
-					e.clientX < threshold ||
-					e.clientY < threshold ||
-					e.clientX > window.innerWidth - threshold ||
-					e.clientY > window.innerHeight - threshold
-				) {
-					dragInfo.current.dragging = false;
-					setIsDragging(false);
-					useDesktopStore.getState().setIsGlobalDragging(false);
-					if (rafId.current !== null) {
-						cancelAnimationFrame(rafId.current);
-						rafId.current = null;
+				dragInfo.current.dragging = false;
+				setIsDragging(false);
+				useDesktopStore.getState().setIsGlobalDragging(false);
+				options?.onDrag?.(0, 0);
+
+				try {
+					if (
+						activeCaptureElem.current &&
+						activeCaptureElem.current.hasPointerCapture(e.pointerId)
+					) {
+						activeCaptureElem.current.releasePointerCapture(e.pointerId);
 					}
-					latestOffset.current = null;
-					options?.onDrag?.(0, 0);
-
-					const target = e.currentTarget as HTMLElement;
-					try {
-						if (target.hasPointerCapture(e.pointerId)) {
-							target.releasePointerCapture(e.pointerId);
-						}
-					} catch (e) {
-						console.warn(e);
-					}
-
-					const iconPath = options.nativeDragIconPath || "";
-					startDrag({
-						item: options.nativeDragItemPaths!,
-						icon: iconPath,
-						mode: "copy",
-					}).catch((err) => {
-						console.error("[DeskZero] Native drag failed:", err);
-					});
-
-					return;
+				} catch (err) {
+					console.warn(err);
 				}
+				activeCaptureElem.current = null;
+
+				const iconPath = options.nativeDragIconPath || "";
+				startDrag({
+					item: options.nativeDragItemPaths!,
+					icon: iconPath,
+					mode: "copy",
+				}).catch((err) => {
+					console.error("[DeskZero] Native drag failed:", err);
+				});
+
+				return;
 			}
 		}
 	};
@@ -184,24 +170,25 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 	const onPointerUp = (e: React.PointerEvent) => {
 		if (!dragInfo.current.dragging) return;
 
-		const target = e.currentTarget as HTMLElement;
-		if (target.hasPointerCapture(e.pointerId)) {
-			target.releasePointerCapture(e.pointerId);
+		try {
+			if (
+				activeCaptureElem.current &&
+				activeCaptureElem.current.hasPointerCapture(e.pointerId)
+			) {
+				activeCaptureElem.current.releasePointerCapture(e.pointerId);
+			}
+		} catch (err) {
+			console.warn(err);
 		}
+		activeCaptureElem.current = null;
 
 		const hasMoved = dragInfo.current.hasMoved;
 		dragInfo.current.dragging = false;
 		setIsDragging(false);
 		useDesktopStore.getState().setIsGlobalDragging(false);
 
-		if (rafId.current !== null) {
-			cancelAnimationFrame(rafId.current);
-			rafId.current = null;
-		}
-		latestOffset.current = null;
-
 		if (hasMoved) {
-			// Use ref for latest position, not stale React state
+			// 使用 ref 的最新位置，而不是已经过时的 React state
 			options?.onDragEnd?.(currentPos.current, e.clientX, e.clientY);
 			options?.onDrag?.(0, 0);
 		}
@@ -229,3 +216,4 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 		},
 	};
 }
+

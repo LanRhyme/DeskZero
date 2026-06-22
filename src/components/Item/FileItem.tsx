@@ -109,7 +109,6 @@ export function FileItem({
 		setSelection,
 		moveSelectedItems,
 		wallpaper,
-		dragOffset,
 	} = useDesktopStore();
 	const { settings } = useSettingsStore();
 
@@ -180,16 +179,22 @@ export function FileItem({
 			}
 		},
 		onDrag: (dx, dy) => {
+			// 直接设置 CSS 变量来驱动随动图标位移，完全跳过 React 渲染周期
 			if (useDesktopStore.getState().selectedIds.has(item.id)) {
+				const root = document.documentElement;
 				if (dx === 0 && dy === 0) {
-					useDesktopStore.getState().setDragOffset(null);
+					root.style.removeProperty("--drag-offset-x");
+					root.style.removeProperty("--drag-offset-y");
 				} else {
-					useDesktopStore.getState().setDragOffset({ dx, dy });
+					root.style.setProperty("--drag-offset-x", `${dx}px`);
+					root.style.setProperty("--drag-offset-y", `${dy}px`);
 				}
 			}
 		},
 		onDragEnd: (newPos, clientX, clientY) => {
-			useDesktopStore.getState().setDragOffset(null);
+			const root = document.documentElement;
+			root.style.removeProperty("--drag-offset-x");
+			root.style.removeProperty("--drag-offset-y");
 			// Use clientX/clientY for accurate absolute screen position hit testing
 			if (!item.isInContainer) {
 				// Desktop -> Container check
@@ -612,14 +617,22 @@ export function FileItem({
 		}
 	}
 
-	const hoverMotion = isIconShow ? getHoverAnimationProps(hoverAnimation) : {};
-	const clickMotion = isIconShow ? getClickAnimationProps(containerStyle?.clickAnimation || "pop") : {};
+	const hoverMotion = isIconShow ? getHoverAnimationProps(hoverAnimation) : ({} as any);
+	const clickMotion = isIconShow ? getClickAnimationProps(containerStyle?.clickAnimation || "pop") : ({} as any);
+
+	// 被选中且非拖拽源的桌面图标通过 CSS 变量实现随动位移，完全跳过 React 渲染
+	const isFollowing = isSelected && !isDragging && !item.isInContainer;
 
 	return (
 		<motion.div
 			ref={ref}
 			data-item-id={item.id}
-			style={layoutStyle}
+			style={{
+				...layoutStyle,
+				...(isFollowing ? {
+					translate: "var(--drag-offset-x, 0px) var(--drag-offset-y, 0px)",
+				} : {}),
+			}}
 			initial={
 				item.isInContainer ? { x: 0, y: 0 } : { left: pos.x, top: pos.y }
 			}
@@ -627,12 +640,10 @@ export function FileItem({
 			animate={
 				item.isInContainer
 					? { x: isDragging ? pos.x : 0, y: isDragging ? pos.y : 0 }
-					: isSelected && dragOffset
-						? { left: initialPos.x + dragOffset.dx, top: initialPos.y + dragOffset.dy }
-						: { left: pos.x, top: pos.y }
+					: { left: pos.x, top: pos.y }
 			}
 			transition={
-				isDragging || (isSelected && dragOffset)
+				isDragging
 					? { duration: 0 }
 					: isIconShow
 						? { ...hoverMotion.transition, ...clickMotion.transition }

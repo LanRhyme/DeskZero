@@ -99,14 +99,10 @@ export default function DesktopLayer() {
 	const desktopRef = useRef<HTMLDivElement>(null);
 	const currentXRef = useRef(0);
 	const currentYRef = useRef(0);
-
-	// Marquee state
-	const [marquee, setMarquee] = useState<{
-		startX: number;
-		startY: number;
-		endX: number;
-		endY: number;
-	} | null>(null);
+	const marqueeRef = useRef<HTMLDivElement>(null);
+	const marqueeStart = useRef<{ x: number; y: number } | null>(null);
+	const marqueeRafId = useRef<number | null>(null);
+	const latestPointerEvent = useRef<React.PointerEvent | null>(null);
 
 	useEffect(() => {
 		if (
@@ -841,6 +837,7 @@ export default function DesktopLayer() {
 
 	const onPointerDown = (e: React.PointerEvent) => {
 		if (createPrompt) setCreatePrompt(null);
+		if (renamePrompt) setRenamePrompt(null);
 		if (e.button !== 0) return; // Only left click
 		if (
 			(e.target as HTMLElement).closest(".touch-none") ||
@@ -851,12 +848,18 @@ export default function DesktopLayer() {
 		}
 
 		clearSelection();
-		setMarquee({
-			startX: e.clientX,
-			startY: e.clientY,
-			endX: e.clientX,
-			endY: e.clientY,
-		});
+		
+		marqueeStart.current = {
+			x: e.clientX,
+			y: e.clientY,
+		};
+
+		if (marqueeRef.current) {
+			marqueeRef.current.style.left = `${e.clientX}px`;
+			marqueeRef.current.style.top = `${e.clientY}px`;
+			marqueeRef.current.style.width = "0px";
+			marqueeRef.current.style.height = "0px";
+		}
 	};
 
 	const onDoubleClick = (e: React.MouseEvent) => {
@@ -873,53 +876,79 @@ export default function DesktopLayer() {
 	};
 
 	const onPointerMove = (e: React.PointerEvent) => {
-		if (!marquee) return;
-		setMarquee((prev) =>
-			prev ? { ...prev, endX: e.clientX, endY: e.clientY } : null,
-		);
+		if (!marqueeStart.current) return;
+		e.persist();
+		latestPointerEvent.current = e;
 
-		// Calculate selection
-		const minX = Math.min(marquee.startX, e.clientX);
-		const maxX = Math.max(marquee.startX, e.clientX);
-		const minY = Math.min(marquee.startY, e.clientY);
-		const maxY = Math.max(marquee.startY, e.clientY);
+		if (marqueeRafId.current === null) {
+			marqueeRafId.current = requestAnimationFrame(() => {
+				marqueeRafId.current = null;
+				const ev = latestPointerEvent.current;
+				if (!ev || !marqueeStart.current) return;
 
-		const newSelectedIds: string[] = [];
+				const startX = marqueeStart.current.x;
+				const startY = marqueeStart.current.y;
+				const minX = Math.min(startX, ev.clientX);
+				const maxX = Math.max(startX, ev.clientX);
+				const minY = Math.min(startY, ev.clientY);
+				const maxY = Math.max(startY, ev.clientY);
 
-		items.forEach((item) => {
-			if (item.isInContainer || !item.position) return;
-			// Item bounds approx (width: 80, height: 96)
-			const itemMinX = item.position.x;
-			const itemMaxX = item.position.x + 80;
-			const itemMinY = item.position.y;
-			const itemMaxY = item.position.y + 96;
+				const width = maxX - minX;
+				const height = maxY - minY;
 
-			const overlap = !(
-				minX > itemMaxX ||
-				maxX < itemMinX ||
-				minY > itemMaxY ||
-				maxY < itemMinY
-			);
-			if (overlap) {
-				newSelectedIds.push(item.id);
-			}
-		});
+				if (marqueeRef.current) {
+					if (width > 2 || height > 2) {
+						marqueeRef.current.style.left = `${minX}px`;
+						marqueeRef.current.style.top = `${minY}px`;
+						marqueeRef.current.style.width = `${width}px`;
+						marqueeRef.current.style.height = `${height}px`;
+						marqueeRef.current.style.display = "block";
+					}
+				}
 
-		setSelection(newSelectedIds);
+				// Calculate selection
+				const newSelectedIds: string[] = [];
+				items.forEach((item) => {
+					if (item.isInContainer || !item.position) return;
+					const itemMinX = item.position.x;
+					const itemMaxX = item.position.x + 80;
+					const itemMinY = item.position.y;
+					const itemMaxY = item.position.y + 96;
+
+					const overlap = !(
+						minX > itemMaxX ||
+						maxX < itemMinX ||
+						minY > itemMaxY ||
+						maxY < itemMinY
+					);
+					if (overlap) {
+						newSelectedIds.push(item.id);
+					}
+				});
+
+				const currentSelected = useDesktopStore.getState().selectedIds;
+				const isSame =
+					newSelectedIds.length === currentSelected.size &&
+					newSelectedIds.every((id) => currentSelected.has(id));
+				if (!isSame) {
+					setSelection(newSelectedIds);
+				}
+			});
+		}
 	};
 
 	const onPointerUp = () => {
-		setMarquee(null);
-	};
+		marqueeStart.current = null;
+		if (marqueeRafId.current !== null) {
+			cancelAnimationFrame(marqueeRafId.current);
+			marqueeRafId.current = null;
+		}
+		latestPointerEvent.current = null;
 
-	const marqueeRect = marquee
-		? {
-				left: Math.min(marquee.startX, marquee.endX),
-				top: Math.min(marquee.startY, marquee.endY),
-				width: Math.abs(marquee.endX - marquee.startX),
-				height: Math.abs(marquee.endY - marquee.startY),
-			}
-		: null;
+		if (marqueeRef.current) {
+			marqueeRef.current.style.display = "none";
+		}
+	};
 
 	return (
 		<div
@@ -934,17 +963,11 @@ export default function DesktopLayer() {
 			onPointerCancel={onPointerUp}
 			onDoubleClick={onDoubleClick}
 		>
-			{marqueeRect && marqueeRect.width > 0 && marqueeRect.height > 0 && (
-				<div
-					className="absolute bg-[var(--color-accent)]/20 border border-[var(--color-accent)]/50 z-50 pointer-events-none"
-					style={{
-						left: marqueeRect.left,
-						top: marqueeRect.top,
-						width: marqueeRect.width,
-						height: marqueeRect.height,
-					}}
-				/>
-			)}
+			<div
+				ref={marqueeRef}
+				className="absolute bg-[var(--color-accent)]/20 border border-[var(--color-accent)]/50 z-50 pointer-events-none rounded"
+				style={{ display: "none" }}
+			/>
 
 			{/* Create Prompt Popup */}
 			{createPrompt && createPrompt.visible && (

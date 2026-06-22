@@ -387,7 +387,13 @@
       "year": "年",
       "day": "天",
       "todayLabel": "今天！",
-      "yearsDays": "{{years}}年"
+      "yearsDays": "{{years}}年",
+      "eventName": "事件名称",
+      "countdown": "倒计日",
+      "anniversary": "纪念日",
+      "countdownShort": "倒计",
+      "anniversaryShort": "纪念",
+      "color": "颜色"
     },
     "todo": {
       "priority": {

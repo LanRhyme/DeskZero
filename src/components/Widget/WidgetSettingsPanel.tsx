@@ -73,7 +73,7 @@ function CountdownEventManager() {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder={t("widget.settingsPanel.eventName")}
+          placeholder={t("widget.countdown.eventName")}
           className="flex-1 bg-black/5 dark:bg-white/5 rounded px-2 py-1 text-[10px] text-[var(--color-text)] outline-none border border-transparent focus:border-[var(--color-accent)]/30"
         />
         <input
@@ -87,8 +87,8 @@ function CountdownEventManager() {
       <div className="flex items-center gap-1.5">
         <div className="flex gap-1">
           {[
-            { value: "countdown", label: t("widget.settingsPanel.countdown") },
-            { value: "anniversary", label: t("widget.settingsPanel.anniversary") },
+            { value: "countdown", label: t("widget.countdown.countdown") },
+            { value: "anniversary", label: t("widget.countdown.anniversary") },
           ].map((m) => (
             <button
               key={m.value}
@@ -105,7 +105,7 @@ function CountdownEventManager() {
           ))}
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-[9px] text-[var(--color-text-secondary)]">{t("widget.settingsPanel.color")}:</span>
+          <span className="text-[9px] text-[var(--color-text-secondary)]">{t("widget.countdown.color")}:</span>
           {["#3b82f6", "#ef4444", "#f59e0b", "#22c55e", "#a855f7", "#ec4899"].map((c) => (
             <button
               key={c}
@@ -120,7 +120,7 @@ function CountdownEventManager() {
           disabled={!name.trim() || !date}
           className="ml-auto px-2 py-0.5 rounded bg-[var(--color-accent)] text-white text-[9px] disabled:opacity-30 hover:opacity-90 transition-opacity"
         >
-          {t("widget.settingsPanel.add")}
+          {t("common.add")}
         </button>
       </div>
 
@@ -131,7 +131,7 @@ function CountdownEventManager() {
             <div key={ev.id} className="flex items-center gap-1.5 px-1.5 py-0.5 rounded bg-black/[0.02] dark:bg-white/[0.03]">
               <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: ev.color }} />
               <span className="flex-1 text-[10px] text-[var(--color-text)] truncate">{ev.name}</span>
-              <span className="text-[9px] text-[var(--color-text-secondary)]">{ev.mode === "anniversary" ? t("widget.settingsPanel.anniversaryShort") : t("widget.settingsPanel.countdownShort")}</span>
+              <span className="text-[9px] text-[var(--color-text-secondary)]">{ev.mode === "anniversary" ? t("widget.countdown.anniversaryShort") : t("widget.countdown.countdownShort")}</span>
               <span className="text-[9px] text-[var(--color-text-secondary)]">{ev.targetDate}</span>
               <button onClick={() => handleDelete(ev.id)} className="text-[var(--color-text-secondary)] hover:text-red-400 text-[10px]">×</button>
             </div>
@@ -518,11 +518,11 @@ export function WidgetSettingsPanel({
       case "clock":
         return (
           <div className="space-y-3.5">
-            <SettingRow title={t("widget.settingsPanel.clockStyle")} layout="vertical">
+            <SettingRow title={t("widget.clock.dialStyle")} layout="vertical">
               <SegmentedControl
                 options={[
-                  { value: "digital", label: t("widget.settingsPanel.digitalClock") },
-                  { value: "analog", label: t("widget.settingsPanel.analogClock") },
+                  { value: "digital", label: t("widget.clock.digital") },
+                  { value: "analog", label: t("widget.clock.analog") },
                 ]}
                 value={clockStyle}
                 onChange={setClockStyle}
@@ -531,11 +531,11 @@ export function WidgetSettingsPanel({
 
             {clockStyle === "digital" && (
               <>
-                <SettingRow title={t("widget.settingsPanel.digitalEffect")} layout="vertical">
+                <SettingRow title={t("widget.clock.digitalEffect")} layout="vertical">
                   <SegmentedControl
                     options={[
-                      { value: "minimal", label: t("widget.settingsPanel.minimal") },
-                      { value: "glow", label: t("widget.settingsPanel.neon") },
+                      { value: "minimal", label: t("widget.clock.minimal") },
+                      { value: "glow", label: t("widget.clock.neon") },
                       { value: "retro", label: "LED" },
                     ]}
                     value={digitalStyle}
@@ -551,10 +551,10 @@ export function WidgetSettingsPanel({
                         { value: "theme", label: t("widget.settingsPanel.theme") },
                         { value: "accent", label: t("widget.settingsPanel.accent") },
                         { value: "gradient-rainbow", label: t("widget.settingsPanel.gradient") },
-                        { value: "#f9fafb", label: t("widget.settingsPanel.ivory") },
-                        { value: "#1f2937", label: t("widget.settingsPanel.charcoal") },
-                        { value: "#10b981", label: t("widget.settingsPanel.auroraGreen") },
-                        { value: "#f97316", label: t("widget.settingsPanel.vibrantOrange") },
+                        { value: "#f9fafb", label: t("widget.clock.colorPresets.ivory") },
+                        { value: "#1f2937", label: t("widget.clock.colorPresets.charcoal") },
+                        { value: "#10b981", label: t("widget.clock.colorPresets.aurora") },
+                        { value: "#f97316", label: t("widget.clock.colorPresets.vibrant") },
                       ]}
                       value={fontColor.startsWith("#") && !["#f9fafb", "#1f2937", "#10b981", "#f97316"].includes(fontColor) ? "" : fontColor}
                       onChange={setFontColor}
@@ -605,41 +605,41 @@ export function WidgetSettingsPanel({
         return (
           <div className="space-y-3.5">
             {/* 便签底色 */}
-            <SettingRow title={t("widget.settingsPanel.stickyBgColor")} layout="vertical">
+            <SettingRow title={t("widget.stickyNote.bgColor")} layout="vertical">
               <ColorPicker
                 value={stickyColor}
                 onChange={setStickyColor}
                 presets={[
-                  { color: "#ffeb3b", label: t("widget.settingsPanel.lemonYellow") },
-                  { color: "#ff9800", label: t("widget.settingsPanel.sweetOrange") },
-                  { color: "#ffebef", label: t("widget.settingsPanel.cherryPink") },
-                  { color: "#e8f5e9", label: t("widget.settingsPanel.mintGreen") },
-                  { color: "#e3f2fd", label: t("widget.settingsPanel.iceBlue") },
-                  { color: "#f3e5f5", label: t("widget.settingsPanel.lavender") },
+                  { color: "#ffeb3b", label: t("widget.stickyNote.colors.lemon") },
+                  { color: "#ff9800", label: t("widget.stickyNote.colors.orange") },
+                  { color: "#ffebef", label: t("widget.stickyNote.colors.sakura") },
+                  { color: "#e8f5e9", label: t("widget.stickyNote.colors.mint") },
+                  { color: "#e3f2fd", label: t("widget.stickyNote.colors.ice") },
+                  { color: "#f3e5f5", label: t("widget.stickyNote.colors.lavender") },
                 ]}
               />
             </SettingRow>
 
             {/* 新增：便签文字颜色 */}
-            <SettingRow title={t("widget.settingsPanel.textColor")} layout="vertical">
+            <SettingRow title={t("widget.stickyNote.textColor")} layout="vertical">
               <ColorPicker
                 value={noteFontColor}
                 onChange={setNoteFontColor}
                 presets={[
-                  { color: "#1f2937", label: t("widget.settingsPanel.classicBlack") },
-                  { color: "#ffffff", label: t("widget.settingsPanel.pureWhite") },
-                  { color: "#1e3a8a", label: t("widget.settingsPanel.vintageBlue") },
-                  { color: "#7f1d1d", label: t("widget.settingsPanel.darkPurpleRed") },
+                  { color: "#1f2937", label: t("widget.stickyNote.textColors.classicBlack") },
+                  { color: "#ffffff", label: t("widget.stickyNote.textColors.pureWhite") },
+                  { color: "#1e3a8a", label: t("widget.stickyNote.textColors.vintageBlue") },
+                  { color: "#7f1d1d", label: t("widget.stickyNote.textColors.darkPurple") },
                 ]}
               />
             </SettingRow>
 
-            <SettingRow title={t("widget.settingsPanel.fontStyle")} layout="vertical">
+            <SettingRow title={t("widget.stickyNote.fontStyle")} layout="vertical">
               <SegmentedControl
                 options={[
-                  { value: "default", label: t("widget.settingsPanel.sansSerif") },
-                  { value: "mono", label: t("widget.settingsPanel.monospace") },
-                  { value: "kaiti", label: t("widget.settingsPanel.kaiti") },
+                  { value: "default", label: t("widget.stickyNote.sansSerif") },
+                  { value: "mono", label: t("widget.stickyNote.monospace") },
+                  { value: "kaiti", label: t("widget.stickyNote.kaiTi") },
                 ]}
                 value={noteFontFamily}
                 onChange={setNoteFontFamily}
@@ -649,7 +649,7 @@ export function WidgetSettingsPanel({
             {/* 排版微调 */}
             <div className="space-y-1.5">
               <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] font-medium">
-                <span>{t("widget.settingsPanel.fontSize")}</span>
+                <span>{t("widget.stickyNote.fontSize")}</span>
                 <span>{noteFontSize}px</span>
               </div>
               <Slider min={12} max={24} step={1} value={noteFontSize} onChange={(v) => setNoteFontSize(Math.round(v))} />
@@ -657,18 +657,18 @@ export function WidgetSettingsPanel({
 
             <div className="space-y-1.5">
               <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] font-medium">
-                <span>{t("widget.settingsPanel.lineHeight")}</span>
+                <span>{t("widget.stickyNote.lineHeight")}</span>
                 <span>{noteLineHeight.toFixed(1)}</span>
               </div>
               <Slider min={1.2} max={2.0} step={0.1} value={noteLineHeight} onChange={setNoteLineHeight} />
             </div>
 
-            <SettingRow title={t("widget.settingsPanel.alignment")} layout="vertical">
+            <SettingRow title={t("widget.stickyNote.alignment")} layout="vertical">
               <SegmentedControl
                 options={[
-                  { value: "left", label: t("widget.settingsPanel.alignLeft") },
-                  { value: "center", label: t("widget.settingsPanel.alignCenter") },
-                  { value: "right", label: t("widget.settingsPanel.alignRight") },
+                  { value: "left", label: t("widget.stickyNote.alignLeft") },
+                  { value: "center", label: t("widget.stickyNote.alignCenter") },
+                  { value: "right", label: t("widget.stickyNote.alignRight") },
                 ]}
                 value={noteTextAlign}
                 onChange={setNoteTextAlign}
@@ -678,8 +678,8 @@ export function WidgetSettingsPanel({
             {/* 卡片装饰开关 */}
             <div className="space-y-2.5 pt-1">
               {[
-                { label: t("widget.settingsPanel.showTape"), val: showTape, set: setShowTape },
-                { label: t("widget.settingsPanel.showLines"), val: showLines, set: setShowLines },
+                { label: t("widget.stickyNote.showTape"), val: showTape, set: setShowTape },
+                { label: t("widget.stickyNote.showLines"), val: showLines, set: setShowLines },
               ].map((sw) => (
                 <label key={sw.label} className="flex items-center justify-between cursor-pointer group">
                   <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
@@ -695,27 +695,27 @@ export function WidgetSettingsPanel({
       case "systemMonitor":
         return (
           <div className="space-y-3.5">
-            <SettingRow title={t("widget.settingsPanel.layoutStyle")} layout="vertical">
+            <SettingRow title={t("widget.systemMonitor.layout")} layout="vertical">
               <SegmentedControl
                 options={[
-                  { value: "list", label: t("widget.settingsPanel.progressList") },
-                  { value: "gauge", label: t("widget.settingsPanel.gaugeDial") },
-                  { value: "compact-dashboard", label: t("widget.settingsPanel.geekConsole") },
+                  { value: "list", label: t("widget.systemMonitor.progressList") },
+                  { value: "gauge", label: t("widget.systemMonitor.ringGauge") },
+                  { value: "compact-dashboard", label: t("widget.systemMonitor.geekConsole") },
                 ]}
                 value={viewMode}
                 onChange={setViewMode}
               />
             </SettingRow>
 
-            <SettingRow title={t("widget.settingsPanel.baseColor")} layout="vertical">
+            <SettingRow title={t("widget.systemMonitor.accentColor")} layout="vertical">
               <div className="flex flex-wrap items-center gap-1.5">
                 <SegmentedControl
                   options={[
                     { value: "theme", label: t("widget.settingsPanel.theme") },
                     { value: "accent", label: t("widget.settingsPanel.accent") },
-                    { value: "#3b82f6", label: t("widget.settingsPanel.techBlue") },
-                    { value: "#10b981", label: t("widget.settingsPanel.auroraGreen") },
-                    { value: "#f97316", label: t("widget.settingsPanel.vibrantOrange") },
+                    { value: "#3b82f6", label: t("widget.systemMonitor.techBlue") },
+                    { value: "#10b981", label: t("widget.systemMonitor.auroraGreen") },
+                    { value: "#f97316", label: t("widget.systemMonitor.vibrantOrange") },
                   ]}
                   value={monitorColor.startsWith("#") && !["#3b82f6", "#10b981", "#f97316"].includes(monitorColor) ? "" : monitorColor}
                   onChange={setMonitorColor}
@@ -735,8 +735,8 @@ export function WidgetSettingsPanel({
             {/* 刷新频率 */}
             <div className="space-y-1.5">
               <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] font-medium">
-                <span>{t("widget.settingsPanel.refreshRate")}</span>
-                <span>{refreshInterval} {t("widget.settingsPanel.seconds")}</span>
+                <span>{t("widget.systemMonitor.refreshRate")}</span>
+                <span>{t("widget.systemMonitor.seconds", { value: refreshInterval })}</span>
               </div>
               <Slider min={1} max={30} step={1} value={refreshInterval} onChange={(v) => setRefreshInterval(Math.round(v))} />
             </div>
@@ -753,9 +753,9 @@ export function WidgetSettingsPanel({
             {/* 指标展示开关 */}
             <div className="space-y-2.5 pt-1">
               {[
-                { label: t("widget.settingsPanel.showCpu"), val: showCpu, set: setShowCpu },
-                { label: t("widget.settingsPanel.showMemory"), val: showMemory, set: setShowMemory },
-                { label: t("widget.settingsPanel.showDisk"), val: showDisk, set: setShowDisk },
+                { label: t("widget.systemMonitor.showCpu"), val: showCpu, set: setShowCpu },
+                { label: t("widget.systemMonitor.showMemory"), val: showMemory, set: setShowMemory },
+                { label: t("widget.systemMonitor.showDisk"), val: showDisk, set: setShowDisk },
               ].map((sw) => (
                 <label key={sw.label} className="flex items-center justify-between cursor-pointer group">
                   <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
@@ -771,11 +771,11 @@ export function WidgetSettingsPanel({
       case "hitokoto":
         return (
           <div className="space-y-3.5">
-            <SettingRow title={t("widget.settingsPanel.dataSource")} layout="vertical">
+            <SettingRow title={t("widget.hitokoto.dataSource")} layout="vertical">
               <SegmentedControl
                 options={[
-                  { value: "api", label: t("widget.settingsPanel.apiAuto") },
-                  { value: "custom", label: t("widget.settingsPanel.customText") },
+                  { value: "api", label: t("widget.hitokoto.apiAuto") },
+                  { value: "custom", label: t("widget.hitokoto.customText") },
                 ]}
                 value={hitokotoSourceMode}
                 onChange={(val) => {
@@ -790,39 +790,39 @@ export function WidgetSettingsPanel({
             {/* API 模式下的配置 */}
             {hitokotoSourceMode === "api" && (
               <>
-                <SettingRow title={t("widget.settingsPanel.quoteType")} layout="vertical">
+                <SettingRow title={t("widget.hitokoto.quoteType")} layout="vertical">
                   <CustomSelect
                     value={hitokotoCategory}
                     onChange={setHitokotoCategory}
                     options={[
-                      { value: "all", label: t("widget.settingsPanel.randomAll") },
-                      { value: "a", label: t("widget.settingsPanel.anime") },
-                      { value: "b", label: t("widget.settingsPanel.comic") },
-                      { value: "c", label: t("widget.settingsPanel.game") },
-                      { value: "d", label: t("widget.settingsPanel.novel") },
-                      { value: "f", label: t("widget.settingsPanel.original") },
-                      { value: "h", label: t("widget.settingsPanel.netQuote") },
-                      { value: "k", label: t("widget.settingsPanel.philosophy") },
-                      { value: "o", label: t("widget.settingsPanel.poetry") },
-                      { value: "i", label: t("widget.settingsPanel.soul") },
-                      { value: "j", label: t("widget.settingsPanel.other") },
+                      { value: "all", label: t("widget.hitokoto.random") },
+                      { value: "a", label: t("widget.hitokoto.anime") },
+                      { value: "b", label: t("widget.hitokoto.comic") },
+                      { value: "c", label: t("widget.hitokoto.game") },
+                      { value: "d", label: t("widget.hitokoto.novel") },
+                      { value: "f", label: t("widget.hitokoto.original") },
+                      { value: "h", label: t("widget.hitokoto.net") },
+                      { value: "k", label: t("widget.hitokoto.philosophy") },
+                      { value: "o", label: t("widget.hitokoto.poetry") },
+                      { value: "i", label: t("widget.hitokoto.soul") },
+                      { value: "j", label: t("widget.hitokoto.other") },
                     ]}
                   />
                 </SettingRow>
 
-                <SettingRow title={t("widget.settingsPanel.autoRefresh")} layout="vertical">
+                <SettingRow title={t("widget.hitokoto.refreshRate")} layout="vertical">
                   <CustomSelect
                     value={String(hitokotoRefreshInterval)}
                     onChange={(val) => setHitokotoRefreshInterval(Number(val))}
                     options={[
-                      { value: "0", label: t("widget.settingsPanel.manualRefresh") },
-                      { value: "300", label: t("widget.settingsPanel.every5min") },
-                      { value: "900", label: t("widget.settingsPanel.every15min") },
-                      { value: "1800", label: t("widget.settingsPanel.every30min") },
-                      { value: "3600", label: t("widget.settingsPanel.every1hour") },
-                      { value: "21600", label: t("widget.settingsPanel.every6hours") },
-                      { value: "43200", label: t("widget.settingsPanel.every12hours") },
-                      { value: "86400", label: t("widget.settingsPanel.every24hours") },
+                      { value: "0", label: t("widget.hitokoto.manual") },
+                      { value: "300", label: t("widget.hitokoto.every5min") },
+                      { value: "900", label: t("widget.hitokoto.every15min") },
+                      { value: "1800", label: t("widget.hitokoto.every30min") },
+                      { value: "3600", label: t("widget.hitokoto.every1hour") },
+                      { value: "21600", label: t("widget.hitokoto.every6hours") },
+                      { value: "43200", label: t("widget.hitokoto.every12hours") },
+                      { value: "86400", label: t("widget.hitokoto.every24hours") },
                     ]}
                     position="top"
                   />
@@ -833,31 +833,31 @@ export function WidgetSettingsPanel({
             {/* 自定义模式下的配置 */}
             {hitokotoSourceMode === "custom" && (
               <div className="space-y-2.5">
-                <SettingRow title={t("widget.settingsPanel.quoteText")} layout="vertical">
+                <SettingRow title={t("widget.hitokoto.quoteText")} layout="vertical">
                   <textarea
                     value={hitokotoCustomText}
                     onChange={(e) => setHitokotoCustomText(e.target.value)}
-                    placeholder={t("widget.settingsPanel.quoteTextPlaceholder")}
+                    placeholder={t("widget.hitokoto.quotePlaceholder")}
                     rows={2}
                     className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-2 py-1.5 text-[11px] text-[var(--color-text)] outline-none focus:ring-1 focus:ring-[var(--color-accent)] resize-none"
                   />
                 </SettingRow>
                 <div className="grid grid-cols-2 gap-2">
-                  <SettingRow title={t("widget.settingsPanel.author")} layout="vertical">
+                  <SettingRow title={t("widget.hitokoto.author")} layout="vertical">
                     <input
                       type="text"
                       value={hitokotoCustomAuthor}
                       onChange={(e) => setHitokotoCustomAuthor(e.target.value)}
-                      placeholder={t("widget.settingsPanel.optional")}
+                      placeholder={t("widget.hitokoto.authorPlaceholder")}
                       className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-2 py-1 text-[11px] text-[var(--color-text)] outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
                     />
                   </SettingRow>
-                  <SettingRow title={t("widget.settingsPanel.source")} layout="vertical">
+                  <SettingRow title={t("widget.hitokoto.source")} layout="vertical">
                     <input
                       type="text"
                       value={hitokotoCustomFrom}
                       onChange={(e) => setHitokotoCustomFrom(e.target.value)}
-                      placeholder={t("widget.settingsPanel.optional")}
+                      placeholder={t("widget.hitokoto.sourcePlaceholder")}
                       className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg px-2 py-1 text-[11px] text-[var(--color-text)] outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
                     />
                   </SettingRow>
@@ -865,12 +865,12 @@ export function WidgetSettingsPanel({
               </div>
             )}
 
-            <SettingRow title={t("widget.settingsPanel.clickAction")} layout="vertical">
+            <SettingRow title={t("widget.hitokoto.clickAction")} layout="vertical">
               <div className="flex bg-black/5 dark:bg-white/5 p-0.5 rounded-lg">
                 {[
-                  { key: "refresh", label: t("widget.settingsPanel.refreshQuote") },
-                  { key: "copy", label: t("widget.settingsPanel.copyText") },
-                  { key: "none", label: t("widget.settingsPanel.noAction") },
+                  { key: "refresh", label: t("widget.hitokoto.actionRefresh") },
+                  { key: "copy", label: t("widget.hitokoto.actionCopy") },
+                  { key: "none", label: t("widget.hitokoto.actionNone") },
                 ].map((act) => (
                   <button
                     key={act.key}
@@ -945,14 +945,14 @@ export function WidgetSettingsPanel({
             <div className="space-y-2.5 pt-1">
               <label className="flex items-center justify-between cursor-pointer group">
                 <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
-                  {t("widget.settingsPanel.showSourceAuthor")}
+                  {t("widget.hitokoto.showSource")}
                 </span>
                 <SwitchToggle checked={hitokotoShowAuthor} onChange={setHitokotoShowAuthor} />
               </label>
 
               <label className="flex items-center justify-between cursor-pointer group">
                 <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
-                  {t("widget.settingsPanel.showQuotes")}
+                  {t("widget.hitokoto.showQuotes")}
                 </span>
                 <SwitchToggle checked={hitokotoShowQuotes} onChange={setHitokotoShowQuotes} />
               </label>
@@ -965,7 +965,7 @@ export function WidgetSettingsPanel({
           <div className="space-y-3.5">
             {/* 预设事件快速添加 */}
             <div className="space-y-1.5">
-              <span className="text-[10px] text-[var(--color-text-secondary)] font-medium">{t("widget.settingsPanel.quickAddPreset")}</span>
+              <span className="text-[10px] text-[var(--color-text-secondary)] font-medium">{t("widget.countdown.quickPresets")}</span>
               <div className="flex flex-wrap gap-1">
                 {[
                   { name: "元旦", date: `${new Date().getFullYear()}-01-01`, color: "#ef4444" },
@@ -1012,26 +1012,26 @@ export function WidgetSettingsPanel({
             {/* 自定义添加 */}
             <CountdownEventManager />
 
-            <SettingRow title={t("widget.settingsPanel.displayMode")} layout="vertical">
+            <SettingRow title={t("widget.countdown.displayMode")} layout="vertical">
               <SegmentedControl
                 options={[
-                  { value: "list", label: t("widget.settingsPanel.list") },
-                  { value: "cards", label: t("widget.settingsPanel.cards") },
+                  { value: "list", label: t("widget.countdown.listMode") },
+                  { value: "cards", label: t("widget.countdown.cardMode") },
                 ]}
                 value={countdownDisplayMode}
                 onChange={setCountdownDisplayMode}
               />
             </SettingRow>
 
-            <SettingRow title={t("widget.settingsPanel.sortOrder")} layout="vertical">
+            <SettingRow title={t("widget.countdown.sortOrder")} layout="vertical">
               <CustomSelect
                 value={countdownSortOrder}
                 onChange={setCountdownSortOrder}
                 options={[
-                  { value: "date-asc", label: t("widget.settingsPanel.dateAsc") },
-                  { value: "date-desc", label: t("widget.settingsPanel.dateDesc") },
-                  { value: "days-asc", label: t("widget.settingsPanel.daysAsc") },
-                  { value: "days-desc", label: t("widget.settingsPanel.daysDesc") },
+                  { value: "date-asc", label: t("widget.countdown.dateAsc") },
+                  { value: "date-desc", label: t("widget.countdown.dateDesc") },
+                  { value: "days-asc", label: t("widget.countdown.daysAsc") },
+                  { value: "days-desc", label: t("widget.countdown.daysDesc") },
                 ]}
               />
             </SettingRow>
@@ -1071,15 +1071,15 @@ export function WidgetSettingsPanel({
       case "todo":
         return (
           <div className="space-y-3.5">
-            <SettingRow title={t("widget.settingsPanel.sortOrder")} layout="vertical">
+            <SettingRow title={t("widget.todo.sortBy")} layout="vertical">
               <CustomSelect
                 value={todoSortOrder}
                 onChange={setTodoSortOrder}
                 options={[
-                  { value: "manual", label: t("widget.settingsPanel.manualSort") },
-                  { value: "priority", label: t("widget.settingsPanel.byPriority") },
-                  { value: "dueDate", label: t("widget.settingsPanel.byDueDate") },
-                  { value: "completed-last", label: t("widget.settingsPanel.completedLast") },
+                  { value: "manual", label: t("widget.todo.manualSort") },
+                  { value: "priority", label: t("widget.todo.byPriority") },
+                  { value: "dueDate", label: t("widget.todo.byDueDate") },
+                  { value: "completed-last", label: t("widget.todo.completedLast") },
                 ]}
               />
             </SettingRow>
@@ -1116,8 +1116,8 @@ export function WidgetSettingsPanel({
 
             <div className="space-y-2.5 pt-1">
               {[
-                { label: t("widget.settingsPanel.showPriorityBar"), val: todoShowPriority, set: setTodoShowPriority },
-                { label: t("widget.settingsPanel.showDueDate"), val: todoShowDueDate, set: setTodoShowDueDate },
+                { label: t("widget.todo.showPriorityBar"), val: todoShowPriority, set: setTodoShowPriority },
+                { label: t("widget.todo.showDueDate"), val: todoShowDueDate, set: setTodoShowDueDate },
               ].map((sw) => (
                 <label key={sw.label} className="flex items-center justify-between cursor-pointer group">
                   <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
@@ -1133,11 +1133,11 @@ export function WidgetSettingsPanel({
       case "calendar":
         return (
           <div className="space-y-3.5">
-            <SettingRow title={t("widget.settingsPanel.startOfWeek")} layout="vertical">
+            <SettingRow title={t("widget.calendar.weekStart")} layout="vertical">
               <SegmentedControl
                 options={[
-                  { value: "monday", label: t("widget.settingsPanel.monday") },
-                  { value: "sunday", label: t("widget.settingsPanel.sunday") },
+                  { value: "monday", label: t("widget.calendar.monday") },
+                  { value: "sunday", label: t("widget.calendar.sunday") },
                 ]}
                 value={calendarStartOfWeek}
                 onChange={setCalendarStartOfWeek}
@@ -1174,23 +1174,23 @@ export function WidgetSettingsPanel({
               <Slider min={0.6} max={1.8} step={0.1} value={calendarFontSizeScale} onChange={setCalendarFontSizeScale} />
             </div>
 
-            <SettingRow title={t("widget.settingsPanel.festivalColor")} layout="vertical">
+            <SettingRow title={t("widget.calendar.festivalColor")} layout="vertical">
               <ColorPicker
                 value={calendarFestivalColor}
                 onChange={setCalendarFestivalColor}
                 presets={[
-                  { color: "#ef4444", label: t("widget.settingsPanel.chineseRed") },
-                  { color: "#f59e0b", label: t("widget.settingsPanel.amber") },
-                  { color: "#8b5cf6", label: t("widget.settingsPanel.violet") },
+                  { color: "#ef4444", label: t("widget.calendar.chinaRed") },
+                  { color: "#f59e0b", label: t("widget.calendar.amber") },
+                  { color: "#8b5cf6", label: t("widget.calendar.violet") },
                 ]}
               />
             </SettingRow>
 
             <div className="space-y-2.5 pt-1">
               {[
-                { label: t("widget.settingsPanel.showLunar"), val: calendarShowLunar, set: setCalendarShowLunar },
-                { label: t("widget.settingsPanel.highlightToday"), val: calendarHighlightToday, set: setCalendarHighlightToday },
-                { label: t("widget.settingsPanel.showFestivals"), val: calendarShowFestivals, set: setCalendarShowFestivals },
+                { label: t("widget.calendar.showLunar"), val: calendarShowLunar, set: setCalendarShowLunar },
+                { label: t("widget.calendar.highlightToday"), val: calendarHighlightToday, set: setCalendarHighlightToday },
+                { label: t("widget.calendar.showFestivals"), val: calendarShowFestivals, set: setCalendarShowFestivals },
               ].map((sw) => (
                 <label key={sw.label} className="flex items-center justify-between cursor-pointer group">
                   <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
@@ -1207,12 +1207,12 @@ export function WidgetSettingsPanel({
         return (
           <div className="space-y-3.5">
             <div className="space-y-2.5">
-              <SettingRow title={t("widget.settingsPanel.layoutStyle")} layout="vertical">
+              <SettingRow title={t("widget.weather.layout")} layout="vertical">
                 <SegmentedControl
                   options={[
-                    { value: "auto", label: t("widget.settingsPanel.autoResponsive") },
-                    { value: "horizontal", label: t("widget.settingsPanel.horizontalLayout") },
-                    { value: "vertical", label: t("widget.settingsPanel.verticalStack") },
+                    { value: "auto", label: t("widget.weather.autoLayout") },
+                    { value: "horizontal", label: t("widget.weather.horizontalLayout") },
+                    { value: "vertical", label: t("widget.weather.verticalLayout") },
                   ]}
                   value={weatherStyle}
                   onChange={(val) => setWeatherStyle(val as any)}
@@ -1220,7 +1220,7 @@ export function WidgetSettingsPanel({
               </SettingRow>
 
               <div className="text-[11px] text-[var(--color-text-secondary)] opacity-80 px-2 py-2 leading-relaxed bg-black/5 dark:bg-white/5 rounded border border-black/5 dark:border-white/5 mt-1">
-                {t("widget.settingsPanel.weatherServiceNote", { url: "https://wttr.in" })}
+                {t("widget.weather.autoDetect")}
               </div>
             </div>
 
@@ -1256,8 +1256,8 @@ export function WidgetSettingsPanel({
 
             <div className="space-y-2.5 pt-1">
               {[
-                { label: t("widget.settingsPanel.showForecast"), val: weatherShowForecast, set: setWeatherShowForecast },
-                { label: t("widget.settingsPanel.showDetails"), val: weatherShowDetails, set: setWeatherShowDetails },
+                { label: t("widget.weather.showForecast"), val: weatherShowForecast, set: setWeatherShowForecast },
+                { label: t("widget.weather.showDetails"), val: weatherShowDetails, set: setWeatherShowDetails },
               ].map((sw) => (
                 <label key={sw.label} className="flex items-center justify-between cursor-pointer group">
                   <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
@@ -1273,13 +1273,13 @@ export function WidgetSettingsPanel({
       case "music":
         return (
           <div className="space-y-3.5">
-            <SettingRow title={t("widget.settingsPanel.displayStyle")} layout="vertical">
+            <SettingRow title={t("widget.music.displayStyle")} layout="vertical">
               <SegmentedControl
                 options={[
-                  { value: "horizontal", label: t("widget.settingsPanel.horizontal") },
-                  { value: "vertical", label: t("widget.settingsPanel.vertical") },
-                  { value: "mini", label: t("widget.settingsPanel.mini") },
-                  { value: "terminal", label: t("widget.settingsPanel.terminal") },
+                  { value: "horizontal", label: t("widget.music.horizontal") },
+                  { value: "vertical", label: t("widget.music.vertical") },
+                  { value: "mini", label: t("widget.music.mini") },
+                  { value: "terminal", label: t("widget.music.terminal") },
                 ]}
                 value={musicStyle}
                 onChange={setMusicStyle}
@@ -1319,7 +1319,7 @@ export function WidgetSettingsPanel({
             <div className="space-y-2.5 pt-1">
               <label className="flex items-center justify-between cursor-pointer group">
                 <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
-                  {t("widget.settingsPanel.showProgressBar")}
+                  {t("widget.music.showProgressBar")}
                 </span>
                 <SwitchToggle checked={musicShowProgress} onChange={setMusicShowProgress} />
               </label>

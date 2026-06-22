@@ -387,7 +387,13 @@
       "year": "y",
       "day": "d",
       "todayLabel": "Today!",
-      "yearsDays": "{{years}}y"
+      "yearsDays": "{{years}}y",
+      "eventName": "Event name",
+      "countdown": "Countdown",
+      "anniversary": "Anniversary",
+      "countdownShort": "Cd",
+      "anniversaryShort": "Anniv",
+      "color": "Color"
     },
     "todo": {
       "priority": {

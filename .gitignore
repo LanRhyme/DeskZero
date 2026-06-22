@@ -6,3 +6,4 @@ src-tauri/target/
 .DS_Store
 Thumbs.db
 test-widget.html
+.claude/

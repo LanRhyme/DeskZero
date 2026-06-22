@@ -1,1 +1,0 @@
-{"mappings":"","sources":["packages/react-aria/exports/private/selection/useSelectableCollection.ts"],"sourcesContent":["export {useSelectableCollection, type AriaSelectableCollectionOptions, type SelectableCollectionAria} from '../../../src/selection/useSelectableCollection';\n"],"names":[],"version":3,"file":"useSelectableCollection.js.map"}

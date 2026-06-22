@@ -1,1 +1,0 @@
-{"mappings":"","sources":["packages/react-aria/exports/private/live-announcer/LiveAnnouncer.ts"],"sourcesContent":["export {announce, clearAnnouncer, destroyAnnouncer} from '../../../src/live-announcer/LiveAnnouncer';\n"],"names":[],"version":3,"file":"LiveAnnouncer.mjs.map"}

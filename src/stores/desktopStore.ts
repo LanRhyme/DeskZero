@@ -87,9 +87,9 @@ async function saveLayout(layout: Record<string, { x: number; y: number }>) {
 function getGridSize() {
 	const settings = useSettingsStore.getState().settings;
 	return {
-		w: settings.gridWidth || 80,
-		h: settings.gridHeight || 104,
-		gapX: settings.gridGapX ?? 20,
+		w: settings.gridWidth || 70,
+		h: settings.gridHeight || 75,
+		gapX: settings.gridGapX ?? 10,
 		gapY: settings.gridGapY ?? 20,
 	};
 }

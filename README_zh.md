@@ -1,34 +1,76 @@
-# DeskZero
+<div align="center">
 
-DeskZero 是一款现代、轻量级的 Windows 桌面整理工具。它可以理解为一个与 Windows 原生桌面区分开的全新桌面环境，通过可自定义的收纳盒（容器）帮助您管理和整理文件、快捷方式和文件夹。
+  <h1>DeskZero</h1>
 
-*其他语言版本: [English](README.md), [简体中文](README_zh.md).*
+  <img src="src-tauri/icons/icon.png" width="128" height="128" />
 
-## 核心功能
+  <br>
+  <br>
 
-- **全新的桌面体验:** 作为一个独立于原生 Windows 桌面的新桌面层运行，为您提供一个焕然一新的工作区。
-- **桌面收纳盒:** 创建可自定义的收纳盒（类似栅栏/分组），用于整理桌面快捷方式和文件。
-- **目录映射:** 支持将收纳盒映射到磁盘上的现有文件夹（目录索引）。
-- **高度自定义:** 自由更改收纳盒的颜色、样式，以及切换文件扩展名的显示状态，以匹配您的个人风格。
-- **全局右键菜单:** 在桌面或收纳盒上右键单击即可轻松管理您的工作区。
-- **系统托盘:** 通过系统托盘图标快速访问应用设置或退出程序。
-- **高性能:** 基于 Rust (Tauri v2) 和 React 构建，占用极少的系统资源。
-- **纯净持久化:** 您的所有配置都安全地存储在内置的 SQLite 数据库中，不会在文件系统中产生额外的杂乱文件。
+  <b>简体中文</b> | <a href="./README.md">English</a>
+
+  <h6>赞助我</h6>
+
+  <a href="https://afdian.com/a/LanRhyme" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/badge/爱发电-@LanRhyme-946ce6?style=for-the-badge&logo=afdian&logoColor=white" alt="爱发电"></a>
+
+  <br>
+  <br>
+
+  将您的 Windows 桌面变为一个全新的、可高度自定义的工作区
+
+  基于 Tauri v2 (Rust) + React 构建，嵌入 Windows 桌面图标层运行
+
+</div>
+
+## 主要功能
+
+- **全新桌面体验**：窗口嵌入 Windows 桌面图标层（壁纸与图标之间），与原生桌面融为一体
+- **桌面收纳盒**：创建可自定义的容器（类似栅栏/分组），支持普通、目录映射、文件夹、游戏、组件等多种类型
+- **目录映射**：将容器映射到磁盘上的现有文件夹，实时同步文件变化
+- **桌面小组件**：支持时钟、天气、待办、日历、倒计时、音乐控制、便签、系统监控等小组件
+- **高度自定义**：容器颜色、圆角、布局、毛玻璃效果、视差滚动、图标光晕、自定义字体等
+- **全局字体设置**：内置思源黑体、霞鹜文楷、缝合像素字体，支持加载本地系统字体
+- **桌面文件管理**：支持拖拽、框选、右键菜单、剪贴板操作、批量排序
+- **自动备份**：后台定时自动备份桌面布局，支持手动创建快照和一键恢复
+- **多显示器支持**：自动检测多显示器配置，适配不同缩放比例
+- **高性能**：Rust 后端 + React 前端，占用极少系统资源
+- **纯净存储**：所有配置安全存储在 SQLite 数据库中，不产生额外文件
+
+## 软件截图
+
+<div align="center">
+  <img src="docs/screenshot.png" width="800" />
+</div>
 
 ## 安装指南
 
-DeskZero 目前**仅支持 Windows 系统**。
+DeskZero 目前**仅支持 Windows**。
 
-1. 前往 [Releases](https://github.com/LanRhyme/DeskZero/releases) 页面。
-2. 下载安装版 (`DeskZero_x.x.x_x64-setup.exe`) 或便携版 (`DeskZero_x.x.x_x64-portable.exe`)。
-3. 运行应用程序即可体验。
+从 [GitHub Releases](https://github.com/LanRhyme/DeskZero/releases) 下载最新版本：
+
+| 版本 | 文件 | 说明 |
+|:---:|:---:|:---:|
+| 安装版 | `DeskZero_x.x.x_x64-setup.exe` | 标准安装程序 |
+| 便携版 | `DeskZero_x.x.x_x64-portable.exe` | 免安装，双击即用 |
 
 ## 使用说明
 
-- **启动:** DeskZero 会在后台运行，并将其主窗口直接附着到您的桌面上。
-- **创建收纳盒:** 在桌面空白处右键单击，通过 DeskZero 的菜单选项即可创建新的收纳盒。
-- **添加项目:** 将您的快捷方式或文件拖放到收纳盒中即可。
-- **应用设置:** 右键单击系统托盘中的 DeskZero 图标并选择“设置” (或通过桌面右键菜单打开)。在设置中，您可以自定义颜色、文件扩展名显示等。
+- **启动**：DeskZero 在后台运行，主窗口直接附着到桌面图标层
+- **创建容器**：在桌面空白处右键单击，选择创建收纳盒
+- **添加项目**：将快捷方式或文件拖放到容器中
+- **添加小组件**：右键桌面 → 新建小组件，选择需要的组件类型
+- **设置**：右键系统托盘图标 → 设置，可自定义网格、字体、主题、毛玻璃效果等
+- **隐藏/显示图标**：双击桌面空白处可切换桌面图标的显示状态
+
+## 技术栈
+
+| 层级 | 技术 |
+|:---:|:---:|
+| 前端 | React 19 + TypeScript + Tailwind CSS v4 + Zustand + Framer Motion |
+| 后端 | Rust + Tauri v2 + rusqlite + tokio |
+| 存储 | SQLite (bundled) |
+| 构建 | Vite + cargo |
 
 ## 开源协议
 

@@ -1,34 +1,76 @@
-# DeskZero
+<div align="center">
 
-DeskZero is a modern, lightweight Windows desktop organization tool. It functions as a brand new desktop environment distinct from the native Windows desktop, providing customizable containers to help you manage and organize your files, shortcuts, and folders.
+  <h1>DeskZero</h1>
 
-*Read this in other languages: [English](README.md), [简体中文](README_zh.md).*
+  <img src="src-tauri/icons/icon.png" width="128" height="128" />
+
+  <br>
+  <br>
+
+  <a href="./README_zh.md">简体中文</a> | <b>English</b>
+
+  <h6>Support Me</h6>
+
+  <a href="https://afdian.com/a/LanRhyme" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/badge/afdian-@LanRhyme-946ce6?style=for-the-badge&logo=afdian&logoColor=white" alt="afdian"></a>
+
+  <br>
+  <br>
+
+  Turn your Windows desktop into a fully customizable workspace.
+
+  Built with Tauri v2 (Rust) + React, embedded into the Windows desktop icon layer.
+
+</div>
 
 ## Features
 
-- **A New Desktop Experience:** Acts as a standalone desktop layer separate from your native Windows desktop, giving you a fresh and organized workspace.
-- **Containers:** Create customizable containers (fences/groups) to organize your desktop shortcuts and files.
-- **Directory Index:** Map a container to an existing directory on your disk.
-- **Customization:** Change container colors, styles, and toggle file extension visibility to match your preferences.
-- **Global Context Menu:** Right-click on the desktop or containers to easily manage your workspace.
-- **System Tray:** Quick access to application settings or exit via the system tray.
-- **High Performance:** Built with Rust (Tauri v2) and React for minimal resource usage.
-- **No Clutter:** Your configurations are safely stored in an internal SQLite database, keeping your filesystem clean.
+- **New Desktop Experience** — Window embeds into the Windows desktop icon layer (between wallpaper and icons), seamlessly integrated with the native desktop
+- **Desktop Containers** — Create customizable containers (similar to fences/groups) with support for normal, directory mapping, folder, game, and widget types
+- **Directory Mapping** — Map containers to existing folders on disk with real-time file change synchronization
+- **Desktop Widgets** — Clock, weather, todo list, calendar, countdown, music controls, sticky notes, system monitor, and more
+- **Deep Customization** — Container colors, corner radius, layout, glassmorphism, parallax scrolling, icon glow, custom fonts
+- **Global Font Settings** — Built-in Noto Sans SC, LXGW WenKai, and Fusion Pixel Font; supports loading local system fonts
+- **Desktop File Management** — Drag & drop, marquee selection, context menus, clipboard operations, batch sorting
+- **Auto Backup** — Automatic background backup of desktop layouts with manual snapshots and one-click restore
+- **Multi-Monitor Support** — Automatic multi-monitor detection with DPI scaling adaptation
+- **High Performance** — Rust backend + React frontend with minimal system resource usage
+- **Clean Storage** — All configurations stored safely in an embedded SQLite database, no extra files on disk
 
-## Installation
+## Screenshots
+
+<div align="center">
+  <img src="docs/screenshot.png" width="800" />
+</div>
+
+## Getting Started
 
 DeskZero is currently available for **Windows only**.
 
-1. Go to the [Releases](https://github.com/LanRhyme/DeskZero/releases) page.
-2. Download either the Installer (`DeskZero_x.x.x_x64-setup.exe`) or the Portable version (`DeskZero_x.x.x_x64-portable.exe`).
-3. Run the application.
+Download the latest release from [GitHub Releases](https://github.com/LanRhyme/DeskZero/releases):
+
+| Variant | File | Description |
+|:---:|:---:|:---:|
+| Installer | `DeskZero_x.x.x_x64-setup.exe` | Standard installation |
+| Portable | `DeskZero_x.x.x_x64-portable.exe` | No installation required |
 
 ## Usage
 
-- **Starting Up:** DeskZero runs in the background and its window is attached directly to your desktop.
-- **Creating a Container:** Right-click on an empty space on your desktop and select the DeskZero option to create a new container.
-- **Adding Items:** Drag and drop your shortcuts or files into containers.
-- **Settings:** Access the settings menu by right-clicking the DeskZero system tray icon and selecting "Settings" (or from the desktop context menu). Here you can customize colors, file extensions, and more.
+- **Launch** — DeskZero runs in the background with its main window attached to the desktop icon layer
+- **Create a Container** — Right-click on an empty desktop space and select create container
+- **Add Items** — Drag and drop shortcuts or files into containers
+- **Add Widgets** — Right-click desktop → New Widget, then choose a widget type
+- **Settings** — Right-click the system tray icon → Settings to customize grid, fonts, themes, glassmorphism, and more
+- **Hide/Show Icons** — Double-click on an empty desktop space to toggle desktop icon visibility
+
+## Tech Stack
+
+| Layer | Technology |
+|:---:|:---:|
+| Frontend | React 19 + TypeScript + Tailwind CSS v4 + Zustand + Framer Motion |
+| Backend | Rust + Tauri v2 + rusqlite + tokio |
+| Storage | SQLite (bundled) |
+| Build | Vite + cargo |
 
 ## License
 

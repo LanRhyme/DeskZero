@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/utils/cn";
 
@@ -17,17 +18,51 @@ export function CustomSelect({
   size = "sm",
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!isOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        triggerRef.current && !triggerRef.current.contains(target) &&
+        portalRef.current && !portalRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [isOpen]);
+
+  const updateDropdownPosition = () => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    if (position === "top") {
+      setDropdownStyle({
+        position: "fixed",
+        left: rect.left,
+        bottom: window.innerHeight - rect.top + 4,
+        width: rect.width,
+      });
+    } else {
+      setDropdownStyle({
+        position: "fixed",
+        left: rect.left,
+        top: rect.bottom + 4,
+        width: rect.width,
+      });
+    }
+  };
+
+  const handleToggle = () => {
+    if (!isOpen) {
+      updateDropdownPosition();
+    }
+    setIsOpen(!isOpen);
+  };
 
   const currentOption = options.find((o) => o.value === value) || options[0];
 
@@ -40,10 +75,10 @@ export function CustomSelect({
     : "text-xs px-3 py-2";
 
   return (
-    <div ref={dropdownRef} className="relative w-full">
+    <div ref={triggerRef} className="relative w-full">
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         className={cn(
           "w-full bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded-lg text-left outline-none border border-black/10 dark:border-white/10 flex justify-between items-center cursor-default hover:bg-black/10 dark:hover:bg-white/10 transition-colors",
           triggerClasses,
@@ -52,11 +87,14 @@ export function CustomSelect({
         <span>{currentOption?.label}</span>
         <span className={cn("opacity-60", size === "sm" ? "text-[9px]" : "text-[10px]")}>▼</span>
       </button>
-      {isOpen && (
-        <div className={cn(
-          "absolute z-[110] left-0 right-0 bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-lg shadow-xl overflow-hidden py-1 max-h-[160px] overflow-y-auto hidden-native-scrollbar",
-          position === "top" ? "bottom-full mb-1" : "top-full mt-1",
-        )}>
+      {isOpen && createPortal(
+        <div
+          ref={portalRef}
+          style={dropdownStyle}
+          className={cn(
+            "z-[9999] bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-lg shadow-xl overflow-hidden py-1 max-h-[160px] overflow-y-auto hidden-native-scrollbar",
+          )}
+        >
           {options.map((opt) => (
             <button
               key={opt.value}
@@ -76,7 +114,8 @@ export function CustomSelect({
               {opt.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

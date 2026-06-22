@@ -533,7 +533,12 @@
       "showGridOnDrag": "Show grid lines on drag",
       "showGridOnDragDesc": "Show faint auxiliary grid lines around the cursor while dragging or scaling",
       "fontSize": "App name font size",
-      "fontSizeDesc": "Adjust the display size of desktop icon text"
+      "fontSizeDesc": "Adjust the display size of desktop icon text",
+      "fontFamily": "Global Font",
+      "fontFamilyDesc": "Set the font used by the app, choose a preset or enter a local font name",
+      "fontSystem": "System Default",
+      "fontCustom": "Custom Font",
+      "fontCustomPlaceholder": "Enter font name, e.g. Microsoft YaHei"
     },
     "appearance": {
       "title": "Appearance",

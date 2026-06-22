@@ -21,6 +21,7 @@ import { SegmentedControl } from "@/components/UI/SegmentedControl";
 import { SettingRow } from "@/components/UI/SettingRow";
 import { Slider } from "@/components/UI/Slider";
 import { SwitchToggle } from "@/components/UI/SwitchToggle";
+import { CustomSelect } from "@/components/UI/CustomSelect";
 import { TextArea } from "@/components/UI/TextInput";
 import { useContainerStore } from "@/stores/containerStore";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -36,6 +37,7 @@ import {
 } from "@/services/backupService";
 import { syncWindowsLayout } from "@/services/desktopService";
 import { cn } from "@/utils/cn";
+import { FONT_PRESETS } from "@/utils/fontLoader";
 import appConfig from "../../../deskzero.config.json";
 
 export function SettingsPage() {
@@ -46,6 +48,9 @@ export function SettingsPage() {
 	const [syncMultiplier, setSyncMultiplier] = useState(1.0);
 	const [isCssDialogOpen, setIsCssDialogOpen] = useState(false);
 	const [cssDraft, setCssDraft] = useState(settings.customCss || "");
+	const [isCustomFont, setIsCustomFont] = useState(
+		!!settings.fontFamily && !FONT_PRESETS.some((f) => f.family === settings.fontFamily),
+	);
 
 	const handleSyncWindowsLayout = async (multiplier: number) => {
 		try {
@@ -227,7 +232,7 @@ export function SettingsPage() {
 	];
 
 	return (
-		<div className="w-screen h-screen flex flex-col bg-[#fafafa] dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100 select-none overflow-hidden font-sans">
+		<div data-font-target className="w-screen h-screen flex flex-col bg-[#fafafa] dark:bg-[#0a0a0a] text-gray-900 dark:text-gray-100 select-none overflow-hidden">
 			{loading && (
 				<div className="fixed top-0 left-0 right-0 h-1 bg-[var(--color-accent)]/20 z-50 overflow-hidden">
 					<div className="w-1/3 h-full bg-[var(--color-accent)] rounded-full animate-ping"></div>
@@ -431,6 +436,46 @@ export function SettingsPage() {
 											}
 										/>
 									</SettingRow>
+
+								<SettingRow
+									title={t("settings.general.fontFamily")}
+									desc={t("settings.general.fontFamilyDesc")}
+								>
+									<div className="flex flex-col gap-2 w-56">
+										<CustomSelect
+											value={isCustomFont ? "__custom__" : (settings.fontFamily || "")}
+											onChange={(v) => {
+												if (v === "__custom__") {
+													setIsCustomFont(true);
+													if (!settings.fontFamily || FONT_PRESETS.some((f) => f.family === settings.fontFamily)) {
+														saveSettings({ fontFamily: "" });
+													}
+												} else {
+													setIsCustomFont(false);
+													saveSettings({ fontFamily: v });
+												}
+											}}
+											options={[
+												{ value: "", label: t("settings.general.fontSystem") },
+												...FONT_PRESETS.map((f) => ({
+													value: f.family,
+													label: `${f.nameZh} (${f.name})`,
+												})),
+												{ value: "__custom__", label: t("settings.general.fontCustom") },
+											]}
+										/>
+										{isCustomFont && (
+											<input
+												type="text"
+												placeholder={t("settings.general.fontCustomPlaceholder")}
+												className="w-full px-3 py-1.5 text-xs rounded-lg bg-black/5 dark:bg-white/5 border border-transparent focus:border-[var(--color-accent)]/50 outline-none text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)]/50"
+												value={settings.fontFamily || ""}
+												onChange={(e) => saveSettings({ fontFamily: e.target.value })}
+												autoFocus
+											/>
+										)}
+									</div>
+								</SettingRow>
 
 								<SettingRow
 									title={t("settings.general.fontSize")}

@@ -955,6 +955,7 @@ export default function DesktopLayer() {
 
 	return (
 		<div
+			data-font-target
 			className="w-screen h-screen relative overflow-hidden select-none pointer-events-auto"
 			style={{
 				backgroundColor: "transparent",

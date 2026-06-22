@@ -230,6 +230,9 @@ pub struct Settings {
     /// 全屏检测模式
     #[serde(default)]
     pub fullscreen_detection_mode: FullscreenDetectionMode,
+    /// 全局字体
+    #[serde(default)]
+    pub font_family: String,
     /// 用户自定义 CSS
     #[serde(default)]
     pub custom_css: String,
@@ -273,6 +276,7 @@ impl Default for Settings {
             backup_settings: None,
             performance_mode_enabled: true,
             fullscreen_detection_mode: FullscreenDetectionMode::FullscreenAndMaximized,
+            font_family: String::new(),
             custom_css: String::new(),
             extra: HashMap::new(),
         }

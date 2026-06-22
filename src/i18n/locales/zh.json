@@ -533,7 +533,12 @@
       "showGridOnDrag": "拖拽和缩放时显示网格线",
       "showGridOnDragDesc": "以低不透明度虚化显示鼠标周围的辅助网格线",
       "fontSize": "软件名称文字大小",
-      "fontSizeDesc": "调整桌面图标文字的显示大小"
+      "fontSizeDesc": "调整桌面图标文字的显示大小",
+      "fontFamily": "全局字体",
+      "fontFamilyDesc": "设置软件使用的字体，可选择预置字体或输入本地字体名称",
+      "fontSystem": "系统默认",
+      "fontCustom": "自定义字体",
+      "fontCustomPlaceholder": "输入字体名称，如 Microsoft YaHei"
     },
     "appearance": {
       "title": "外观个性化",

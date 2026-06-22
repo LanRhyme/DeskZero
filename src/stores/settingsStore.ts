@@ -3,6 +3,7 @@ import { emit, listen } from "@tauri-apps/api/event";
 import { create } from "zustand";
 import i18n from "@/i18n";
 import type { Settings, Theme } from "@/types/settings";
+import { applyFontFamily } from "@/utils/fontLoader";
 
 interface SettingsState {
 	settings: Settings;
@@ -119,6 +120,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 		applySelectedBackground(settings.selectedItemBackground);
 		applyGlobalBlur(settings.globalBlur);
 		applyCustomCss(settings.customCss || "");
+		applyFontFamily(settings.fontFamily || "");
 		if (settings.language) i18n.changeLanguage(settings.language);
 		} catch (err) {
 			const message = err instanceof Error ? err.message : i18n.t("settings.backup.loadFailed");
@@ -146,6 +148,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 		}
 		if (changes.customCss !== undefined) {
 			applyCustomCss(newSettings.customCss || "");
+		}
+		if (changes.fontFamily !== undefined) {
+			applyFontFamily(newSettings.fontFamily || "");
 		}
 		if (changes.language) {
 			i18n.changeLanguage(changes.language);
@@ -197,6 +202,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 			applySelectedBackground(newSettings.selectedItemBackground);
 			applyGlobalBlur(newSettings.globalBlur);
 			applyCustomCss(newSettings.customCss || "");
+			applyFontFamily(newSettings.fontFamily || "");
 			if (newSettings.language) i18n.changeLanguage(newSettings.language);
 		});
 

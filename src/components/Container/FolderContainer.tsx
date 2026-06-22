@@ -177,8 +177,6 @@ export function FolderContainer({ container }: ContainerProps) {
 		const startY = e.clientY;
 		const startWidth = sizeRef.current.width;
 		const startHeight = sizeRef.current.height;
-		const target = e.currentTarget as HTMLElement;
-		try { target.setPointerCapture(e.pointerId); } catch {}
 
 		const handlePointerMove = (moveEvent: PointerEvent) => {
 			const deltaX = moveEvent.clientX - startX;

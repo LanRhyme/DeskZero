@@ -33,8 +33,6 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 		hasMoved: false,
 	});
 
-	const activeCaptureElem = useRef<HTMLElement | null>(null);
-
 	const pos =
 		(dragInfo.current.dragging || isDragging) && dragPos ? dragPos : initialPos;
 
@@ -43,6 +41,24 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 	currentPos.current = pos;
 
 	const lastPointerDownTime = useRef<number>(0);
+
+	// 安全重置拖拽状态（防止指针事件丢失导致卡死）
+	const safetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const clearSafetyTimer = () => {
+		if (safetyTimerRef.current) {
+			clearTimeout(safetyTimerRef.current);
+			safetyTimerRef.current = null;
+		}
+	};
+
+	const resetDragState = () => {
+		dragInfo.current.dragging = false;
+		dragInfo.current.hasMoved = false;
+		setIsDragging(false);
+		useDesktopStore.getState().setIsGlobalDragging(false);
+		setDragPos(null);
+		clearSafetyTimer();
+	};
 
 	const onPointerDown = (e: React.PointerEvent) => {
 		if (options?.disabled) return;
@@ -71,8 +87,7 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 		lastPointerDownTime.current = now;
 
 		if (isDoubleClick) {
-			dragInfo.current.dragging = false;
-			dragInfo.current.hasMoved = false;
+			resetDragState();
 			return;
 		}
 
@@ -85,14 +100,14 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 			hasMoved: false,
 		};
 
-		// 同步设置指针捕获到绑定监听器的元素，确保即使鼠标快速移出元素仍能捕获 move/up 事件
-		const captureElem = e.currentTarget as HTMLElement;
-		activeCaptureElem.current = captureElem;
-		try {
-			captureElem.setPointerCapture(e.pointerId);
-		} catch (err) {
-			console.warn("[useDrag] SetPointerCapture failed in onPointerDown:", err);
-		}
+		// 安全定时器：如果 5 秒内没有收到 pointerup，自动重置状态
+		clearSafetyTimer();
+		safetyTimerRef.current = setTimeout(() => {
+			if (dragInfo.current.dragging) {
+				console.warn("[useDrag] Safety timeout: resetting stuck drag state");
+				resetDragState();
+			}
+		}, 5000);
 	};
 
 	const onPointerMove = (e: React.PointerEvent) => {
@@ -147,22 +162,7 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 				e.clientX > edgeX - threshold ||
 				e.clientY > edgeY - threshold
 			) {
-				dragInfo.current.dragging = false;
-				setIsDragging(false);
-				useDesktopStore.getState().setIsGlobalDragging(false);
-				options?.onDrag?.(0, 0);
-
-				try {
-					if (
-						activeCaptureElem.current &&
-						activeCaptureElem.current.hasPointerCapture(e.pointerId)
-					) {
-						activeCaptureElem.current.releasePointerCapture(e.pointerId);
-					}
-				} catch (err) {
-					console.warn(err);
-				}
-				activeCaptureElem.current = null;
+				resetDragState();
 
 				const iconPath = options.nativeDragIconPath || "";
 				startDrag({
@@ -181,17 +181,7 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 	const onPointerUp = (e: React.PointerEvent) => {
 		if (!dragInfo.current.dragging) return;
 
-		try {
-			if (
-				activeCaptureElem.current &&
-				activeCaptureElem.current.hasPointerCapture(e.pointerId)
-			) {
-				activeCaptureElem.current.releasePointerCapture(e.pointerId);
-			}
-		} catch (err) {
-			console.warn(err);
-		}
-		activeCaptureElem.current = null;
+		clearSafetyTimer();
 
 		const hasMoved = dragInfo.current.hasMoved;
 		dragInfo.current.dragging = false;
@@ -210,8 +200,9 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 		if (dragInfo.current.hasMoved) {
 			e.stopPropagation();
 			e.preventDefault();
-			dragInfo.current.hasMoved = false;
 		}
+		// 无论是否拦截，都重置标记
+		dragInfo.current.hasMoved = false;
 	};
 
 	return {
@@ -227,4 +218,3 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 		},
 	};
 }
-

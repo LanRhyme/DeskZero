@@ -87,8 +87,6 @@ export function IconShowContainer({ container }: IconShowContainerProps) {
 		const startHeight = size.height;
 		const startPosX = pos.x;
 		const startPosY = pos.y;
-		const target = e.currentTarget as HTMLElement;
-		try { target.setPointerCapture(e.pointerId); } catch {}
 
 		const handlePointerMove = (moveEvent: PointerEvent) => {
 			const deltaX = moveEvent.clientX - startX;

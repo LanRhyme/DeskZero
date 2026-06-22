@@ -9,9 +9,11 @@ import { SegmentedControl } from "@/components/UI/SegmentedControl";
 import { CustomSelect } from "@/components/UI/CustomSelect";
 import { SettingRow } from "@/components/UI/SettingRow";
 import { Slider } from "@/components/UI/Slider";
+import { TextInput } from "@/components/UI/TextInput";
+import { NumberInput } from "@/components/UI/NumberInput";
 import { useContainerStore } from "@/stores/containerStore";
 import type { Container as ContainerType } from "@/types/container";
-import type { WidgetConfig } from "@/types/widget";
+import type { WidgetConfig, ConfigField } from "@/types/widget";
 import { cn } from "@/utils/cn";
 
 function generateId() {
@@ -146,12 +148,14 @@ interface WidgetSettingsPanelProps {
   container: ContainerType;
   widgetConfig: WidgetConfig;
   onClose: () => void;
+  customConfigSchema?: ConfigField[] | null;
 }
 
 export function WidgetSettingsPanel({
   container,
   widgetConfig,
   onClose,
+  customConfigSchema,
 }: WidgetSettingsPanelProps) {
   const { updateContainerStyle } = useContainerStore();
   const { t } = useTranslation();
@@ -283,6 +287,16 @@ export function WidgetSettingsPanel({
   const [musicShowProgress, setMusicShowProgress] = useState(widgetConfig.config?.showProgress !== false);
   const [musicStyle, setMusicStyle] = useState(widgetConfig.config?.musicStyle || "horizontal");
 
+  // 11. 自定义小组件设置（由 configSchema 动态驱动）
+  const [customConfig, setCustomConfig] = useState<Record<string, any>>(() => {
+    if (widgetConfig.widgetType !== "custom" || !customConfigSchema) return {};
+    const initial: Record<string, any> = {};
+    for (const field of customConfigSchema) {
+      initial[field.key] = widgetConfig.config?.[field.key] ?? field.default;
+    }
+    return initial;
+  });
+
   // 备份打开设置面板时的初始样式，以便取消时完美回滚
   const initialStyleRef = useRef<any>(null);
   useEffect(() => {
@@ -393,6 +407,9 @@ export function WidgetSettingsPanel({
           musicStyle,
         });
         break;
+      case "custom":
+        Object.assign(newConfig, customConfig);
+        break;
     }
 
     updateContainerStyle(container.id, {
@@ -469,6 +486,7 @@ export function WidgetSettingsPanel({
     musicFontColor,
     musicShowProgress,
     musicStyle,
+    customConfig,
   ]);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1326,6 +1344,89 @@ export function WidgetSettingsPanel({
             </div>
           </div>
         );
+
+      case "custom": {
+        if (!customConfigSchema || customConfigSchema.length === 0) {
+          return (
+            <div className="text-[11px] text-[var(--color-text-secondary)] opacity-60 text-center py-4">
+              {t("widget.customWidget.noConfigSchema", "该小组件未声明配置项")}
+            </div>
+          );
+        }
+
+        const updateCustomField = (key: string, value: any) => {
+          setCustomConfig((prev) => ({ ...prev, [key]: value }));
+        };
+
+        return (
+          <div className="space-y-3.5">
+            {customConfigSchema.map((field) => (
+              <div key={field.key}>
+                {field.type === "toggle" ? (
+                  <label className="flex items-center justify-between cursor-pointer group">
+                    <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
+                      {field.label}
+                    </span>
+                    <SwitchToggle
+                      checked={customConfig[field.key] ?? field.default}
+                      onChange={(val) => updateCustomField(field.key, val)}
+                    />
+                  </label>
+                ) : field.type === "color" ? (
+                  <SettingRow title={field.label} layout="vertical">
+                    <ColorPicker
+                      value={customConfig[field.key] ?? field.default}
+                      onChange={(val) => updateCustomField(field.key, val)}
+                    />
+                  </SettingRow>
+                ) : field.type === "select" && field.options ? (
+                  <SettingRow title={field.label} layout="vertical">
+                    <SegmentedControl
+                      options={field.options.map((o) => ({ value: o.value, label: o.label }))}
+                      value={customConfig[field.key] ?? field.default}
+                      onChange={(val) => updateCustomField(field.key, val)}
+                      variant="accent"
+                    />
+                  </SettingRow>
+                ) : field.type === "number" ? (
+                  <SettingRow title={field.label} layout="vertical">
+                    {field.min !== undefined && field.max !== undefined ? (
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] font-medium">
+                          <span>{field.label}</span>
+                          <span>{customConfig[field.key] ?? field.default}</span>
+                        </div>
+                        <Slider
+                          min={field.min}
+                          max={field.max}
+                          step={field.step ?? 1}
+                          value={customConfig[field.key] ?? field.default}
+                          onChange={(val) => updateCustomField(field.key, val)}
+                        />
+                      </div>
+                    ) : (
+                      <NumberInput
+                        value={customConfig[field.key] ?? field.default}
+                        onChange={(val) => updateCustomField(field.key, val)}
+                        min={field.min}
+                        max={field.max}
+                        step={field.step ?? 1}
+                      />
+                    )}
+                  </SettingRow>
+                ) : field.type === "text" ? (
+                  <SettingRow title={field.label} layout="vertical">
+                    <TextInput
+                      value={customConfig[field.key] ?? field.default ?? ""}
+                      onChange={(val) => updateCustomField(field.key, val)}
+                    />
+                  </SettingRow>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        );
+      }
 
       default:
         return null;

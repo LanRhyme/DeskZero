@@ -217,6 +217,9 @@
     "builtin": "内置小组件",
     "custom": "自定义小组件",
     "importHtml": "导入 HTML",
+    "grantIpc": "授权命令调用",
+    "ipcConfirmTitle": "安全提示",
+    "ipcConfirmMessage": "该自定义小组件请求调用 Tauri 命令的权限。授权后，小组件可以访问文件系统、系统信息等本地能力。\n\n请确保你信任该小组件的来源。",
     "registry": {
       "clock": "时钟",
       "stickyNote": "便签",
@@ -250,6 +253,15 @@
       "showSeconds": "显示秒数",
       "showDate": "显示日期",
       "showWeekday": "显示星期"
+    },
+    "customWidget": {
+      "noConfigSchema": "该小组件未声明配置项",
+      "genPrompt": "生成开发提示词",
+      "genPromptTitle": "生成小组件开发提示词",
+      "genPromptDesc": "描述你想要的小组件，系统会生成一份包含完整开发规范的提示词，你可以将其发送给 AI 来生成代码",
+      "genPromptPlaceholder": "例如：一个显示当前网速的小组件，带实时图表...",
+      "copyPrompt": "复制提示词",
+      "copied": "提示词已复制到剪贴板"
     },
     "clock": {
       "dialStyle": "表盘样式",

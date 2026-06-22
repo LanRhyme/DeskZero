@@ -7,6 +7,7 @@ export interface CustomWidgetEntry {
   htmlPath: string;
   name: string;
   meta?: WidgetMeta;
+  ipcEnabled?: boolean;
 }
 
 interface WidgetState {
@@ -17,6 +18,7 @@ interface WidgetState {
   addCustomWidget: (entry: CustomWidgetEntry) => void;
   removeCustomWidget: (htmlPath: string) => void;
   updateCustomWidgetMeta: (htmlPath: string, meta: WidgetMeta) => void;
+  setCustomWidgetIpcEnabled: (htmlPath: string, enabled: boolean) => void;
 }
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -71,6 +73,16 @@ export const useWidgetStore = create<WidgetState>((set) => ({
     set((state) => {
       const updated = state.customWidgets.map((w) =>
         w.htmlPath === htmlPath ? { ...w, meta } : w,
+      );
+      persistCustomWidgets(updated);
+      return { customWidgets: updated };
+    });
+  },
+
+  setCustomWidgetIpcEnabled: (htmlPath, enabled) => {
+    set((state) => {
+      const updated = state.customWidgets.map((w) =>
+        w.htmlPath === htmlPath ? { ...w, ipcEnabled: enabled } : w,
       );
       persistCustomWidgets(updated);
       return { customWidgets: updated };

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Trash2, Settings } from "lucide-react";
+import { Trash2, Settings, Shield } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,8 +10,9 @@ import type { MenuItem } from "@/components/ContextMenu/ContextMenu";
 import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useWidgetStore } from "@/stores/widgetStore";
 import type { Container as ContainerType } from "@/types/container";
-import type { WidgetConfig } from "@/types/widget";
+import type { WidgetConfig, ConfigField } from "@/types/widget";
 import { cn } from "@/utils/cn";
 import { hexToRgb } from "@/utils/color";
 import { snapSize, snapPosition } from "@/utils/grid";
@@ -34,6 +35,7 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
   } = useContainerStore();
   const { settings } = useSettingsStore();
   const { wallpaper } = useDesktopStore();
+  const { customWidgets } = useWidgetStore();
 
   const [resizePosOffset, setResizePosOffset] = useState({ x: 0, y: 0 });
   const resizeOffsetRef = useRef({ x: 0, y: 0 });
@@ -41,6 +43,7 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [customConfigSchema, setCustomConfigSchema] = useState<ConfigField[] | null>(null);
   const [menuState, setMenuState] = useState<{
     visible: boolean;
     x: number;
@@ -50,6 +53,11 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
   // 从 style 中读取 widgetConfig
   const widgetConfig: WidgetConfig = (container.style as any).config || getDefaultWidgetConfig("clock")!;
   const transparentBackground = widgetConfig.config?.transparentBackground === true;
+
+  // 自定义小组件 IPC 权限
+  const isCustom = widgetConfig.widgetType === "custom";
+  const customEntry = isCustom ? customWidgets.find((w) => w.htmlPath === widgetConfig.customHtmlPath) : undefined;
+  const ipcEnabled = customEntry?.ipcEnabled === true;
 
   // 整个卡片拖拽（不需要单独的 dragHandle）
   const { ref, pos, isDragging, listeners } = useDrag(container.position, {
@@ -72,16 +80,29 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
     await deleteContainer(container.id);
   };
 
+  const { setCustomWidgetIpcEnabled } = useWidgetStore.getState();
+
   const contextMenuItems: MenuItem[] = [
     {
       label: t("widget.settings"),
       icon: <Settings size={14} />,
       onClick: () => {
-        if (widgetConfig.widgetType !== "custom") {
-          setIsSettingsOpen(true);
-        }
+        setIsSettingsOpen(true);
       },
     },
+    ...(isCustom && !ipcEnabled
+      ? [
+          {
+            label: t("widget.grantIpc", "授权命令调用"),
+            icon: <Shield size={14} />,
+            onClick: () => {
+              if (widgetConfig.customHtmlPath) {
+                setCustomWidgetIpcEnabled(widgetConfig.customHtmlPath, true);
+              }
+            },
+          },
+        ]
+      : []),
     { label: "", divider: true },
     {
       label: t("widget.remove"),
@@ -101,6 +122,11 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
     e.preventDefault();
     setIsResizing(true);
     useDesktopStore.getState().setIsGlobalDragging(true);
+
+    // 锁定指针到调整手柄，防止 iframe 等子元素抢夺事件
+    const target = e.currentTarget;
+    target.setPointerCapture(e.pointerId);
+
     const startX = e.clientX;
     const startY = e.clientY;
     const startWidth = size.width;
@@ -138,14 +164,14 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
       const snappedSize = snapSize(sizeRef.current.width, sizeRef.current.height);
       if (direction === "bl") {
         const snappedPos = snapPosition(startPosX + resizeOffsetRef.current.x, startPosY);
-        // 使用 Geometry 合并更新位置和尺寸，避免两次 store 更新渲染的竞态
         updateContainerGeometry(container.id, snappedPos, snappedSize);
         setResizePosOffset({ x: 0, y: 0 });
         resizeOffsetRef.current = { x: 0, y: 0 };
       } else {
         updateContainerSize(container.id, snappedSize);
       }
-      setSize(snappedSize); // 立即更新本地状态，确保瞬时网格对齐
+      setSize(snappedSize);
+      target.releasePointerCapture(e.pointerId);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
@@ -285,6 +311,9 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
               containerId={container.id}
               width={size.width}
               height={size.height}
+              ipcEnabled={ipcEnabled}
+              onShowConfig={() => setIsSettingsOpen(true)}
+              onConfigSchema={setCustomConfigSchema}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-xs opacity-50">
@@ -348,6 +377,7 @@ export function WidgetContainer({ container }: WidgetContainerProps) {
                 container={container}
                 widgetConfig={widgetConfig}
                 onClose={() => setIsSettingsOpen(false)}
+                customConfigSchema={isCustom ? customConfigSchema : null}
               />
             </motion.div>
           </div>,

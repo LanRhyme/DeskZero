@@ -425,6 +425,7 @@ pub fn run() {
             commands::file::show_properties_dialog,
             commands::file::trash_file,
             commands::file::check_files_exist,
+            commands::file::read_file_content,
             commands::system::get_settings,
             commands::system::save_settings,
             commands::system::set_auto_start,

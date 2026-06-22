@@ -19,6 +19,9 @@ export interface ConfigField {
 	type: "text" | "number" | "color" | "select" | "toggle";
 	default: any;
 	options?: { label: string; value: any }[];
+	min?: number;
+	max?: number;
+	step?: number;
 }
 
 export interface ThemeInfo {
@@ -51,15 +54,21 @@ export interface WidgetComponentProps {
 }
 
 export interface WidgetToHostMessage {
-	type: "ready" | "configChanged";
+	type: "ready" | "configChanged" | "invoke" | "showConfig";
 	meta?: WidgetMeta;
 	config?: Record<string, any>;
+	id?: string;
+	command?: string;
+	args?: Record<string, any>;
 }
 
 export interface HostToWidgetMessage {
-	type: "render" | "showConfig" | "destroy";
+	type: "render" | "showConfig" | "destroy" | "invokeResult";
 	config?: WidgetConfig;
 	width?: number;
 	height?: number;
 	theme?: ThemeInfo;
+	id?: string;
+	result?: any;
+	error?: string;
 }

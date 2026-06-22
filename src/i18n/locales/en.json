@@ -217,6 +217,9 @@
     "builtin": "Built-in widgets",
     "custom": "Custom widgets",
     "importHtml": "Import HTML",
+    "grantIpc": "Grant command access",
+    "ipcConfirmTitle": "Security Notice",
+    "ipcConfirmMessage": "This custom widget requests permission to call Tauri commands. Once granted, the widget can access the file system, system information, and other local capabilities.\n\nMake sure you trust the source of this widget.",
     "registry": {
       "clock": "Clock",
       "stickyNote": "Sticky Note",
@@ -250,6 +253,15 @@
       "showSeconds": "Show seconds",
       "showDate": "Show date",
       "showWeekday": "Show weekday"
+    },
+    "customWidget": {
+      "noConfigSchema": "This widget has no configurable options",
+      "genPrompt": "Generate Dev Prompt",
+      "genPromptTitle": "Generate Widget Dev Prompt",
+      "genPromptDesc": "Describe the widget you want. A prompt with full development specs will be generated for you to send to an AI.",
+      "genPromptPlaceholder": "e.g. A widget that shows current network speed with a real-time chart...",
+      "copyPrompt": "Copy Prompt",
+      "copied": "Prompt copied to clipboard"
     },
     "clock": {
       "dialStyle": "Dial style",

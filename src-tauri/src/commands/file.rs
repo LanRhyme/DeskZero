@@ -272,3 +272,8 @@ pub fn check_files_exist(paths: Vec<String>) -> Vec<String> {
         })
         .collect()
 }
+
+#[tauri::command]
+pub fn read_file_content(path: String) -> Result<String, String> {
+    std::fs::read_to_string(&path).map_err(|e| format!("读取文件失败: {}", e))
+}

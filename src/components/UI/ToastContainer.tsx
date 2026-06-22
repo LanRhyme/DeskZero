@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, AlertTriangle, CheckCircle2, Info } from "lucide-react";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useToastStore } from "@/stores/toastStore";
+import { useMonitorStore } from "@/stores/monitorStore";
 import { cn } from "@/utils/cn";
 
 const icons = {
@@ -17,12 +18,17 @@ const icons = {
 	),
 };
 
-export function ToastContainer() {
+function ToastDisplay({ monitorX, monitorWidth }: { monitorX: number; monitorWidth: number }) {
 	const toasts = useToastStore((state) => state.toasts);
 	const globalBlur = useSettingsStore((state) => state.settings.globalBlur);
 
+	const centerX = monitorX + monitorWidth / 2;
+
 	return (
-		<div className="fixed top-8 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 pointer-events-none">
+		<div
+			className="absolute top-8 flex flex-col gap-2 pointer-events-none"
+			style={{ left: centerX, transform: "translateX(-50%)" }}
+		>
 			<AnimatePresence>
 				{toasts.map((toast) => (
 					<motion.div
@@ -43,5 +49,26 @@ export function ToastContainer() {
 				))}
 			</AnimatePresence>
 		</div>
+	);
+}
+
+export function ToastContainer() {
+	const monitors = useMonitorStore((state) => state.monitors);
+
+	// 如果没有显示器信息，使用默认的居中显示
+	if (monitors.length === 0) {
+		return <ToastDisplay monitorX={0} monitorWidth={window.innerWidth} />;
+	}
+
+	return (
+		<>
+			{monitors.map((monitor) => (
+				<ToastDisplay
+					key={monitor.id}
+					monitorX={monitor.x}
+					monitorWidth={monitor.width}
+				/>
+			))}
+		</>
 	);
 }

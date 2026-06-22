@@ -5,6 +5,7 @@ import type { Container, Position, Size } from "@/types/container";
 import type { Item } from "@/types/item";
 import { useHistoryStore } from "./historyStore";
 import { useToastStore } from "./toastStore";
+import { useMonitorStore } from "./monitorStore";
 
 // 每个容器独立的防抖定时器，避免拖拽/调整大小时每帧都触发数据库写入
 const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -141,10 +142,16 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 				finalName = `${name} (${counter})`;
 			}
 
+			// 根据位置自动关联显示器
+			const { findMonitorForPoint } = useMonitorStore.getState();
+			const monitor = findMonitorForPoint(position.x, position.y);
+			const monitorId = monitor?.id ?? null;
+
 			const newContainer = await invoke<Container>("create_container", {
 				name: finalName,
 				containerType: type,
 				position,
+				monitorId,
 			});
 			if (folderPath) {
 				newContainer.folderPath = folderPath;
@@ -172,9 +179,14 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 
 	updateContainerPosition: (id, position) => {
 		useHistoryStore.getState().pushState();
+		// 根据位置自动更新显示器关联
+		const { findMonitorForPoint } = useMonitorStore.getState();
+		const monitor = findMonitorForPoint(position.x, position.y);
+		const monitorId = monitor?.id;
+
 		set((state) => ({
 			containers: state.containers.map((c) =>
-				c.id === id ? { ...c, position } : c,
+				c.id === id ? { ...c, position, monitorId } : c,
 			),
 		}));
 		const updated = get().containers.find((c) => c.id === id);
@@ -194,9 +206,14 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 
 	updateContainerGeometry: (id, position, size) => {
 		useHistoryStore.getState().pushState();
+		// 根据位置自动更新显示器关联
+		const { findMonitorForPoint } = useMonitorStore.getState();
+		const monitor = findMonitorForPoint(position.x, position.y);
+		const monitorId = monitor?.id;
+
 		set((state) => ({
 			containers: state.containers.map((c) =>
-				c.id === id ? { ...c, position, size } : c,
+				c.id === id ? { ...c, position, size, monitorId } : c,
 			),
 		}));
 		const updated = get().containers.find((c) => c.id === id);

@@ -4,6 +4,7 @@ pub mod container_store;
 pub mod countdown_store;
 pub mod desktop_store;
 pub mod migration;
+pub mod monitor_store;
 pub mod settings_store;
 pub mod todo_store;
 pub mod db;

@@ -19,6 +19,7 @@ pub fn create_container(
     name: String,
     container_type: ContainerType,
     position: Position,
+    monitor_id: Option<String>,
 ) -> Result<Container, String> {
     let _lock = CONTAINER_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
     let now = chrono::Utc::now().timestamp_millis() as u64;
@@ -64,6 +65,7 @@ pub fn create_container(
         items: Vec::new(),
         style,
         folder_path: None,
+        monitor_id,
         created_at: now,
         updated_at: now,
         extra: HashMap::new(),
@@ -81,6 +83,7 @@ pub fn update_container(
     name: Option<String>,
     position: Option<Position>,
     size: Option<Size>,
+    monitor_id: Option<Option<String>>,
 ) -> Result<Container, String> {
     let _lock = CONTAINER_LOCK.lock().map_err(|e| format!("锁获取失败: {}", e))?;
     let mut containers = container_store::load_containers()?;
@@ -97,6 +100,9 @@ pub fn update_container(
     }
     if let Some(s) = size {
         container.size = s;
+    }
+    if let Some(m) = monitor_id {
+        container.monitor_id = m;
     }
     container.updated_at = chrono::Utc::now().timestamp_millis() as u64;
 

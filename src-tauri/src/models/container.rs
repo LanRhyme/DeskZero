@@ -157,6 +157,7 @@ pub struct Container {
     pub items: Vec<super::item::Item>,
     pub style: ContainerStyle,
     pub folder_path: Option<String>,
+    pub monitor_id: Option<String>,
     #[serde(alias = "created_at")]
     pub created_at: u64,
     #[serde(alias = "updated_at")]
@@ -180,6 +181,7 @@ impl Default for Container {
             items: Vec::new(),
             style: Default::default(),
             folder_path: None,
+            monitor_id: None,
             created_at: 0,
             updated_at: 0,
             extra: HashMap::new(),

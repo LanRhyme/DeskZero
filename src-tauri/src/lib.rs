@@ -208,8 +208,8 @@ mod win_layer {
             let sm_xvirtualscreen = 76;
             let sm_yvirtualscreen = 77;
             extern "system" { fn GetSystemMetrics(nIndex: i32) -> i32; }
-            let _v_x = GetSystemMetrics(sm_xvirtualscreen);
-            let _v_y = GetSystemMetrics(sm_yvirtualscreen);
+            let v_x = GetSystemMetrics(sm_xvirtualscreen);
+            let v_y = GetSystemMetrics(sm_yvirtualscreen);
             let v_width = GetSystemMetrics(sm_cxvirtualscreen);
             let v_height = GetSystemMetrics(sm_cyvirtualscreen);
 
@@ -232,8 +232,8 @@ mod win_layer {
             SetWindowPos(
                 hwnd as HWND,
                 HWND_TOP as HWND,
-                0, 
-                0,
+                v_x,
+                v_y,
                 v_width,
                 v_height - 1, // 关键：利用 Tauri 的全屏模式消除 8px 边框，但手动削减 1 像素以绕过壁纸引擎检测
                 SWP_SHOWWINDOW | swp_framechanged,
@@ -253,6 +253,20 @@ pub fn run() {
             if let Err(e) = crate::storage::init() {
                 eprintln!("[DeskZero] Storage initialization failed: {}", e);
                 return Err(format!("数据库初始化失败: {}", e).into());
+            }
+
+            // 初始化显示器信息
+            match crate::desktop::monitor_scanner::enumerate_monitors() {
+                Ok(monitors) => {
+                    if let Err(e) = crate::storage::monitor_store::save_monitors(&monitors) {
+                        eprintln!("[DeskZero] 保存显示器信息失败: {}", e);
+                    } else {
+                        eprintln!("[DeskZero] 检测到 {} 个显示器", monitors.len());
+                    }
+                }
+                Err(e) => {
+                    eprintln!("[DeskZero] 显示器枚举失败: {}", e);
+                }
             }
 
             // 设置进程为高优先级，确保桌面渲染不被其他进程抢占
@@ -436,6 +450,9 @@ pub fn run() {
             commands::system::get_wallpaper_engine_preview,
             commands::system::capture_desktop_background,
             commands::system::get_system_info,
+            commands::monitor::get_monitors,
+            commands::monitor::refresh_monitors,
+            commands::monitor::get_monitor_for_point,
             clipboard::copy_files_to_clipboard,
             clipboard::get_files_from_clipboard,
             clipboard::check_clipboard_has_files,

@@ -54,6 +54,7 @@ export interface Container {
 	items: Item[];
 	style: ContainerStyle;
 	folderPath?: string;
+	monitorId?: string;
 	createdAt: number;
 	updatedAt: number;
 }

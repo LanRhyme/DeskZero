@@ -6,7 +6,7 @@ pub fn load_containers() -> Result<Vec<Container>, String> {
     let conn = get_connection().map_err(|e| e.to_string())?;
     
     // 读取容器
-    let mut stmt = conn.prepare("SELECT id, name, type, x, y, width, height, style, folder_path, created_at, updated_at FROM containers").map_err(|e| e.to_string())?;
+    let mut stmt = conn.prepare("SELECT id, name, type, x, y, width, height, style, folder_path, monitor_id, created_at, updated_at FROM containers").map_err(|e| e.to_string())?;
     let container_rows = stmt.query_map([], |row| {
         let id: String = row.get(0)?;
         let name: String = row.get(1)?;
@@ -17,8 +17,9 @@ pub fn load_containers() -> Result<Vec<Container>, String> {
         let height: f64 = row.get(6)?;
         let style_str: String = row.get(7)?;
         let folder_path: Option<String> = row.get(8)?;
-        let created_at: i64 = row.get(9)?;
-        let updated_at: i64 = row.get(10)?;
+        let monitor_id: Option<String> = row.get(9)?;
+        let created_at: i64 = row.get(10)?;
+        let updated_at: i64 = row.get(11)?;
         
         // 使用自定义反序列化：未知类型会被保留为 Other(String)，不会丢失
         let container_type: ContainerType = serde_json::from_str(&format!("\"{}\"", type_str)).unwrap_or(ContainerType::Normal);
@@ -33,6 +34,7 @@ pub fn load_containers() -> Result<Vec<Container>, String> {
             items: Vec::new(),
             style,
             folder_path,
+            monitor_id,
             created_at: created_at as u64,
             updated_at: updated_at as u64,
             extra: HashMap::new(),
@@ -126,8 +128,8 @@ pub fn save_containers(containers: &[Container]) -> Result<(), String> {
         }
         
         tx.execute(
-            "INSERT INTO containers (id, name, type, x, y, width, height, style, folder_path, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+            "INSERT INTO containers (id, name, type, x, y, width, height, style, folder_path, monitor_id, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
              ON CONFLICT(id) DO UPDATE SET
                 name = excluded.name,
                 type = excluded.type,
@@ -137,6 +139,7 @@ pub fn save_containers(containers: &[Container]) -> Result<(), String> {
                 height = excluded.height,
                 style = excluded.style,
                 folder_path = excluded.folder_path,
+                monitor_id = excluded.monitor_id,
                 updated_at = excluded.updated_at",
             (
                 &container.id,
@@ -148,6 +151,7 @@ pub fn save_containers(containers: &[Container]) -> Result<(), String> {
                 container.size.height,
                 &style_str,
                 &container.folder_path,
+                &container.monitor_id,
                 container.created_at as i64,
                 container.updated_at as i64
             ),

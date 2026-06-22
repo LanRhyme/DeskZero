@@ -66,6 +66,21 @@ pub fn init_db() -> Result<()> {
         [],
     )?;
 
+    // Monitors table
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS monitors (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            x INTEGER NOT NULL,
+            y INTEGER NOT NULL,
+            width INTEGER NOT NULL,
+            height INTEGER NOT NULL,
+            is_primary INTEGER NOT NULL DEFAULT 0,
+            scale_factor REAL NOT NULL DEFAULT 1.0
+        )",
+        [],
+    )?;
+
     // Containers table
     conn.execute(
         "CREATE TABLE IF NOT EXISTS containers (
@@ -78,6 +93,7 @@ pub fn init_db() -> Result<()> {
             height REAL NOT NULL,
             style TEXT NOT NULL,
             folder_path TEXT,
+            monitor_id TEXT,
             created_at INTEGER NOT NULL,
             updated_at INTEGER NOT NULL
         )",
@@ -165,6 +181,17 @@ pub fn init_db() -> Result<()> {
         "CREATE INDEX IF NOT EXISTS idx_calendar_events_date ON calendar_events(container_id, date)",
         [],
     )?;
+
+    // 为现有 containers 表添加 monitor_id 列（如果不存在）
+    let has_monitor_id: bool = {
+        let mut stmt = conn.prepare("PRAGMA table_info(containers)")?;
+        let names: Vec<String> = stmt.query_map([], |row| row.get(1))?.filter_map(|n| n.ok()).collect();
+        names.contains(&"monitor_id".to_string())
+    };
+
+    if !has_monitor_id {
+        conn.execute_batch("ALTER TABLE containers ADD COLUMN monitor_id TEXT")?;
+    }
 
     Ok(())
 }

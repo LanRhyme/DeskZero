@@ -100,6 +100,9 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 			hasMoved: false,
 		};
 
+		// 捕获指针，确保鼠标移出元素后仍能收到 pointermove 事件
+		(e.target as HTMLElement)?.setPointerCapture?.(e.pointerId);
+
 		// 安全定时器：如果 5 秒内没有收到 pointerup，自动重置状态
 		clearSafetyTimer();
 		safetyTimerRef.current = setTimeout(() => {
@@ -182,6 +185,9 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 		if (!dragInfo.current.dragging) return;
 
 		clearSafetyTimer();
+
+		// 释放指针捕获
+		(e.target as HTMLElement)?.releasePointerCapture?.(e.pointerId);
 
 		const hasMoved = dragInfo.current.hasMoved;
 		dragInfo.current.dragging = false;

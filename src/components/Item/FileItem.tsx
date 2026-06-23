@@ -388,17 +388,19 @@ export function FileItem({
 						}
 
 						if (container.type === "folder") {
-							import("@tauri-apps/api/core").then(({ invoke }) => {
-								invoke<string>("get_desktop_dir").then((desktopDir) => {
-									useDesktopStore.getState().setDropPrompt({
-										sourcePaths: [item.path],
-										targetDir: desktopDir,
-										targetType: "desktop",
-										x: clientX,
-										y: clientY,
-									});
-								});
-							});
+							let actualX2 = clientX;
+							let actualY2 = clientY;
+							if (ref.current) {
+								const rect = ref.current.getBoundingClientRect();
+								actualX2 = rect.left;
+								actualY2 = rect.top;
+							}
+							useContainerStore
+								.getState()
+								.removeItemFromContainer(container.id, item.id);
+							useDesktopStore
+								.getState()
+								.moveItemToDesktop(item, actualX2, actualY2);
 							return;
 						}
 						let actualX = clientX;

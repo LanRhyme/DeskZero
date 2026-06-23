@@ -1,5 +1,5 @@
 import { startDrag } from "@crabnebula/tauri-plugin-drag";
-import { type RefObject, useRef, useState } from "react";
+import { type RefObject, useEffect, useRef, useState } from "react";
 import { useDesktopStore } from "@/stores/desktopStore";
 import { useMonitorStore } from "@/stores/monitorStore";
 
@@ -59,6 +59,10 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 		setDragPos(null);
 		clearSafetyTimer();
 	};
+
+	useEffect(() => {
+		return () => clearSafetyTimer();
+	}, []);
 
 	const onPointerDown = (e: React.PointerEvent) => {
 		if (options?.disabled) return;

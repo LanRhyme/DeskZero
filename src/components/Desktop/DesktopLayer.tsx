@@ -162,12 +162,6 @@ export default function DesktopLayer() {
 	}, []);
 
 	useEffect(() => {
-		const initData = async () => {
-			await fetchContainers();
-			await fetchDesktopItems();
-		};
-		initData();
-
 		if (settings.wallpaperCompatible) {
 			import("@tauri-apps/api/core").then(({ invoke }) => {
 				invoke<string>("capture_desktop_background")
@@ -177,6 +171,14 @@ export default function DesktopLayer() {
 		} else {
 			setWallpaper(null);
 		}
+	}, [settings.wallpaperCompatible]);
+
+	useEffect(() => {
+		const initData = async () => {
+			await fetchContainers();
+			await fetchDesktopItems();
+		};
+		initData();
 
 		let isCancelled = false;
 		const unlistenFns: (() => void)[] = [];
@@ -201,21 +203,24 @@ export default function DesktopLayer() {
 		};
 
 		import("@tauri-apps/api/event").then(({ listen }) => {
-			listen("desktop-dir-changed", () => {
+			const registerListener = (event: string, handler: () => void) => {
+				listen(event, handler).then((u) => {
+					if (isCancelled) u();
+					else unlistenFns.push(u);
+				}).catch((err) => {
+					console.error(`[DeskZero] Failed to listen "${event}":`, err);
+				});
+			};
+
+			registerListener("desktop-dir-changed", () => {
 				fetchDesktopItems();
-			}).then((u) => {
-				if (isCancelled) u();
-				else unlistenFns.push(u);
 			});
 
-			listen("refresh-desktop", () => {
+			registerListener("refresh-desktop", () => {
 				fetchDesktopItems();
-			}).then((u) => {
-				if (isCancelled) u();
-				else unlistenFns.push(u);
 			});
 
-			listen("sync-desktop-layout", async () => {
+			registerListener("sync-desktop-layout", async () => {
 				try {
 					await useSettingsStore.getState().loadSettings();
 					await useContainerStore.getState().fetchContainers();
@@ -223,19 +228,13 @@ export default function DesktopLayer() {
 					console.error("Failed to reload settings or containers:", err);
 				}
 				fetchDesktopItems(true);
-			}).then((u) => {
-				if (isCancelled) u();
-				else unlistenFns.push(u);
 			});
 
-			listen("open-settings", () => {
+			registerListener("open-settings", () => {
 				openSettingsWindow();
-			}).then((u) => {
-				if (isCancelled) u();
-				else unlistenFns.push(u);
 			});
 
-			listen("re-capture-wallpaper", () => {
+			registerListener("re-capture-wallpaper", () => {
 				import("@tauri-apps/api/core").then(({ invoke }) => {
 					invoke<string>("capture_desktop_background")
 						.then((res) => {
@@ -247,9 +246,6 @@ export default function DesktopLayer() {
 							useToastStore.getState().addToast(t("desktop.blurRepairFailed") + String(err), "error");
 						});
 				});
-			}).then((u) => {
-				if (isCancelled) u();
-				else unlistenFns.push(u);
 			});
 		});
 
@@ -296,6 +292,9 @@ export default function DesktopLayer() {
 				.then((u) => {
 					if (isCancelled) u();
 					else unlistenFns.push(u);
+				})
+				.catch((err) => {
+					console.error("[DeskZero] Failed to register drag-drop listener:", err);
 				});
 		});
 
@@ -401,12 +400,13 @@ export default function DesktopLayer() {
 			window.removeEventListener("keydown", handleKeyDown);
 			window.removeEventListener("show-item-context-menu", handleShowItemMenu);
 		};
-	}, [settings.wallpaperCompatible]);
+	}, []);
 
 	useEffect(() => {
 		let targetX = 0;
 		let targetY = 0;
-		let rafId: number;
+		let rafId: number | null = null;
+		let isCleanedUp = false;
 		const intensity = settings.parallaxIntensity ?? 2;
 
 		const handlePointerMove = (e: PointerEvent) => {
@@ -415,49 +415,63 @@ export default function DesktopLayer() {
 			const dy = clientY - window.innerHeight / 2;
 			targetX = dx * 0.012 * (intensity / 5);
 			targetY = dy * 0.012 * (intensity / 5);
+			if (rafId === null && !isCleanedUp) {
+				scheduleFrame();
+			}
 		};
 
 		const handlePointerLeave = () => {
 			targetX = 0;
 			targetY = 0;
+			if (rafId === null && !isCleanedUp) {
+				scheduleFrame();
+			}
 		};
 
 		if (effectiveParallaxEnabled) {
 			window.addEventListener("pointermove", handlePointerMove);
 			document.addEventListener("pointerleave", handlePointerLeave);
 			document.addEventListener("mouseleave", handlePointerLeave);
-		} else {
-			targetX = 0;
-			targetY = 0;
 		}
 
+		const scheduleFrame = () => {
+			if (isCleanedUp) return;
+			rafId = requestAnimationFrame(updateParallax);
+		};
+
 		const updateParallax = () => {
+			if (isCleanedUp) return;
+			rafId = null;
+
 			currentXRef.current += (targetX - currentXRef.current) * 0.04;
 			currentYRef.current += (targetY - currentYRef.current) * 0.04;
 
 			if (desktopRef.current) {
-				if (!effectiveParallaxEnabled && Math.abs(currentXRef.current) < 0.05 && Math.abs(currentYRef.current) < 0.05) {
+				const needsUpdate = Math.abs(currentXRef.current) >= 0.05 || Math.abs(currentYRef.current) >= 0.05;
+
+				if (needsUpdate) {
+					desktopRef.current.style.setProperty("--container-parallax-x", `${currentXRef.current}px`);
+					desktopRef.current.style.setProperty("--container-parallax-y", `${currentYRef.current}px`);
+					scheduleFrame();
+				} else if (!effectiveParallaxEnabled) {
 					desktopRef.current.style.removeProperty("--container-parallax-x");
 					desktopRef.current.style.removeProperty("--container-parallax-y");
 					currentXRef.current = 0;
-					currentYRef.current = 0;
-					return; // Stop RAF loop
 				}
-
-				desktopRef.current.style.setProperty("--container-parallax-x", `${currentXRef.current}px`);
-				desktopRef.current.style.setProperty("--container-parallax-y", `${currentYRef.current}px`);
 			}
-
-			rafId = requestAnimationFrame(updateParallax);
 		};
 
-		rafId = requestAnimationFrame(updateParallax);
+		scheduleFrame();
 
 		return () => {
+			isCleanedUp = true;
+			if (rafId !== null) {
+				cancelAnimationFrame(rafId);
+				rafId = null;
+			}
 			window.removeEventListener("pointermove", handlePointerMove);
 			document.removeEventListener("pointerleave", handlePointerLeave);
 			document.removeEventListener("mouseleave", handlePointerLeave);
-			cancelAnimationFrame(rafId);
 		};
 	}, [effectiveParallaxEnabled, settings.parallaxIntensity]);
 

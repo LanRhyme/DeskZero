@@ -174,6 +174,14 @@ function NormalContainer({ container }: ContainerProps) {
 		});
 	};
 
+	const resizeCleanupRef = useRef<(() => void) | null>(null);
+
+	useEffect(() => {
+		return () => {
+			resizeCleanupRef.current?.();
+		};
+	}, []);
+
 	const handleResizePointerDown = (
 		e: React.PointerEvent,
 		direction: "br" | "bl",
@@ -210,6 +218,12 @@ function NormalContainer({ container }: ContainerProps) {
 			}
 		};
 
+		const cleanup = () => {
+			window.removeEventListener("pointermove", handlePointerMove);
+			window.removeEventListener("pointerup", handlePointerUp);
+			resizeCleanupRef.current = null;
+		};
+
 		const handlePointerUp = () => {
 			setIsResizing(false);
 			useDesktopStore.getState().setIsGlobalDragging(false);
@@ -220,10 +234,10 @@ function NormalContainer({ container }: ContainerProps) {
 				resizeOffsetRef.current = { x: 0, y: 0 };
 			}
 			commitResize();
-			window.removeEventListener("pointermove", handlePointerMove);
-			window.removeEventListener("pointerup", handlePointerUp);
+			cleanup();
 		};
 
+		resizeCleanupRef.current = cleanup;
 		window.addEventListener("pointermove", handlePointerMove);
 		window.addEventListener("pointerup", handlePointerUp);
 	};

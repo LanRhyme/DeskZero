@@ -401,20 +401,23 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 				return { normalizedItems, newSelectedIds };
 			};
 
+			let timeoutId: ReturnType<typeof setTimeout> | null = null;
 			const timeoutPromise = new Promise<{
 				normalizedItems: DesktopItem[];
 				newSelectedIds: Set<string>;
-			}>((_, reject) =>
-				setTimeout(
+			}>((_, reject) => {
+				timeoutId = setTimeout(
 					() => reject(new Error("Timeout scanning desktop icons")),
 					30000,
-				),
-			);
+				);
+			});
 
 			const { normalizedItems, newSelectedIds } = await Promise.race([
 				fetchPromise(),
 				timeoutPromise,
 			]);
+
+			if (timeoutId) clearTimeout(timeoutId);
 
 			set({ items: normalizedItems, selectedIds: newSelectedIds });
 

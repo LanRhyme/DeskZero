@@ -88,10 +88,12 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 		set({ isLoading: true, error: null });
 		try {
 			const fetchPromise = invoke<Container[]>("get_all_containers");
-			const timeoutPromise = new Promise<Container[]>((_, reject) =>
-				setTimeout(() => reject(new Error("Timeout loading containers")), 5000),
-			);
+			let timeoutId: ReturnType<typeof setTimeout> | null = null;
+			const timeoutPromise = new Promise<Container[]>((_, reject) => {
+				timeoutId = setTimeout(() => reject(new Error("Timeout loading containers")), 5000);
+			});
 			let containers = await Promise.race([fetchPromise, timeoutPromise]);
+			if (timeoutId) clearTimeout(timeoutId);
 
 			// 先设置容器数据，确保即使清理失败也能加载
 			set({ containers });

@@ -289,6 +289,9 @@ pub fn run() {
                 }
             }
 
+            // 更新后恢复高优先级服务（安装包会先删除服务再替换 exe）
+            crate::commands::system::ensure_service_if_needed();
+
             // 设置进程为高优先级，确保桌面渲染不被其他进程抢占
             #[cfg(target_os = "windows")]
             {

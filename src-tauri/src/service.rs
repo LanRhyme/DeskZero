@@ -1,4 +1,5 @@
 use std::ffi::c_void;
+use std::sync::Mutex;
 use std::time::Duration;
 use windows::core::{w, PCWSTR, PWSTR};
 use windows::Win32::Foundation::{CloseHandle, HANDLE};
@@ -6,8 +7,8 @@ use windows::Win32::System::RemoteDesktop::{WTSGetActiveConsoleSessionId, WTSQue
 use windows::Win32::Security::{DuplicateTokenEx, SecurityIdentification, TokenPrimary, TOKEN_ALL_ACCESS};
 use windows::Win32::System::Environment::{CreateEnvironmentBlock, DestroyEnvironmentBlock};
 use windows::Win32::System::Threading::{
-    CreateProcessAsUserW, PROCESS_INFORMATION, STARTUPINFOW, CREATE_UNICODE_ENVIRONMENT,
-    CREATE_NO_WINDOW,
+    CreateProcessAsUserW, GetExitCodeProcess, TerminateProcess, PROCESS_INFORMATION,
+    STARTUPINFOW, CREATE_UNICODE_ENVIRONMENT, CREATE_NO_WINDOW,
 };
 use windows_service::{
     define_windows_service,
@@ -23,7 +24,10 @@ pub const SERVICE_NAME: &str = "DeskZeroService";
 
 define_windows_service!(ffi_service_main, service_main);
 
-/// 启动 Windows 服务分发器（当程序以 "run-service" 参数运行时调用）
+struct RawHandle(HANDLE);
+unsafe impl Send for RawHandle {}
+static USER_PROCESS_HANDLE: Mutex<Option<RawHandle>> = Mutex::new(None);
+
 pub fn run_service_main() -> Result<(), String> {
     service_dispatcher::start(SERVICE_NAME, ffi_service_main)
         .map_err(|e| format!("启动服务分发器失败: {}", e))
@@ -36,16 +40,17 @@ fn service_main(arguments: Vec<std::ffi::OsString>) {
 }
 
 fn service_main_impl(_arguments: Vec<std::ffi::OsString>) -> Result<(), String> {
-    // 注册服务控制处理器
     let status_handle = service_control_handler::register(SERVICE_NAME, move |control_event| {
         match control_event {
             ServiceControl::Stop | ServiceControl::Shutdown => {
+                kill_user_process();
                 std::process::exit(0);
             }
             ServiceControl::SessionChange(event_details) => {
                 if event_details.reason == SessionChangeReason::SessionLogon
                     || event_details.reason == SessionChangeReason::ConsoleConnect
                 {
+                    kill_user_process();
                     let _ = spawn_user_process();
                 }
                 ServiceControlHandlerResult::NoError
@@ -55,7 +60,6 @@ fn service_main_impl(_arguments: Vec<std::ffi::OsString>) -> Result<(), String> 
     })
     .map_err(|e| format!("注册服务控制器失败: {}", e))?;
 
-    // 设置服务状态为 Running
     let running_status = ServiceStatus {
         service_type: ServiceType::OWN_PROCESS,
         current_state: ServiceState::Running,
@@ -71,16 +75,44 @@ fn service_main_impl(_arguments: Vec<std::ffi::OsString>) -> Result<(), String> 
         .set_service_status(running_status)
         .map_err(|e| format!("更新服务状态失败: {}", e))?;
 
-    // 启动服务时，如果已有活动桌面，立即尝试唤醒主程序
+    // 初次尝试拉起用户进程
     let _ = spawn_user_process();
 
-    // 进入后台挂起循环，等待控制事件
+    // 主循环：定期检查用户进程是否存活，如果退出了就重新拉起
     loop {
         std::thread::sleep(Duration::from_secs(5));
+        if !is_user_process_alive() {
+            let _ = spawn_user_process();
+        }
     }
 }
 
-/// 跨 Session 在活动用户的桌面会话中拉起 DeskZero 进程
+/// 检查用户进程是否仍在运行
+fn is_user_process_alive() -> bool {
+    if let Ok(guard) = USER_PROCESS_HANDLE.lock() {
+        if let Some(ref raw) = *guard {
+            unsafe {
+                let mut exit_code: u32 = 0;
+                if GetExitCodeProcess(raw.0, &mut exit_code).is_ok() {
+                    return exit_code == 259; // STILL_ACTIVE
+                }
+            }
+        }
+    }
+    false
+}
+
+fn kill_user_process() {
+    if let Ok(mut guard) = USER_PROCESS_HANDLE.lock() {
+        if let Some(raw) = guard.take() {
+            unsafe {
+                let _ = TerminateProcess(raw.0, 0);
+                let _ = CloseHandle(raw.0);
+            }
+        }
+    }
+}
+
 fn spawn_user_process() -> Result<(), String> {
     unsafe {
         let session_id = WTSGetActiveConsoleSessionId();
@@ -119,7 +151,6 @@ fn spawn_user_process() -> Result<(), String> {
         let path_str = format!("\"{}\"", exe_path.to_string_lossy());
         let mut path_wide: Vec<u16> = path_str.encode_utf16().chain(std::iter::once(0)).collect();
 
-        // 使用程序父目录作为工作目录，避免工作目录指向 System32
         let work_dir = exe_path
             .parent()
             .map(|p| p.to_string_lossy().to_string())
@@ -128,7 +159,6 @@ fn spawn_user_process() -> Result<(), String> {
 
         let mut si = STARTUPINFOW::default();
         si.cb = std::mem::size_of::<STARTUPINFOW>() as u32;
-        // 指定程序运行在 visible interactive desktop
         si.lpDesktop = PWSTR(w!("winsta0\\default").0 as *mut u16);
 
         let mut pi = PROCESS_INFORMATION::default();
@@ -151,8 +181,12 @@ fn spawn_user_process() -> Result<(), String> {
         let _ = CloseHandle(primary_token);
 
         if ok.is_ok() {
-            let _ = CloseHandle(pi.hProcess);
             let _ = CloseHandle(pi.hThread);
+            if let Ok(mut guard) = USER_PROCESS_HANDLE.lock() {
+                *guard = Some(RawHandle(pi.hProcess));
+            } else {
+                let _ = CloseHandle(pi.hProcess);
+            }
             Ok(())
         } else {
             Err("CreateProcessAsUserW 启动进程失败".to_string())

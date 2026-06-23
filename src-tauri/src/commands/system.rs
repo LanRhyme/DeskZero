@@ -139,6 +139,23 @@ fn sync_autostart_config(_enable: bool, _high_priority: bool) -> Result<(), Stri
     Ok(())
 }
 
+/// 启动时检查：如果设置中启用了高优先级自启动但服务不存在，则重新创建服务
+/// 用于更新后自动恢复服务（更新安装包会先删除服务再替换 exe）
+pub fn ensure_service_if_needed() {
+    #[cfg(target_os = "windows")]
+    {
+        let settings = settings_store::load_settings().unwrap_or_default();
+        if settings.auto_start_high_priority && !has_service_registered() {
+            eprintln!("[DeskZero] 检测到高优先级设置已启用但服务不存在，正在重新创建...");
+            if let Err(e) = set_service_autostart(true) {
+                eprintln!("[DeskZero] 重新创建服务失败: {}", e);
+            } else {
+                eprintln!("[DeskZero] 服务已重新创建");
+            }
+        }
+    }
+}
+
 static SETTINGS_LOCK: Mutex<()> = Mutex::new(());
 
 static SYSTEM: LazyLock<Mutex<System>> = LazyLock::new(|| Mutex::new(System::new_all()));

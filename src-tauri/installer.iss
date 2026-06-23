@@ -9,7 +9,6 @@
 #define MyAppExeName "deskzero.exe"
 
 [Setup]
-; Unique AppId for registry and uninstall tracking
 AppId={{9FF86DF6-F981-499D-B775-4FC22B0058C0}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
@@ -17,13 +16,12 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={localappdata}\{#MyAppName}
+DefaultDirName={autopf}\{#MyAppName}
 DisableDirPage=no
 DisableProgramGroupPage=yes
-; 自动读取注册表记住先前安装路径
 UsePreviousAppDir=yes
-; 仅对当前用户安装，无需管理员权限
-PrivilegesRequired=lowest
+PrivilegesRequired=admin
+PrivilegesRequiredOverridesAllowed=dialog
 OutputBaseFilename=DeskZero_{#MyAppVersion}_x64-setup
 OutputDir=target\release\bundle\inno
 Compression=lzma2/max
@@ -33,13 +31,14 @@ SetupIconFile=icons\icon.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 
 [Languages]
-Name: "chinesesimplified"; MessagesFile: "compiler:Default.isl"
+Name: "chinesesimplified"; MessagesFile: "compiler:Default.isl,SimpChinese.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "target\release\deskzero.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "target\release\deskzero.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
@@ -48,3 +47,15 @@ Name: "{userdesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  ResultCode: Integer;
+begin
+  if CurStep <> ssInstall then Exit;
+  // 尝试停止服务和进程，失败也不阻塞安装
+  Exec('cmd.exe', '/c sc stop DeskZeroService >nul 2>&1', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Exec('cmd.exe', '/c taskkill /F /IM deskzero.exe /T >nul 2>&1', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Sleep(2000);
+end;

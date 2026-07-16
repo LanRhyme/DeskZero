@@ -136,7 +136,7 @@ mod win_layer {
                 let class_name = get_class_name(child);
                 if class_name == "SHELLDLL_DefView" {
                     eprintln!("[DeskZero] Found SHELLDLL_DefView as direct child of Progman");
-                    target_parent = child; // 关键修复：直接作为 SHELLDLL_DefView 的子窗口
+                    target_parent = progman;
                     break;
                 }
             }
@@ -165,7 +165,7 @@ mod win_layer {
                         let class_name = get_class_name(child);
                         if class_name == "SHELLDLL_DefView" {
                             eprintln!("[DeskZero] Found SHELLDLL_DefView in WorkerW: {:?}", worker);
-                            target_parent = child; // 关键修复：直接作为 SHELLDLL_DefView 的子窗口
+                            target_parent = worker;
                             break;
                         }
                     }
@@ -233,8 +233,7 @@ mod win_layer {
             set_window_long(hwnd as HWND, gwl_style, style);
 
             // 修复扩展样式：清除 WS_EX_LAYERED 和 WS_EX_TRANSPARENT
-            // 在 WebView2 中，如果带有 WS_EX_LAYERED，CSS 的阴影（半透明像素）会因为 alpha 预乘 bug 显示为白边/白色阴影。
-            // 因为现在 DeskZero 直接作为 SHELLDLL_DefView 的子窗口，不再需要 WS_EX_LAYERED 也能保证 Z-order 稳定，所以可以安全移除它！
+            // transparent: true 会导致 WS_EX_LAYERED，嵌入桌面层后会阻止所有输入事件
             let ws_ex_layered: isize = 0x00080000;
             let ws_ex_transparent: isize = 0x00000020;
             let ws_ex_noactivate: isize = 0x08000000_u32 as isize;
@@ -256,9 +255,31 @@ mod win_layer {
                 v_x,
                 v_y,
                 v_width,
-                v_height - 1,
-                SWP_SHOWWINDOW | swp_framechanged,
+                v_height,
+                swp_framechanged,
             );
+            
+            // 启动后台线程强制维持 Z-order，防止当用户点击桌面时 Explorer 将 SHELLDLL_DefView 提升到顶层导致 DeskZero 失去交互能力
+            let hwnd_isize = hwnd as isize;
+            std::thread::spawn(move || {
+                let hwnd_clone = hwnd_isize as HWND;
+                let swp_nomove: UINT = 0x0002;
+                let swp_nosize: UINT = 0x0001;
+                let swp_noactivate: UINT = 0x0010;
+                let flags = swp_nomove | swp_nosize | swp_noactivate;
+                loop {
+                    std::thread::sleep(std::time::Duration::from_millis(200));
+                    SetWindowPos(
+                        hwnd_clone,
+                        HWND_TOP as HWND,
+                        0,
+                        0,
+                        0,
+                        0,
+                        flags,
+                    );
+                }
+            });
         }
     }
 }

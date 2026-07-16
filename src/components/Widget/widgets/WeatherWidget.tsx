@@ -190,7 +190,11 @@ export function WeatherWidget({
   // 错误状态
   if (error && !weather) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center gap-2 opacity-40 select-none px-4">
+      <div 
+        className="w-full h-full flex flex-col items-center justify-center gap-2 opacity-40 select-none px-4 cursor-pointer hover:opacity-80 transition-opacity"
+        onClick={fetchWeather}
+        title={t("common.retry") || "Click to retry"}
+      >
         <CloudSun size={32} strokeWidth={1.2} className="text-[var(--color-text)]" />
         <span style={{ fontSize: `${baseFontSize * 0.9}px` }} className={secondaryClass + " text-center leading-tight"}>
           {error}

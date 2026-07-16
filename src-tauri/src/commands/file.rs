@@ -160,8 +160,19 @@ pub fn run_as_admin(path: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn open_file_location(path: String) -> Result<(), String> {
+    let mut target_path = path.clone();
+    
+    // 如果是快捷方式，尝试解析目标路径
+    if path.to_lowercase().ends_with(".lnk") {
+        if let Ok(resolved) = crate::desktop::shortcut::resolve_shortcut(std::path::Path::new(&path)) {
+            if !resolved.is_empty() {
+                target_path = resolved;
+            }
+        }
+    }
+
     std::process::Command::new("explorer.exe")
-        .arg(format!("/select,\"{}\"", path))
+        .arg(format!("/select,\"{}\"", target_path))
         .spawn()
         .map_err(|e| e.to_string())?;
     Ok(())

@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { motion } from "framer-motion";
-import { Copy, Settings, Trash2 } from "lucide-react";
+import { Copy, Settings, Trash2, ImageOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
@@ -39,6 +39,9 @@ export function GameContainer({ container }: GameContainerProps) {
 
 	const [resizePosOffset, setResizePosOffset] = useState({ x: 0, y: 0 });
 	const resizeOffsetRef = useRef({ x: 0, y: 0 });
+
+	const [imageError, setImageError] = useState(false);
+	const [retryKey, setRetryKey] = useState(Date.now());
 
 	// Default size 1x2 grids
 	const defaultWidth = settings.gridWidth || 80;
@@ -304,11 +307,31 @@ export function GameContainer({ container }: GameContainerProps) {
 				>
 					<div className="absolute inset-0 bg-black/50 dark:bg-black/50" />
 					{coverImage ? (
-						<img
-							src={coverImage}
-							alt={container.name}
-							className="absolute inset-0 w-full h-full object-cover select-none"
-						/>
+						<div className="absolute inset-0">
+							<img
+								key={retryKey}
+								src={coverImage.startsWith("data:image") ? coverImage : `${coverImage}${coverImage.includes('?') ? '&' : '?'}retry=${retryKey}`}
+								alt={container.name}
+								className="absolute inset-0 w-full h-full object-cover select-none"
+								onError={() => setImageError(true)}
+								onLoad={() => setImageError(false)}
+							/>
+							{imageError && (
+								<div 
+									className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 cursor-pointer hover:bg-black/50 transition-colors z-10"
+									onClick={() => {
+										setImageError(false);
+										setRetryKey(Date.now());
+									}}
+									title={t("common.retry") || "Click to retry"}
+								>
+									<ImageOff size={24} className="text-white/50 mb-2" />
+									<span className="text-white/50 text-xs text-center px-2">
+										{t("common.retry") || "加载失败，点击重试"}
+									</span>
+								</div>
+							)}
+						</div>
 					) : container.items.length > 0 ? (
 						(() => {
 							const item = container.items[0];

@@ -1,0 +1,4 @@
+﻿🐞 fix(file): 彻底解决无法打开快捷方式源文件位置的问题
+
+- 使用 std::os::windows::process::CommandExt 的 raw_arg 替代普通 arg，避免 Rust 自动将带有空格的路径外层包裹双引号，导致 Explorer 的 /select 参数无法正确识别而回退到打开文档目录。
+- 添加使用 PowerShell 解析快捷方式源路径的备用方案，解决由于纯 Rust lnk 解析器中文编码导致的快捷方式目标地址解析失败。

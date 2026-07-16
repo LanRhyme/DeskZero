@@ -160,19 +160,39 @@ pub fn run_as_admin(path: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn open_file_location(path: String) -> Result<(), String> {
+    use std::os::windows::process::CommandExt;
     let mut target_path = path.clone();
     
-    // 如果是快捷方式，尝试解析目标路径
+    // 如果是快捷方式，使用 PowerShell 完美解析目标路径（支持中文及特殊字符）
     if path.to_lowercase().ends_with(".lnk") {
-        if let Ok(resolved) = crate::desktop::shortcut::resolve_shortcut(std::path::Path::new(&path)) {
-            if !resolved.is_empty() {
-                target_path = resolved;
+        let script = format!(
+            "$sh = New-Object -ComObject WScript.Shell; $sh.CreateShortcut('{}').TargetPath",
+            path.replace("'", "''")
+        );
+        
+        if let Ok(output) = std::process::Command::new("powershell.exe")
+            .arg("-NoProfile")
+            .arg("-Command")
+            .arg(&script)
+            .creation_flags(0x08000000) // CREATE_NO_WINDOW
+            .output() 
+        {
+            if output.status.success() {
+                // windows powershell 输出可能是 gbk，但 powershell core 默认 utf8。
+                // WScript.Shell 打印出来通常能被 from_utf8_lossy 获取（或经过控制台代码页编码）。
+                // 为了万无一失，Tauri 应用一般配置了 utf8 控制台，所以 from_utf8_lossy 通常可行。
+                let resolved = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                if !resolved.is_empty() && std::path::Path::new(&resolved).exists() {
+                    target_path = resolved;
+                }
             }
         }
     }
 
+    // 必须使用 raw_arg，否则 Rust 的 .arg 会在包含空格的路径外侧自动包裹双引号并转义内部引号，
+    // 导致传入 explorer 的参数变成 "/select,\"C:\path\""，从而无法被 explorer 识别，最终退化为打开我的文档。
     std::process::Command::new("explorer.exe")
-        .arg(format!("/select,\"{}\"", target_path))
+        .raw_arg(format!("/select,\"{}\"", target_path))
         .spawn()
         .map_err(|e| e.to_string())?;
     Ok(())

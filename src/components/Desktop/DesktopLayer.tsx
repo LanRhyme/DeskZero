@@ -972,7 +972,7 @@ export default function DesktopLayer() {
 			data-font-target
 			className="w-screen h-screen relative overflow-hidden select-none pointer-events-auto"
 			style={{
-				backgroundColor: "transparent",
+				backgroundColor: "rgba(0, 0, 0, 0.01)",
 			}}
 			onContextMenu={handleContextMenu}
 			onPointerDown={onPointerDown}

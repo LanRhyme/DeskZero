@@ -1,0 +1,7 @@
+﻿🐞 fix: 彻底解决桌面窗口指针死锁与白影渲染bug
+
+- 将桌面层窗口挂载目标改为 SHELLDLL_DefView 本身，永久解决与资源管理器刷新时的 Z-order 遮挡死锁
+- 移除 WebView2 在 WorkerW 下的 WS_EX_LAYERED 属性，修复半透明 CSS 阴影渲染为白边的 bug
+- 修复 useDrag 中异常分支未释放 setPointerCapture 导致的全局输入死锁
+- 增加防穿透底层背景 (rgba(0,0,0,0.01))
+- 忽略 src-tauri 文件夹的 Vite 文件监听，避免频繁触发 lstat error

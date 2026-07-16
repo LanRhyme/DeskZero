@@ -31,6 +31,8 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 		elemStartY: 0,
 		dragging: false,
 		hasMoved: false,
+		pointerId: null as number | null,
+		target: null as HTMLElement | null,
 	});
 
 	const pos =
@@ -52,6 +54,16 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 	};
 
 	const resetDragState = () => {
+		if (dragInfo.current.target && dragInfo.current.pointerId !== null) {
+			try {
+				dragInfo.current.target.releasePointerCapture?.(dragInfo.current.pointerId);
+			} catch (e) {
+				// ignore
+			}
+			dragInfo.current.target = null;
+			dragInfo.current.pointerId = null;
+		}
+
 		dragInfo.current.dragging = false;
 		dragInfo.current.hasMoved = false;
 		setIsDragging(false);
@@ -102,6 +114,8 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 			elemStartY: currentPos.current.y,
 			dragging: true,
 			hasMoved: false,
+			pointerId: e.pointerId,
+			target: e.target as HTMLElement,
 		};
 
 		// 捕获指针，确保鼠标移出元素后仍能收到 pointermove 事件
@@ -188,22 +202,15 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 	const onPointerUp = (e: React.PointerEvent) => {
 		if (!dragInfo.current.dragging) return;
 
-		clearSafetyTimer();
-
-		// 释放指针捕获
-		(e.target as HTMLElement)?.releasePointerCapture?.(e.pointerId);
-
 		const hasMoved = dragInfo.current.hasMoved;
-		dragInfo.current.dragging = false;
-		setIsDragging(false);
-		useDesktopStore.getState().setIsGlobalDragging(false);
+
+		resetDragState();
 
 		if (hasMoved) {
 			// 使用 ref 的最新位置，而不是已经过时的 React state
 			options?.onDragEnd?.(currentPos.current, e.clientX, e.clientY);
 			options?.onDrag?.(0, 0);
 		}
-		setDragPos(null);
 	};
 
 	const onClickCapture = (e: React.MouseEvent) => {

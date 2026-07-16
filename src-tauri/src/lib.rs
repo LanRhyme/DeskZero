@@ -100,6 +100,15 @@ mod win_layer {
         }
     }
 
+    static SHELLDLL_HWND: std::sync::atomic::AtomicIsize = std::sync::atomic::AtomicIsize::new(0);
+
+    pub fn restore_desktop_icons() {
+        let shelldll = SHELLDLL_HWND.load(std::sync::atomic::Ordering::SeqCst) as HWND;
+        if !shelldll.is_null() {
+            unsafe { ShowWindow(shelldll, 5); } // SW_SHOW
+        }
+    }
+
     /// 嵌入窗口到桌面图标层
     /// 返回 true 表示成功嵌入
     pub fn embed_into_icon_layer(hwnd: isize) -> bool {
@@ -136,7 +145,8 @@ mod win_layer {
                 let class_name = get_class_name(child);
                 if class_name == "SHELLDLL_DefView" {
                     eprintln!("[DeskZero] Found SHELLDLL_DefView as direct child of Progman");
-                    target_parent = progman;
+                    target_parent = child; // EMBED DIRECTLY INTO SHELLDLL_DefView!
+                    SHELLDLL_HWND.store(child as isize, std::sync::atomic::Ordering::SeqCst);
                     break;
                 }
             }
@@ -164,8 +174,9 @@ mod win_layer {
                         }
                         let class_name = get_class_name(child);
                         if class_name == "SHELLDLL_DefView" {
-                            eprintln!("[DeskZero] Found SHELLDLL_DefView in WorkerW: {:?}", worker);
-                            target_parent = worker;
+                            eprintln!("[DeskZero] Found SHELLDLL_DefView in WorkerW: {:?}", child);
+                            target_parent = child; // EMBED DIRECTLY INTO SHELLDLL_DefView!
+                            SHELLDLL_HWND.store(child as isize, std::sync::atomic::Ordering::SeqCst);
                             break;
                         }
                     }
@@ -258,28 +269,6 @@ mod win_layer {
                 v_height,
                 swp_framechanged,
             );
-            
-            // 启动后台线程强制维持 Z-order，防止当用户点击桌面时 Explorer 将 SHELLDLL_DefView 提升到顶层导致 DeskZero 失去交互能力
-            let hwnd_isize = hwnd as isize;
-            std::thread::spawn(move || {
-                let hwnd_clone = hwnd_isize as HWND;
-                let swp_nomove: UINT = 0x0002;
-                let swp_nosize: UINT = 0x0001;
-                let swp_noactivate: UINT = 0x0010;
-                let flags = swp_nomove | swp_nosize | swp_noactivate;
-                loop {
-                    std::thread::sleep(std::time::Duration::from_millis(200));
-                    SetWindowPos(
-                        hwnd_clone,
-                        HWND_TOP as HWND,
-                        0,
-                        0,
-                        0,
-                        0,
-                        flags,
-                    );
-                }
-            });
         }
     }
 }
@@ -447,6 +436,13 @@ pub fn run() {
             crate::backup_timer::start_backup_timer(app.handle().clone());
 
             Ok(())
+        })
+        .on_window_event(|_window, event| match event {
+            tauri::WindowEvent::Destroyed => {
+                #[cfg(target_os = "windows")]
+                win_layer::restore_desktop_icons();
+            }
+            _ => {}
         })
         .invoke_handler(tauri::generate_handler![
             commands::container::get_all_containers,

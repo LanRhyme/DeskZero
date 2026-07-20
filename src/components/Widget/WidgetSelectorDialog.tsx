@@ -315,8 +315,7 @@ export function WidgetSelectorDialog({
     if (!selectedType) return;
 
     try {
-      const reg = builtInWidgets.find((w) => w.widgetType === selectedType);
-      if (reg) {
+      if (selectedType === "custom" && pendingCustomPath) {
         const { settings: s } = useSettingsStore.getState();
         const gw = s.gridWidth || 80;
         const gh = s.gridHeight || 104;
@@ -324,19 +323,23 @@ export function WidgetSelectorDialog({
         const gy = s.gridGapY ?? 20;
         const stepX = gw + gx;
         const stepY = gh + gy;
-        const widgetConfig = { ...reg.defaultConfig };
-
+        
         const container = await createContainer(
-          t(reg.name),
+          pendingCustomName || t("widget.custom"),
           "widget",
           position,
         );
-
+        
+        const widgetConfig: WidgetConfig = {
+          widgetType: "custom",
+          customHtmlPath: pendingCustomPath,
+          config: {},
+        };
         const { updateContainerStyle, updateContainerSize } = useContainerStore.getState();
         updateContainerStyle(container.id, { config: widgetConfig } as any);
         updateContainerSize(container.id, {
-          width: reg.defaultSize.width * stepX - gx,
-          height: reg.defaultSize.height * stepY - gy,
+          width: 2 * stepX - gx,
+          height: 2 * stepY - gy,
         });
 
         const updated = useContainerStore.getState().containers.find(c => c.id === container.id);
@@ -344,8 +347,40 @@ export function WidgetSelectorDialog({
           const { invoke } = await import("@tauri-apps/api/core");
           await invoke("update_container_full", { container: updated });
         }
+        useToastStore.getState().addToast(t("widget.created", { name: pendingCustomName }), "success");
+      } else {
+        const reg = builtInWidgets.find((w) => w.widgetType === selectedType);
+        if (reg) {
+          const { settings: s } = useSettingsStore.getState();
+          const gw = s.gridWidth || 80;
+          const gh = s.gridHeight || 104;
+          const gx = s.gridGapX ?? 20;
+          const gy = s.gridGapY ?? 20;
+          const stepX = gw + gx;
+          const stepY = gh + gy;
+          const widgetConfig = { ...reg.defaultConfig };
 
-        useToastStore.getState().addToast(t("widget.created", { name: t(reg.name) }), "success");
+          const container = await createContainer(
+            t(reg.name),
+            "widget",
+            position,
+          );
+
+          const { updateContainerStyle, updateContainerSize } = useContainerStore.getState();
+          updateContainerStyle(container.id, { config: widgetConfig } as any);
+          updateContainerSize(container.id, {
+            width: reg.defaultSize.width * stepX - gx,
+            height: reg.defaultSize.height * stepY - gy,
+          });
+
+          const updated = useContainerStore.getState().containers.find(c => c.id === container.id);
+          if (updated) {
+            const { invoke } = await import("@tauri-apps/api/core");
+            await invoke("update_container_full", { container: updated });
+          }
+
+          useToastStore.getState().addToast(t("widget.created", { name: t(reg.name) }), "success");
+        }
       }
     } catch (e: any) {
       useToastStore.getState().addToast(t("widget.createFailed") + String(e), "error");

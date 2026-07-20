@@ -345,6 +345,9 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 				}
 
 				if (newItemsForContainer.length > 0 && autoOrganizeContainerId) {
+					const targetContainer = useContainerStore.getState().containers.find(c => c.id === autoOrganizeContainerId);
+					const tabId = targetContainer?.style?.enableTabs ? (targetContainer.style.activeTabId || targetContainer.style.tabs?.[0]?.id || "default") : undefined;
+
 					const formattedItems = newItemsForContainer.map(item => ({
 						id: item.id,
 						name: item.name,
@@ -354,6 +357,7 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 						targetPath: item.targetPath || item.target_path,
 						size: item.size,
 						modifiedAt: item.modifiedAt || item.modified_at,
+						tabId,
 					}));
 					
 					useContainerStore.getState().addItemsToContainer(autoOrganizeContainerId, formattedItems as any, true);

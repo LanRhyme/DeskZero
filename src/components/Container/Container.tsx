@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ChevronDown, Edit2, Settings, Trash2 } from "lucide-react";
+import { ChevronDown, Edit2, Settings, Trash2, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
@@ -63,6 +63,24 @@ function NormalContainer({ container }: ContainerProps) {
 		x: number;
 		y: number;
 	}>({ visible: false, x: 0, y: 0 });
+
+	const enableTabs = container.style.enableTabs === true;
+	const defaultTab = { id: "default", name: t("container.defaultTab", "默认标签") };
+	const tabs = container.style.tabs?.length ? container.style.tabs : [defaultTab];
+	
+	const activeTabId = container.style.activeTabId || tabs[0].id;
+	const setActiveTabId = (id: string) => {
+		updateContainerStyle(container.id, { activeTabId: id });
+	};
+
+	const [isEditingTabId, setIsEditingTabId] = useState<string | null>(null);
+	const [editTabName, setEditTabName] = useState("");
+
+	useEffect(() => {
+		if (!tabs.find((t) => t.id === activeTabId)) {
+			setActiveTabId(tabs[0].id);
+		}
+	}, [tabs, activeTabId]);
 
 	const { ref, pos, isDragging, listeners } = useDrag(container.position, {
 		dragHandleRef,
@@ -303,6 +321,14 @@ function NormalContainer({ container }: ContainerProps) {
 
 	const cornerRadius = container.style.cornerRadius ?? 10;
 
+	const displayItems = enableTabs
+		? container.items.filter((item) => {
+				const itemTabId = item.tabId;
+				const effectiveTabId = tabs.find(t => t.id === itemTabId) ? itemTabId : tabs[0].id;
+				return effectiveTabId === activeTabId;
+		  })
+		: container.items;
+
 	return (
 		<>
 			<motion.div
@@ -435,6 +461,86 @@ function NormalContainer({ container }: ContainerProps) {
 					</div>
 				)}
 
+				{/* Tab Bar */}
+				{!isCollapsed && enableTabs && (
+					<div 
+						className="flex items-center gap-1 px-2 py-1 overflow-x-auto hidden-native-scrollbar border-b border-black/5 dark:border-white/5 shrink-0"
+						onPointerDown={(e) => e.stopPropagation()}
+					>
+						{tabs.map(tab => (
+							<div
+								key={tab.id}
+								className={cn(
+									"flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors max-w-[120px]",
+									activeTabId === tab.id
+										? "bg-black/10 dark:bg-white/10 text-[var(--color-text)]"
+										: "text-[var(--color-text-secondary)] hover:bg-black/5 dark:hover:bg-white/5"
+								)}
+								onClick={() => setActiveTabId(tab.id)}
+								onDoubleClick={() => {
+									setIsEditingTabId(tab.id);
+									setEditTabName(tab.name);
+								}}
+								onContextMenu={(e) => {
+									e.preventDefault();
+									e.stopPropagation();
+									if (tabs.length > 1) {
+										const newTabs = tabs.filter(t => t.id !== tab.id);
+										updateContainerStyle(container.id, { tabs: newTabs });
+									}
+								}}
+							>
+								{isEditingTabId === tab.id ? (
+									<input
+										autoFocus
+										className="bg-transparent text-[var(--color-text)] outline-none w-full min-w-[40px]"
+										value={editTabName}
+										onChange={e => setEditTabName(e.target.value)}
+										onBlur={() => {
+											setIsEditingTabId(null);
+											const newTabs = tabs.map(t => t.id === tab.id ? { ...t, name: editTabName.trim() || t.name } : t);
+											updateContainerStyle(container.id, { tabs: newTabs });
+										}}
+										onKeyDown={e => {
+											if (e.key === "Enter") {
+												setIsEditingTabId(null);
+												const newTabs = tabs.map(t => t.id === tab.id ? { ...t, name: editTabName.trim() || t.name } : t);
+												updateContainerStyle(container.id, { tabs: newTabs });
+											} else if (e.key === "Escape") {
+												setIsEditingTabId(null);
+											}
+										}}
+									/>
+								) : (
+									<span className="truncate">{tab.name}</span>
+								)}
+								{activeTabId === tab.id && tabs.length > 1 && (
+									<X 
+										size={10} 
+										className="opacity-50 hover:opacity-100 shrink-0" 
+										onClick={(e) => {
+											e.stopPropagation();
+											const newTabs = tabs.filter(t => t.id !== tab.id);
+											updateContainerStyle(container.id, { tabs: newTabs });
+										}} 
+									/>
+								)}
+							</div>
+						))}
+						<div
+							className="p-1 rounded-md text-[var(--color-text-secondary)] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer shrink-0"
+							onClick={() => {
+								const newId = `tab_${Date.now()}`;
+								const newTabs = [...tabs, { id: newId, name: t("container.newTab", "新标签") }];
+								updateContainerStyle(container.id, { tabs: newTabs });
+								setActiveTabId(newId);
+							}}
+						>
+							<Plus size={14} />
+						</div>
+					</div>
+				)}
+
 				{/* Body - Relative for free layout */}
 				{!isCollapsed && (
 				<div className="relative flex-1 overflow-hidden">
@@ -447,7 +553,7 @@ function NormalContainer({ container }: ContainerProps) {
 							layoutStyle,
 						)}
 					>
-						{container.items.map((item) => (
+						{displayItems.map((item) => (
 							<FileItem
 								key={item.id}
 								item={item}

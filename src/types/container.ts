@@ -44,6 +44,9 @@ export interface ContainerStyle {
 	collapsible?: boolean;
 	collapsed?: boolean;
 	expandOnHover?: boolean;
+	enableTabs?: boolean;
+	tabs?: { id: string; name: string }[];
+	activeTabId?: string;
 }
 
 export interface Container {

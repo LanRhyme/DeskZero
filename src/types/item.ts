@@ -9,6 +9,7 @@ export interface Item {
 	targetPath?: string;
 	isInContainer: boolean;
 	containerId?: string;
+	tabId?: string;
 	position?: { x: number; y: number };
 	size?: number;
 	modifiedAt?: number;

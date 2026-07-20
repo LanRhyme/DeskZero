@@ -319,6 +319,7 @@ export function FileItem({
 							...sItem,
 							isInContainer: true,
 							containerId: targetContainer.id,
+							tabId: targetContainer.style?.enableTabs ? (targetContainer.style?.activeTabId || targetContainer.style?.tabs?.[0]?.id || "default") : undefined,
 						}));
 						useContainerStore
 							.getState()

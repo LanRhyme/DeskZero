@@ -191,27 +191,31 @@ export function ContainerSettings({
 							</motion.div>
 						</div>
 
-						<div className="h-[1px] w-full bg-black/5 dark:bg-white/10 my-1" />
+						{container.type !== "folder" && (
+							<>
+								<div className="h-[1px] w-full bg-black/5 dark:bg-white/10 my-1" />
 
-						<div className="space-y-3">
-							<label className="flex items-center gap-2 cursor-pointer group">
-								<SwitchToggle checked={isAutoOrganize} onChange={handleToggleAutoOrganize} />
-								<span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
-									{t("settings.general.autoOrganizeContainer", "自动整理新文件到此收纳盒")}
-								</span>
-							</label>
-						</div>
+								<div className="space-y-3">
+									<label className="flex items-center gap-2 cursor-pointer group">
+										<SwitchToggle checked={isAutoOrganize} onChange={handleToggleAutoOrganize} />
+										<span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
+											{t("settings.general.autoOrganizeContainer", "自动整理新文件到此收纳盒")}
+										</span>
+									</label>
+								</div>
 
-						<div className="h-[1px] w-full bg-black/5 dark:bg-white/10 my-1" />
+								<div className="h-[1px] w-full bg-black/5 dark:bg-white/10 my-1" />
 
-						<div className="space-y-3">
-							<label className="flex items-center gap-2 cursor-pointer group">
-								<SwitchToggle checked={enableTabs} onChange={setEnableTabs} />
-								<span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
-									{t("container.enableTabs", "开启多标签页")}
-								</span>
-							</label>
-						</div>
+								<div className="space-y-3">
+									<label className="flex items-center gap-2 cursor-pointer group">
+										<SwitchToggle checked={enableTabs} onChange={setEnableTabs} />
+										<span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
+											{t("container.enableTabs", "开启多标签页")}
+										</span>
+									</label>
+								</div>
+							</>
+						)}
 					</motion.div>
 				);
 

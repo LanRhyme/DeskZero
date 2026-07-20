@@ -1,5 +1,6 @@
-import { X } from "lucide-react";
+import { X, LayoutGrid, Paintbrush } from "lucide-react";
 import { useLayoutEffect, useRef, useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
@@ -161,45 +162,6 @@ export function WidgetSettingsPanel({
   const { t } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<"style" | "content">("style");
-
-  // 自定义滚动条状态与处理器
-  const thumbRef = useRef<HTMLDivElement>(null);
-  const [isScrolling, setIsScrolling] = useState(false);
-  const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleScroll = (e: React.UIEvent<HTMLElement>) => {
-    const el = e.currentTarget;
-    const thumb = thumbRef.current;
-    if (!el || !thumb) return;
-
-    if (el.scrollHeight <= el.clientHeight) {
-      if (isScrolling) setIsScrolling(false);
-      return;
-    }
-
-    const scrollRatio = el.scrollTop / (el.scrollHeight - el.clientHeight);
-    const thumbHeight = Math.max(
-      16,
-      (el.clientHeight / el.scrollHeight) * el.clientHeight,
-    );
-    const maxThumbTop = el.clientHeight - thumbHeight;
-
-    thumb.style.height = `${thumbHeight}px`;
-    thumb.style.transform = `translateY(${scrollRatio * maxThumbTop}px)`;
-
-    if (!isScrolling) setIsScrolling(true);
-
-    if (scrollTimeout.current) window.clearTimeout(scrollTimeout.current);
-    scrollTimeout.current = window.setTimeout(() => {
-      setIsScrolling(false);
-    }, 1000);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
-    };
-  }, []);
 
   // 1. 通用外观设置
   const [opacity, setOpacity] = useState(container.style.backgroundOpacity ?? 0.5);
@@ -1436,10 +1398,10 @@ export function WidgetSettingsPanel({
   return (
     <div
       ref={containerRef}
-      className="w-full transform overflow-hidden rounded-xl bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-3xl p-3 text-left align-middle shadow-2xl transition-all border border-black/5 dark:border-white/10 ring-1 ring-black/5"
+      className="w-full transform overflow-hidden rounded-xl bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-3xl p-3 text-left align-middle shadow-2xl transition-all border border-black/5 dark:border-white/10 ring-1 ring-black/5 max-h-[85vh] flex flex-col"
     >
       {/* 头部标题 */}
-      <div className="text-sm font-semibold leading-5 text-[var(--color-text)] flex justify-between items-center mb-2">
+      <div className="text-sm font-semibold leading-5 text-[var(--color-text)] flex justify-between items-center mb-3 shrink-0">
         <span className="flex items-baseline gap-1">
           {t("widget.settingsPanel.title")}
           <span className="text-[9px] font-normal text-[var(--color-text-secondary)] opacity-70">
@@ -1455,113 +1417,112 @@ export function WidgetSettingsPanel({
       </div>
 
       {/* Tabs 切换 */}
-      <div className="flex border-b border-black/5 dark:border-white/5 mb-3 text-center">
-        <button
-          onClick={() => setActiveTab("style")}
-          className={`flex-1 pb-1.5 text-[11px] font-medium transition-all border-b-2 ${
-            activeTab === "style"
-              ? "border-[var(--color-accent)] text-[var(--color-accent)] font-semibold"
-              : "border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
-          }`}
-        >
-          {t("widget.settingsPanel.appearance")}
-        </button>
-        <button
-          onClick={() => setActiveTab("content")}
-          className={`flex-1 pb-1.5 text-[11px] font-medium transition-all border-b-2 ${
-            activeTab === "content"
-              ? "border-[var(--color-accent)] text-[var(--color-accent)] font-semibold"
-              : "border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
-          }`}
-        >
-          {t("widget.settingsPanel.content")}
-        </button>
+      <div className="flex bg-black/5 dark:bg-white/5 rounded-lg p-1 mb-4 shrink-0">
+        {[
+          { id: "style", icon: <Paintbrush size={14} />, label: t("widget.settingsPanel.appearance") },
+          { id: "content", icon: <LayoutGrid size={14} />, label: t("widget.settingsPanel.content") },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as "style" | "content")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-xs font-medium transition-all duration-200",
+              activeTab === tab.id
+                ? "bg-white dark:bg-[#2a2a2a] text-[var(--color-text)] shadow-sm"
+                : "text-[var(--color-text-secondary)] hover:text-[var(--color-text)] hover:bg-white/50 dark:hover:bg-white/5"
+            )}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      <div 
-        className="space-y-3.5 max-h-[300px] overflow-y-auto px-0.5 hidden-native-scrollbar relative"
-        onScroll={handleScroll}
-      >
-        {/* TAB 1: 卡片外观设置 */}
-        {activeTab === "style" && (
-          <div className="space-y-3.5">
-            {/* 背景设置 */}
-            {widgetConfig.widgetType !== "stickyNote" && (
-              <SettingRow title={t("widget.settingsPanel.background")} layout="vertical">
-                <SegmentedControl
-                  options={[
-                    { value: "theme", label: t("widget.settingsPanel.followTheme") },
-                    { value: "custom", label: t("widget.settingsPanel.custom") },
-                  ]}
-                  value={bgColor === "theme" || !bgColor ? "theme" : "custom"}
-                  onChange={(v) => setBgColor(v === "theme" ? "theme" : "#000000")}
-                  variant="accent"
-                />
-                <div className="flex items-center gap-3">
-                  {bgColor !== "theme" && bgColor && (
-                    <ColorPicker
-                      value={bgColor.startsWith("#") ? bgColor : "#000000"}
-                      onChange={setBgColor}
-                      size="md"
-                    />
-                  )}
-                  <div className="flex-1">
-                    <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-2">
-                      <span>{t("widget.settingsPanel.opacity")}</span>
-                      <span>{Math.round(opacity * 100)}%</span>
+      <div className="flex-1 overflow-y-auto hidden-native-scrollbar pr-1 relative">
+        <AnimatePresence mode="wait">
+          {activeTab === "style" ? (
+            <motion.div
+              key="style"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              className="space-y-3.5"
+            >
+              {/* 背景设置 */}
+              {widgetConfig.widgetType !== "stickyNote" && (
+                <SettingRow title={t("widget.settingsPanel.background")} layout="vertical">
+                  <SegmentedControl
+                    options={[
+                      { value: "theme", label: t("widget.settingsPanel.followTheme") },
+                      { value: "custom", label: t("widget.settingsPanel.custom") },
+                    ]}
+                    value={bgColor === "theme" || !bgColor ? "theme" : "custom"}
+                    onChange={(v) => setBgColor(v === "theme" ? "theme" : "#000000")}
+                    variant="accent"
+                  />
+                  <div className="flex items-center gap-3">
+                    {bgColor !== "theme" && bgColor && (
+                      <ColorPicker
+                        value={bgColor.startsWith("#") ? bgColor : "#000000"}
+                        onChange={setBgColor}
+                        size="md"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] mb-2">
+                        <span>{t("widget.settingsPanel.opacity")}</span>
+                        <span>{Math.round(opacity * 100)}%</span>
+                      </div>
+                      <Slider min={0} max={1} step={0.05} value={opacity} onChange={setOpacity} />
                     </div>
-                    <Slider min={0} max={1} step={0.05} value={opacity} onChange={setOpacity} />
                   </div>
-                </div>
-              </SettingRow>
-            )}
+                </SettingRow>
+              )}
 
-            {/* 便签类小组件只显示不透明度 */}
-            {widgetConfig.widgetType === "stickyNote" && (
+              {/* 便签类小组件只显示不透明度 */}
+              {widgetConfig.widgetType === "stickyNote" && (
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] font-medium">
+                    <span>{t("widget.settingsPanel.bgOpacity")}</span>
+                    <span>{Math.round(opacity * 100)}%</span>
+                  </div>
+                  <Slider min={0} max={1} step={0.05} value={opacity} onChange={setOpacity} />
+                </div>
+              )}
+
+              {/* 圆角大小 */}
               <div className="space-y-1.5">
                 <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] font-medium">
-                  <span>{t("widget.settingsPanel.bgOpacity")}</span>
-                  <span>{Math.round(opacity * 100)}%</span>
+                  <span>{t("widget.settingsPanel.cornerRadius")}</span>
+                  <span>{cornerRadius}px</span>
                 </div>
-                <Slider min={0} max={1} step={0.05} value={opacity} onChange={setOpacity} />
+                <Slider min={0} max={64} step={1} value={cornerRadius} onChange={setCornerRadius} />
               </div>
-            )}
 
-            {/* 圆角大小 */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-[10px] text-[var(--color-text-secondary)] font-medium">
-                <span>{t("widget.settingsPanel.cornerRadius")}</span>
-                <span>{cornerRadius}px</span>
-              </div>
-              <Slider min={0} max={64} step={1} value={cornerRadius} onChange={setCornerRadius} />
-            </div>
-
-            {/* 完全透明开关 */}
-            <label className="flex items-center justify-between cursor-pointer pt-1 group">
-              <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
-                {t("widget.settingsPanel.transparentBg")}
-              </span>
-              <SwitchToggle checked={transparentBackground} onChange={setTransparentBackground} />
-            </label>
-          </div>
-        )}
-
-        {/* TAB 2: 小组件专属设置 */}
-        {activeTab === "content" && renderContentSpecific()}
-
-        {/* 自定义滚动滑块 */}
-        <div
-          ref={thumbRef}
-          className={cn(
-            "absolute top-1.5 right-1 w-1 bg-black/20 dark:bg-white/20 rounded-full pointer-events-none",
-            "transition-opacity duration-300 ease-in-out backdrop-blur-[0.5px]",
-            isScrolling ? "opacity-100" : "opacity-0"
+              {/* 完全透明开关 */}
+              <label className="flex items-center justify-between cursor-pointer pt-1 group">
+                <span className="text-[11px] text-[var(--color-text)] opacity-80 group-hover:text-[var(--color-accent)] transition-colors">
+                  {t("widget.settingsPanel.transparentBg")}
+                </span>
+                <SwitchToggle checked={transparentBackground} onChange={setTransparentBackground} />
+              </label>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="content"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              className="space-y-3.5"
+            >
+              {renderContentSpecific()}
+            </motion.div>
           )}
-        />
+        </AnimatePresence>
       </div>
 
       {/* 底部确认操作按钮 */}
-      <div className="pt-3.5 flex gap-2 border-t border-black/5 dark:border-white/5 mt-3">
+      <div className="pt-4 mt-2 border-t border-black/5 dark:border-white/5 flex gap-2 shrink-0">
         <button
           type="button"
           className="flex-1 justify-center rounded-lg border border-transparent bg-black/5 dark:bg-white/5 px-3 py-1.5 text-[11px] font-medium text-[var(--color-text)] hover:bg-black/10 dark:hover:bg-white/10 transition-all focus:outline-none"

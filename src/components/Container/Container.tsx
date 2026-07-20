@@ -249,6 +249,25 @@ function NormalContainer({ container }: ContainerProps) {
 	const bgOpacity = container.style.backgroundOpacity ?? 0.3;
 	const isCollapsible = container.style.collapsible === true;
 	const isCollapsed = isCollapsible && container.style.collapsed === true;
+	const expandOnHover = container.style.expandOnHover === true;
+
+	const hoverExpandTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const handlePointerEnter = () => {
+		if (expandOnHover && isCollapsible && isCollapsed) {
+			if (hoverExpandTimer.current) clearTimeout(hoverExpandTimer.current);
+			updateContainerStyle(container.id, { collapsed: false });
+		}
+	};
+
+	const handlePointerLeave = () => {
+		if (expandOnHover && isCollapsible && !isCollapsed) {
+			if (hoverExpandTimer.current) clearTimeout(hoverExpandTimer.current);
+			hoverExpandTimer.current = setTimeout(() => {
+				updateContainerStyle(container.id, { collapsed: true });
+			}, 300);
+		}
+	};
 
 	const toggleCollapse = () => {
 		if (!isCollapsible) return;
@@ -316,12 +335,15 @@ function NormalContainer({ container }: ContainerProps) {
 				initial={{ opacity: 0, scale: 0.95 }}
 				animate={{ opacity: isDragging ? 0.9 : 1, scale: 1 }}
 				className={cn(
-					"flex flex-col overflow-hidden transition-colors border shadow-xl select-none relative",
+					"flex flex-col overflow-hidden transition-colors border shadow-xl select-none relative touch-none",
 					"border-[var(--color-border)]",
-					isDragging && "shadow-2xl ring-1 ring-black/10 dark:ring-white/10",
+					isSettingsOpen ? "ring-2 ring-[var(--color-accent)]" : "",
+					isDragging ? "shadow-2xl ring-1 ring-black/10 dark:ring-white/10" : "",
 					isCollapsible && !isResizing && "transition-[height] duration-200 ease-in-out",
 				)}
 				onContextMenu={handleContextMenu}
+				onPointerEnter={handlePointerEnter}
+				onPointerLeave={handlePointerLeave}
 			>
 				{/* Fake Blur Layer for Dynamic Wallpaper Mode */}
 				{effectiveWallpaperCompatible && effectiveGlobalBlur && wallpaper && (

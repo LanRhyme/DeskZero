@@ -41,4 +41,5 @@ export interface Settings {
 	customCss?: string;
 	customWidgets?: any[];
 	dialogMonitorPreference?: "focused" | "primary";
+	autoOrganizeContainerId?: string;
 }

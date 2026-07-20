@@ -12,6 +12,7 @@ import { SettingRow } from "@/components/UI/SettingRow";
 import { TextInput } from "@/components/UI/TextInput";
 import { useContainerStore } from "@/stores/containerStore";
 import { useDesktopStore } from "@/stores/desktopStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import type { Container } from "@/types/container";
 
 interface ContainerSettingsProps {
@@ -53,6 +54,14 @@ export function ContainerSettings({
 	);
 	const [collapsible, setCollapsible] = useState(
 		container.style.collapsible ?? (container.type === "folder"),
+	);
+	const [expandOnHover, setExpandOnHover] = useState(
+		container.style.expandOnHover ?? false,
+	);
+	
+	const settingsStore = useSettingsStore();
+	const [isAutoOrganize, setIsAutoOrganize] = useState(
+		settingsStore.settings.autoOrganizeContainerId === container.id
 	);
 
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -101,7 +110,15 @@ export function ContainerSettings({
 			hideAppNames,
 			cornerRadius,
 			collapsible,
+			expandOnHover,
 		});
+
+		if (isAutoOrganize) {
+			settingsStore.saveSettings({ autoOrganizeContainerId: container.id });
+		} else if (settingsStore.settings.autoOrganizeContainerId === container.id) {
+			settingsStore.saveSettings({ autoOrganizeContainerId: undefined });
+		}
+
 		onClose();
 	};
 
@@ -113,6 +130,20 @@ export function ContainerSettings({
 	};
 
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+	const [showOverrideConfirm, setShowOverrideConfirm] = useState(false);
+
+	const handleToggleAutoOrganize = (checked: boolean) => {
+		if (checked) {
+			const currentTargetId = settingsStore.settings.autoOrganizeContainerId;
+			if (currentTargetId && currentTargetId !== container.id) {
+				setShowOverrideConfirm(true);
+			} else {
+				setIsAutoOrganize(true);
+			}
+		} else {
+			setIsAutoOrganize(false);
+		}
+	};
 
 	return (
 		<>
@@ -284,6 +315,31 @@ export function ContainerSettings({
 							{t("container.clickHeaderCollapse")}
 						</span>
 					</label>
+
+					<motion.div
+						initial={false}
+						animate={{
+							height: collapsible ? "auto" : 0,
+							opacity: collapsible ? 1 : 0,
+						}}
+						className="overflow-hidden"
+					>
+						<label className="flex items-center gap-2 cursor-pointer group">
+							<SwitchToggle checked={expandOnHover} onChange={setExpandOnHover} />
+							<span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
+								{t("container.expandOnHover")}
+							</span>
+						</label>
+					</motion.div>
+				</div>
+
+				<div className="space-y-3">
+					<label className="flex items-center gap-2 cursor-pointer group">
+						<SwitchToggle checked={isAutoOrganize} onChange={handleToggleAutoOrganize} />
+						<span className="text-xs font-medium text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors">
+							{t("settings.general.autoOrganizeContainer")}
+						</span>
+					</label>
 				</div>
 
 				<div className="pt-4 flex gap-2">
@@ -321,6 +377,17 @@ export function ContainerSettings({
 			await handleDelete();
 		}}
 		onCancel={() => setShowDeleteConfirm(false)}
+	/>
+	<ConfirmDialog
+		isOpen={showOverrideConfirm}
+		title={t("container.overrideAutoOrganizeTitle")}
+		message={t("container.overrideAutoOrganizeConfirm")}
+		confirmLabel={t("common.confirm")}
+		onConfirm={() => {
+			setShowOverrideConfirm(false);
+			setIsAutoOrganize(true);
+		}}
+		onCancel={() => setShowOverrideConfirm(false)}
 	/>
 		</>
 	);

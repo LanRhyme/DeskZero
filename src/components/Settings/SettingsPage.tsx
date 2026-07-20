@@ -52,6 +52,8 @@ export function SettingsPage() {
 	const [isCustomFont, setIsCustomFont] = useState(
 		!!settings.fontFamily && !FONT_PRESETS.some((f) => f.family === settings.fontFamily),
 	);
+	const containers = useContainerStore((s) => s.containers);
+	const normalContainers = containers.filter((c) => c.type === "normal" || !c.type);
 
 	const handleSyncWindowsLayout = async (multiplier: number) => {
 		try {
@@ -423,10 +425,10 @@ export function SettingsPage() {
 
 								{/* 桌面行为 */}
 								<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl">
-								<SettingRow
-									title={t("settings.general.hideFileExt")}
-									desc={t("settings.general.hideFileExtDesc")}
-								>
+									<SettingRow
+										title={t("settings.general.hideFileExt")}
+										desc={t("settings.general.hideFileExtDesc")}
+									>
 										<SwitchToggle
 											checked={settings.hideFileExtensions !== false}
 											onChange={() =>
@@ -438,6 +440,8 @@ export function SettingsPage() {
 											}
 										/>
 									</SettingRow>
+
+
 
 									<SettingRow
 										title={t("settings.general.doubleClickHide")}

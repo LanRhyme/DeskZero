@@ -288,6 +288,10 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 					preferredSlot: { x: number; y: number };
 				}[] = [];
 				const itemsWithoutLayout: any[] = [];
+				const newItemsForContainer: any[] = [];
+				
+				const autoOrganizeContainerId = useSettingsStore.getState().settings.autoOrganizeContainerId;
+				const autoOrganizeContainer = autoOrganizeContainerId ? containers.find(c => c.id === autoOrganizeContainerId && (c.type === "normal" || !c.type)) : undefined;
 
 				for (const item of items) {
 					if (containerItemIds.has(item.id)) {
@@ -309,6 +313,16 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 
 					let preferredSlot: { x: number; y: number } | undefined;
 					const currentItem = forceFromStorage ? undefined : currentItems.find((i) => i.id === item.id);
+					const isNewDuringSession = !forceFromStorage && !currentItem;
+					
+					const type = (item.type || item.item_type)?.toLowerCase() || "file";
+					const isSystem = type === "system";
+
+					// Auto-organize newly appeared items
+					if (autoOrganizeContainer && !isSystem && isNewDuringSession) {
+						newItemsForContainer.push(item);
+						continue;
+					}
 
 					if (currentItem && currentItem.position) {
 						preferredSlot = currentItem.position;
@@ -321,7 +335,35 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 					if (preferredSlot) {
 						itemsWithLayout.push({ item, preferredSlot });
 					} else {
+						// If it's a completely new file on startup and has no layout at all
+						if (autoOrganizeContainer && !isSystem && forceFromStorage) {
+							newItemsForContainer.push(item);
+							continue;
+						}
 						itemsWithoutLayout.push(item);
+					}
+				}
+
+				if (newItemsForContainer.length > 0 && autoOrganizeContainerId) {
+					const formattedItems = newItemsForContainer.map(item => ({
+						id: item.id,
+						name: item.name,
+						path: item.path,
+						iconPath: item.iconPath || item.icon_path || "",
+						type: (item.type || item.item_type)?.toLowerCase() || "file",
+						targetPath: item.targetPath || item.target_path,
+						size: item.size,
+						modifiedAt: item.modifiedAt || item.modified_at,
+					}));
+					
+					useContainerStore.getState().addItemsToContainer(autoOrganizeContainerId, formattedItems as any, true);
+					
+					for (const formattedItem of formattedItems) {
+						normalizedItems.push({
+							...(formattedItem as any),
+							isInContainer: true,
+							position: undefined,
+						});
 					}
 				}
 
@@ -349,8 +391,10 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 					});
 				}
 
+				const remainingItemsWithoutLayout: any[] = [...itemsWithoutLayout];
+
 				// Pass 2: Place new items in the first available slots
-				for (const item of itemsWithoutLayout) {
+				for (const item of remainingItemsWithoutLayout) {
 					const slot = findEmptySlot(currentX, currentY, normalizedItems);
 					needsSave = true;
 					currentY = slot.y + stepY;

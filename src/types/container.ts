@@ -43,6 +43,7 @@ export interface ContainerStyle {
 	iconGapRatio?: number;
 	collapsible?: boolean;
 	collapsed?: boolean;
+	expandOnHover?: boolean;
 }
 
 export interface Container {

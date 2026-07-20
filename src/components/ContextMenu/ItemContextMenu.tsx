@@ -108,25 +108,38 @@ export function ItemContextMenu({
 			fetchDesktopItems();
 			// 清理容器内的幽灵条目（文件已不存在的引用）
 			// 使用 check_files_exist 验证哪些文件真正不存在，避免误删权限错误的文件
+			const succeededPaths = results
+				.map((r, i) => (r.status === "fulfilled" ? paths[i] : null))
+				.filter(Boolean) as string[];
+				
 			const failedPaths = results
 				.map((r, i) => (r.status === "rejected" ? paths[i] : null))
 				.filter(Boolean) as string[];
+
+			const pathsToRemove = new Set(succeededPaths);
+
 			if (failedPaths.length > 0) {
 				try {
 					const missingPaths = await invoke<string[]>("check_files_exist", { paths: failedPaths });
-					const containers = useContainerStore.getState().containers;
 					for (const p of missingPaths) {
-						for (const c of containers) {
-							const ghost = c.items.find((i) => i.path === p);
-							if (ghost) {
-								useContainerStore
-									.getState()
-									.removeItemFromContainer(c.id, ghost.id);
-							}
-						}
+						pathsToRemove.add(p);
 					}
 				} catch (e) {
 					console.warn("[handleDelete] 清理幽灵条目失败:", e);
+				}
+			}
+			
+			if (pathsToRemove.size > 0) {
+				const containers = useContainerStore.getState().containers;
+				for (const p of pathsToRemove) {
+					for (const c of containers) {
+						const ghost = c.items.find((i) => i.path === p);
+						if (ghost) {
+							useContainerStore
+								.getState()
+								.removeItemFromContainer(c.id, ghost.id);
+						}
+					}
 				}
 			}
 			if (failed.length === 0) {

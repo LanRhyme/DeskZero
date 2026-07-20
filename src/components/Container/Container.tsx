@@ -373,6 +373,7 @@ function NormalContainer({ container }: ContainerProps) {
 									updateContainerName(container.id, editNameValue.trim());
 								}}
 								onKeyDown={(e) => {
+									if (e.nativeEvent.isComposing) return;
 									if (e.key === "Enter") {
 										setIsEditingName(false);
 										updateContainerName(container.id, editNameValue.trim());

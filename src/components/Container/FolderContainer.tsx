@@ -499,6 +499,7 @@ export function FolderContainer({ container }: ContainerProps) {
 									updateContainerName(container.id, editNameValue.trim());
 							}}
 							onKeyDown={(e) => {
+								if (e.nativeEvent.isComposing) return;
 								if (e.key === "Enter") {
 									setIsEditingName(false);
 									if (editNameValue.trim())

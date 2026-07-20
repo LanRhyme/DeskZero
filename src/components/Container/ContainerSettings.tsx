@@ -52,7 +52,7 @@ export function ContainerSettings({
 		container.style.cornerRadius ?? 10,
 	);
 	const [collapsible, setCollapsible] = useState(
-		container.style.collapsible ?? false,
+		container.style.collapsible ?? (container.type === "folder"),
 	);
 
 	const containerRef = useRef<HTMLDivElement>(null);

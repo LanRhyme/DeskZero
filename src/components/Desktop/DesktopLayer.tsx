@@ -162,15 +162,37 @@ export default function DesktopLayer() {
 	}, []);
 
 	useEffect(() => {
+		let isCancelled = false;
+		let timeoutId: number | undefined = undefined;
+
 		if (settings.wallpaperCompatible) {
 			import("@tauri-apps/api/core").then(({ invoke }) => {
-				invoke<string>("capture_desktop_background")
-					.then((res) => setWallpaper(res))
-					.catch((err) => console.error("Failed to capture desktop:", err));
+				const captureWithRetry = (retryCount: number) => {
+					if (isCancelled) return;
+					invoke<string>("capture_desktop_background")
+						.then((res) => {
+							if (!isCancelled) setWallpaper(res);
+						})
+						.catch((err) => {
+							if (isCancelled) return;
+							console.error(`Failed to capture desktop (retries left: ${retryCount}):`, err);
+							if (retryCount > 0) {
+								timeoutId = window.setTimeout(() => captureWithRetry(retryCount - 1), 2000);
+							}
+						});
+				};
+				captureWithRetry(3);
 			});
 		} else {
 			setWallpaper(null);
 		}
+
+		return () => {
+			isCancelled = true;
+			if (timeoutId !== undefined) {
+				window.clearTimeout(timeoutId);
+			}
+		};
 	}, [settings.wallpaperCompatible]);
 
 	useEffect(() => {
@@ -1003,6 +1025,7 @@ export default function DesktopLayer() {
 						defaultValue={createPrompt.defaultName}
 						className="w-full bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded px-2 py-1 text-xs border border-transparent focus:border-[var(--color-accent)]/50 focus:bg-transparent outline-none transition-all"
 						onKeyDown={async (e) => {
+							if (e.nativeEvent.isComposing) return;
 							if (e.key === "Enter") {
 								const name = (e.target as HTMLInputElement).value;
 								if (name) {
@@ -1125,6 +1148,7 @@ export default function DesktopLayer() {
 							setRenamePrompt(null);
 						}}
 						onKeyDown={async (e) => {
+							if (e.nativeEvent.isComposing) return;
 							if (e.key === "Enter") {
 								e.currentTarget.blur();
 							} else if (e.key === "Escape") {

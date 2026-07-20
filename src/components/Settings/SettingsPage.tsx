@@ -2,6 +2,7 @@ import { Tab } from "@headlessui/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
 	AlertCircle,
+	AlertTriangle,
 	Archive,
 	Info,
 	LayoutGrid,
@@ -55,6 +56,21 @@ export function SettingsPage() {
 	const handleSyncWindowsLayout = async (multiplier: number) => {
 		try {
 			setSyncing(true);
+			
+			// 移除所有容器，并将容器内的图标移回桌面
+			const { containers, deleteContainer } = useContainerStore.getState();
+			const desktopStore = await import("@/stores/desktopStore").then(m => m.useDesktopStore.getState());
+			const { items, moveItemsToDesktop } = desktopStore;
+			
+			const itemsInContainers = items.filter(i => i.isInContainer);
+			if (itemsInContainers.length > 0) {
+				await moveItemsToDesktop(itemsInContainers, 10, 10, true);
+			}
+
+			for (const container of containers) {
+				await deleteContainer(container.id);
+			}
+
 			await syncWindowsLayout(multiplier);
 			await useSettingsStore.getState().loadSettings();
 			
@@ -1434,6 +1450,19 @@ export function SettingsPage() {
 								<span>{t("settings.syncDialog.multiplier1")}</span>
 								<span>{t("settings.syncDialog.multiplier2")}</span>
 								</div>
+							</div>
+
+							<div className="mb-6 bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
+								<div className="flex items-center gap-2 mb-1.5">
+									<AlertTriangle className="text-yellow-600 dark:text-yellow-500 w-4 h-4" />
+									<span className="text-xs font-bold text-yellow-700 dark:text-yellow-500">
+										{t("settings.general.warningTitle")}
+									</span>
+								</div>
+								<ul className="list-disc list-inside text-[11px] text-yellow-700/80 dark:text-yellow-500/80 space-y-1 ml-1">
+									<li>{t("settings.general.warningRemoveContainers")}</li>
+									<li>{t("settings.general.warningIrreversible")}</li>
+								</ul>
 							</div>
 
 							<div className="flex justify-end gap-3">

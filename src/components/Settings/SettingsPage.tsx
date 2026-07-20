@@ -423,10 +423,11 @@ export function SettingsPage() {
 										/>
 									</SettingRow>
 
-								<SettingRow
-									title={t("settings.general.doubleClickHide")}
-									desc={t("settings.general.doubleClickHideDesc")}
-								>
+									<SettingRow
+										title={t("settings.general.doubleClickHide")}
+										desc={t("settings.general.doubleClickHideDesc")}
+										noBorder
+									>
 										<SwitchToggle
 											checked={settings.doubleClickHide !== false}
 											onChange={() =>
@@ -434,6 +435,24 @@ export function SettingsPage() {
 													doubleClickHide: !settings.doubleClickHide,
 												})
 											}
+										/>
+									</SettingRow>
+								</div>
+
+								{/* 多显示器 */}
+								<div className="bg-white/80 dark:bg-white/[0.02] rounded-2xl border border-black/5 dark:border-white/5 px-6 py-2 shadow-sm backdrop-blur-xl mt-6">
+									<SettingRow
+										title={t("settings.general.dialogMonitor")}
+										desc={t("settings.general.dialogMonitorDesc")}
+										noBorder
+									>
+										<SegmentedControl
+											options={[
+												{ value: "focused", label: t("settings.general.monitorFocused") },
+												{ value: "primary", label: t("settings.general.monitorPrimary") },
+											]}
+											value={settings.dialogMonitorPreference || "focused"}
+											onChange={(v) => saveSettings({ dialogMonitorPreference: v as "focused" | "primary" })}
 										/>
 									</SettingRow>
 

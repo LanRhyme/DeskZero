@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useMonitorStore } from "@/stores/monitorStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 
 interface ConfirmDialogProps {
 	isOpen: boolean;
@@ -31,7 +32,15 @@ export function ConfirmDialog({
 	const isDesktop = window.location.pathname !== "/settings";
 	let monitorStyle: React.CSSProperties = { inset: 0 };
 	if (isDesktop) {
-		const monitor = currentMonitorId ? getMonitorById(currentMonitorId) : getPrimaryMonitor();
+		const settings = useSettingsStore.getState().settings;
+		const preferPrimary = settings.dialogMonitorPreference === "primary";
+		const { currentMonitorId, getMonitorById, monitors } = useMonitorStore.getState();
+		
+		let monitor = monitors.find(m => m.isPrimary) ?? monitors[0];
+		if (!preferPrimary && currentMonitorId) {
+			monitor = getMonitorById(currentMonitorId) || monitor;
+		}
+
 		if (monitor) {
 			monitorStyle = {
 				left: monitor.x,

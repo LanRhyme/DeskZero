@@ -56,10 +56,17 @@ export function ToastContainer() {
 	const monitors = useMonitorStore((state) => state.monitors);
 
 	// 优先在聚焦的显示器上显示，其次是主显示器，避免多显示器跨屏
+	const settings = useSettingsStore((state) => state.settings);
+	const preferPrimary = settings.dialogMonitorPreference === "primary";
 	const currentMonitorId = useMonitorStore((state) => state.currentMonitorId);
+	
 	const primary = monitors.find((m) => m.isPrimary);
 	const current = monitors.find((m) => m.id === currentMonitorId);
-	const target = current ?? primary ?? monitors[0];
+	
+	let target = primary ?? monitors[0];
+	if (!preferPrimary && current) {
+		target = current;
+	}
 
 	if (!target) {
 		return <ToastDisplay monitorX={0} monitorWidth={window.innerWidth} />;

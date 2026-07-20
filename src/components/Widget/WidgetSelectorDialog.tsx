@@ -297,9 +297,13 @@ export function WidgetSelectorDialog({
 
   const { customWidgets, addCustomWidget, removeCustomWidget } = useWidgetStore();
   const createContainer = useContainerStore((s) => s.createContainer);
-
-  const { currentMonitorId, getMonitorById, getPrimaryMonitor } = useMonitorStore();
-  const monitor = currentMonitorId ? getMonitorById(currentMonitorId) : getPrimaryMonitor();
+  const { currentMonitorId, getMonitorById, monitors } = useMonitorStore();
+  const settings = useSettingsStore.getState().settings;
+  const preferPrimary = settings.dialogMonitorPreference === "primary";
+  let monitor = monitors.find(m => m.isPrimary) ?? monitors[0];
+  if (!preferPrimary && currentMonitorId) {
+    monitor = getMonitorById(currentMonitorId) || monitor;
+  }
   const monitorStyle: React.CSSProperties = monitor ? {
     left: monitor.x,
     top: monitor.y,

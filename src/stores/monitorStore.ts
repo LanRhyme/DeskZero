@@ -26,7 +26,19 @@ export const useMonitorStore = create<MonitorState>((set, get) => ({
 	fetchMonitors: async () => {
 		set({ isLoading: true, error: null });
 		try {
-			const monitors = await getMonitors();
+			const rawMonitors = await getMonitors();
+			const minX = Math.min(...rawMonitors.map((m) => m.x));
+			const minY = Math.min(...rawMonitors.map((m) => m.y));
+			const monitors = rawMonitors.map(m => ({
+				...m,
+				x: m.x - minX,
+				y: m.y - minY,
+				workArea: {
+					...m.workArea,
+					x: m.workArea.x - minX,
+					y: m.workArea.y - minY,
+				}
+			}));
 			set({ monitors, isLoading: false });
 		} catch (err) {
 			set({ error: String(err), isLoading: false });
@@ -36,7 +48,19 @@ export const useMonitorStore = create<MonitorState>((set, get) => ({
 	refreshMonitors: async () => {
 		set({ isLoading: true, error: null });
 		try {
-			const monitors = await refreshMonitors();
+			const rawMonitors = await refreshMonitors();
+			const minX = Math.min(...rawMonitors.map((m) => m.x));
+			const minY = Math.min(...rawMonitors.map((m) => m.y));
+			const monitors = rawMonitors.map(m => ({
+				...m,
+				x: m.x - minX,
+				y: m.y - minY,
+				workArea: {
+					...m.workArea,
+					x: m.workArea.x - minX,
+					y: m.workArea.y - minY,
+				}
+			}));
 			set({ monitors, isLoading: false });
 		} catch (err) {
 			set({ error: String(err), isLoading: false });

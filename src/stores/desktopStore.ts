@@ -94,21 +94,29 @@ function getGridSize() {
 	};
 }
 
-// 获取主显示器工作区域（排除任务栏）
-function getWorkAreaBounds() {
+// 获取指定坐标所在显示器的工作区域（排除任务栏），默认主显示器
+function getWorkAreaBounds(x?: number, y?: number) {
 	const monitors = useMonitorStore.getState().monitors;
-	const primary = monitors.find((m) => m.isPrimary) ?? monitors[0];
-	if (primary?.workArea) {
+	let targetMonitor = monitors.find((m) => m.isPrimary) ?? monitors[0];
+	
+	if (x !== undefined && y !== undefined) {
+		const found = monitors.find(
+			(m) => x >= m.x && x <= m.x + m.width && y >= m.y && y <= m.y + m.height
+		);
+		if (found) targetMonitor = found;
+	}
+
+	if (targetMonitor?.workArea) {
 		return {
-			x: primary.workArea.x,
-			y: primary.workArea.y,
-			w: primary.workArea.width,
-			h: primary.workArea.height,
+			x: targetMonitor.workArea.x,
+			y: targetMonitor.workArea.y,
+			w: targetMonitor.workArea.width,
+			h: targetMonitor.workArea.height,
 		};
 	}
 	// 降级：使用全屏高度减去典型任务栏高度
-	const screenW = window?.screen?.width ?? 1920;
-	const screenH = window?.screen?.height ?? 1080;
+	const screenW = window?.innerWidth ?? 1920;
+	const screenH = window?.innerHeight ?? 1080;
 	return { x: 0, y: 0, w: screenW, h: screenH - 48 };
 }
 
@@ -127,17 +135,17 @@ function findEmptySlot(
 	const grid = getGridSize();
 	const stepX = grid.w + grid.gapX;
 	const stepY = grid.h + grid.gapY;
-	const bounds = getWorkAreaBounds();
-	const screenW = bounds.w;
-	const screenH = bounds.h;
+	const bounds = getWorkAreaBounds(x, y);
 
-	// Snap to grid first (with 10px padding from top/left)
-	let targetX = Math.round(Math.max(0, x - 10) / stepX) * stepX + 10;
-	let targetY = Math.round(Math.max(0, y - 10) / stepY) * stepY + 10;
+	// Snap to grid first (relative to monitor's work area)
+	const relX = Math.max(0, x - bounds.x - 10);
+	const relY = Math.max(0, y - bounds.y - 10);
+	let targetX = Math.round(relX / stepX) * stepX + 10 + bounds.x;
+	let targetY = Math.round(relY / stepY) * stepY + 10 + bounds.y;
 
-	// Constrain target to screen (ensure at least grid.w/h is visible)
-	targetX = Math.min(targetX, screenW - grid.w);
-	targetY = Math.min(targetY, screenH - grid.h);
+	// Constrain target to the monitor's bounds
+	targetX = Math.min(targetX, bounds.x + bounds.w - grid.w);
+	targetY = Math.min(targetY, bounds.y + bounds.h - grid.h);
 
 	const isOccupied = (checkX: number, checkY: number) => {
 		// Check intersection with other items (bounding box overlap)
@@ -173,10 +181,10 @@ function findEmptySlot(
 					const checkX = targetX + dx * stepX;
 					const checkY = targetY + dy * stepY;
 					if (
-						checkX >= 0 &&
-						checkY >= 0 &&
-						checkX <= screenW - grid.w &&
-						checkY <= screenH - grid.h
+						checkX >= bounds.x &&
+						checkY >= bounds.y &&
+						checkX <= bounds.x + bounds.w - grid.w &&
+						checkY <= bounds.y + bounds.h - grid.h
 					) {
 						if (!isOccupied(checkX, checkY)) {
 							return { x: checkX, y: checkY };
@@ -346,10 +354,14 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 					const slot = findEmptySlot(currentX, currentY, normalizedItems);
 					needsSave = true;
 					currentY = slot.y + stepY;
-					if (currentY + grid.h > screenH) {
-						currentY = 10;
-						currentX += stepX;
+					
+					// Use the bounds of the monitor where we just placed the item
+					const currentBounds = getWorkAreaBounds(slot.x, slot.y);
+					if (currentY + grid.h > currentBounds.y + currentBounds.h) {
+						currentY = currentBounds.y + 10;
+						currentX = slot.x + stepX;
 					}
+					
 					normalizedItems.push({
 						id: item.id,
 						name: item.name,
@@ -741,8 +753,9 @@ export const useDesktopStore = create<DesktopState>((set, get) => ({
 				placedItems.push(item);
 
 				currentY = slot.y + stepY;
-				if (currentY + grid.h > screenH) {
-					currentY = 10;
+				const currentBounds = getWorkAreaBounds(slot.x, slot.y);
+				if (currentY + grid.h > currentBounds.y + currentBounds.h) {
+					currentY = currentBounds.y + 10;
 					currentX = slot.x + stepX;
 				}
 			});

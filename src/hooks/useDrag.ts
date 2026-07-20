@@ -153,12 +153,19 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 		// 限制范围在屏幕工作区域内（排除任务栏）
 		if (options?.clampToBounds !== false) {
 			const monitors = useMonitorStore.getState().monitors;
-			const primary = monitors.find((m) => m.isPrimary) ?? monitors[0];
-			const workArea = primary?.workArea;
-			const maxX = workArea ? workArea.x + workArea.width : window.innerWidth;
-			const maxY = workArea ? workArea.y + workArea.height : window.innerHeight;
-			nextX = Math.max(0, Math.min(nextX, maxX - 80));
-			nextY = Math.max(0, Math.min(nextY, maxY - 96));
+			// 找到鼠标当前所在的显示器，如果找不到则降级到主显示器或第一个
+			const currentMonitor = monitors.find(
+				(m) => nextX >= m.x && nextX <= m.x + m.width && nextY >= m.y && nextY <= m.y + m.height
+			) ?? monitors.find((m) => m.isPrimary) ?? monitors[0];
+			
+			if (currentMonitor?.workArea) {
+				const wa = currentMonitor.workArea;
+				nextX = Math.max(wa.x, Math.min(nextX, wa.x + wa.width - 80));
+				nextY = Math.max(wa.y, Math.min(nextY, wa.y + wa.height - 96));
+			} else {
+				nextX = Math.max(0, Math.min(nextX, window.innerWidth - 80));
+				nextY = Math.max(0, Math.min(nextY, window.innerHeight - 96));
+			}
 		}
 
 		setDragPos({ x: nextX, y: nextY });
@@ -172,16 +179,11 @@ export function useDrag(initialPos: Position, options?: DragOptions) {
 			options.nativeDragItemPaths.length > 0
 		) {
 			const threshold = 10;
-			const monitors = useMonitorStore.getState().monitors;
-			const primary = monitors.find((m) => m.isPrimary) ?? monitors[0];
-			const workArea = primary?.workArea;
-			const edgeX = workArea ? workArea.x + workArea.width : window.innerWidth;
-			const edgeY = workArea ? workArea.y + workArea.height : window.innerHeight;
 			if (
 				e.clientX < threshold ||
 				e.clientY < threshold ||
-				e.clientX > edgeX - threshold ||
-				e.clientY > edgeY - threshold
+				e.clientX > window.innerWidth - threshold ||
+				e.clientY > window.innerHeight - threshold
 			) {
 				resetDragState();
 

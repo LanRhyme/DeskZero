@@ -40,4 +40,5 @@ export interface Settings {
 	fontFamily?: string;
 	customCss?: string;
 	customWidgets?: any[];
+	dialogMonitorPreference?: "focused" | "primary";
 }

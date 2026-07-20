@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { useMonitorStore } from "@/stores/monitorStore";
 
 interface ConfirmDialogProps {
 	isOpen: boolean;
@@ -25,10 +26,26 @@ export function ConfirmDialog({
 	const { t } = useTranslation();
 	const confirmLabel = confirmLabelProp ?? t("common.confirm");
 	const cancelLabel = cancelLabelProp ?? t("common.cancel");
+
+	const { currentMonitorId, getMonitorById, getPrimaryMonitor } = useMonitorStore();
+	const isDesktop = window.location.pathname !== "/settings";
+	let monitorStyle: React.CSSProperties = { inset: 0 };
+	if (isDesktop) {
+		const monitor = currentMonitorId ? getMonitorById(currentMonitorId) : getPrimaryMonitor();
+		if (monitor) {
+			monitorStyle = {
+				left: monitor.x,
+				top: monitor.y,
+				width: monitor.width,
+				height: monitor.height,
+			};
+		}
+	}
+
 	return (
 		<AnimatePresence>
 			{isOpen && (
-				<div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+				<div className="fixed z-[200] flex items-center justify-center p-4" style={monitorStyle}>
 					<motion.div
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}

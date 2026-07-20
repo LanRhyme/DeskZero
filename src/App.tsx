@@ -14,8 +14,21 @@ function App() {
 		loadSettings();
 		fetchMonitors();
 		const cleanup = initThemeListener();
-		return cleanup;
-	}, [loadSettings, initThemeListener, fetchMonitors]);
+		
+		const handlePointerDown = (e: PointerEvent) => {
+			if (!isSettings) {
+				const { findMonitorForPoint, setCurrentMonitor } = useMonitorStore.getState();
+				const monitor = findMonitorForPoint(e.clientX, e.clientY);
+				if (monitor) setCurrentMonitor(monitor.id);
+			}
+		};
+		window.addEventListener("pointerdown", handlePointerDown, { capture: true });
+		
+		return () => {
+			cleanup();
+			window.removeEventListener("pointerdown", handlePointerDown, { capture: true });
+		};
+	}, [loadSettings, initThemeListener, fetchMonitors, isSettings]);
 
 	return (
 		<div className="relative w-full h-full">

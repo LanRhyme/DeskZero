@@ -55,9 +55,11 @@ function ToastDisplay({ monitorX, monitorWidth }: { monitorX: number; monitorWid
 export function ToastContainer() {
 	const monitors = useMonitorStore((state) => state.monitors);
 
-	// 只在主显示器上显示通知，避免多显示器重复
+	// 优先在聚焦的显示器上显示，其次是主显示器，避免多显示器跨屏
+	const currentMonitorId = useMonitorStore((state) => state.currentMonitorId);
 	const primary = monitors.find((m) => m.isPrimary);
-	const target = primary ?? monitors[0];
+	const current = monitors.find((m) => m.id === currentMonitorId);
+	const target = current ?? primary ?? monitors[0];
 
 	if (!target) {
 		return <ToastDisplay monitorX={0} monitorWidth={window.innerWidth} />;

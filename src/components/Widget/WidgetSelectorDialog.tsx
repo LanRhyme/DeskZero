@@ -8,6 +8,7 @@ import { useWidgetStore, type CustomWidgetEntry } from "@/stores/widgetStore";
 import { useContainerStore } from "@/stores/containerStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useToastStore } from "@/stores/toastStore";
+import { useMonitorStore } from "@/stores/monitorStore";
 import { ConfirmDialog } from "@/components/UI/ConfirmDialog";
 import type { Position } from "@/types/container";
 import type { WidgetConfig } from "@/types/widget";
@@ -297,6 +298,15 @@ export function WidgetSelectorDialog({
   const { customWidgets, addCustomWidget, removeCustomWidget } = useWidgetStore();
   const createContainer = useContainerStore((s) => s.createContainer);
 
+  const { currentMonitorId, getMonitorById, getPrimaryMonitor } = useMonitorStore();
+  const monitor = currentMonitorId ? getMonitorById(currentMonitorId) : getPrimaryMonitor();
+  const monitorStyle: React.CSSProperties = monitor ? {
+    left: monitor.x,
+    top: monitor.y,
+    width: monitor.width,
+    height: monitor.height,
+  } : { inset: 0 };
+
   const handleCreate = async () => {
     if (!selectedType) return;
 
@@ -418,7 +428,8 @@ export function WidgetSelectorDialog({
     <AnimatePresence>
       {isOpen && !showPromptDialog && (
         <motion.div
-          className="fixed inset-0 z-[100] flex items-center justify-center"
+          className="fixed z-[100] flex items-center justify-center"
+          style={monitorStyle}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -558,7 +569,8 @@ export function WidgetSelectorDialog({
       {/* 生成开发提示词对话框 */}
       {showPromptDialog && (
         <motion.div
-          className="fixed inset-0 z-[101] flex items-center justify-center"
+          className="fixed z-[101] flex items-center justify-center"
+          style={monitorStyle}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

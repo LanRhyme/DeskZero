@@ -58,12 +58,16 @@ mod win_layer {
     extern "system" {
         fn GetWindowLongPtrA(hWnd: HWND, nIndex: i32) -> isize;
         fn SetWindowLongPtrA(hWnd: HWND, nIndex: i32, dwNewLong: isize) -> isize;
+        fn CallWindowProcA(lpPrevWndFunc: isize, hWnd: HWND, Msg: UINT, wParam: usize, lParam: isize) -> isize;
+        fn DefWindowProcA(hWnd: HWND, Msg: UINT, wParam: usize, lParam: isize) -> isize;
     }
 
     #[cfg(target_pointer_width = "32")]
     extern "system" {
         fn GetWindowLongA(hWnd: HWND, nIndex: i32) -> i32;
         fn SetWindowLongA(hWnd: HWND, nIndex: i32, dwNewLong: i32) -> i32;
+        fn CallWindowProcA(lpPrevWndFunc: isize, hWnd: HWND, Msg: UINT, wParam: usize, lParam: isize) -> isize;
+        fn DefWindowProcA(hWnd: HWND, Msg: UINT, wParam: usize, lParam: isize) -> isize;
     }
 
     #[cfg(target_pointer_width = "64")]
@@ -96,6 +100,37 @@ mod win_layer {
                 String::from_utf8_lossy(&buf[..len as usize]).to_string()
             } else {
                 String::new()
+            }
+        }
+    }
+
+    static mut OLD_WNDPROC: isize = 0;
+    const WM_NCCALCSIZE: UINT = 0x0083;
+    const GWLP_WNDPROC: i32 = -4;
+
+    unsafe extern "system" fn custom_wndproc(
+        hwnd: HWND,
+        msg: UINT,
+        wparam: usize,
+        lparam: isize,
+    ) -> isize {
+        if msg == WM_NCCALCSIZE {
+            // 返回 0，告诉系统客户区覆盖整个窗口，彻底消除所有非客户区（边框、标题栏）
+            return 0;
+        }
+        if OLD_WNDPROC != 0 {
+            CallWindowProcA(OLD_WNDPROC, hwnd, msg, wparam, lparam)
+        } else {
+            DefWindowProcA(hwnd, msg, wparam, lparam)
+        }
+    }
+
+    pub fn subclass_window(hwnd: isize) {
+        unsafe {
+            let hwnd_ptr = hwnd as HWND;
+            let old = set_window_long(hwnd_ptr, GWLP_WNDPROC, custom_wndproc as isize);
+            if old != 0 {
+                OLD_WNDPROC = old;
             }
         }
     }
@@ -384,6 +419,9 @@ pub fn run() {
                     }
                 };
                 eprintln!("[DeskZero] Window HWND: {:?} (0x{:X})", hwnd, hwnd);
+                
+                // 在主线程立刻注入子类化，拦截 WM_NCCALCSIZE
+                win_layer::subclass_window(hwnd);
 
                 // 在新线程中执行嵌入操作
                 std::thread::spawn(move || {

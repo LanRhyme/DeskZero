@@ -120,7 +120,7 @@ mod win_layer {
         }
     }
 
-    static mut OLD_WNDPROC: isize = 0;
+    static OLD_WNDPROC: std::sync::atomic::AtomicIsize = std::sync::atomic::AtomicIsize::new(0);
     const WM_NCCALCSIZE: UINT = 0x0083;
     const WM_NCPAINT: UINT = 0x0085;
     const WM_NCACTIVATE: UINT = 0x0086;
@@ -148,8 +148,9 @@ mod win_layer {
             }
             _ => {}
         }
-        if OLD_WNDPROC != 0 {
-            CallWindowProcA(OLD_WNDPROC, hwnd, msg, wparam, lparam)
+        let old_ptr = OLD_WNDPROC.load(std::sync::atomic::Ordering::SeqCst);
+        if old_ptr != 0 {
+            CallWindowProcA(old_ptr, hwnd, msg, wparam, lparam)
         } else {
             DefWindowProcA(hwnd, msg, wparam, lparam)
         }
@@ -165,9 +166,15 @@ mod win_layer {
             let old = set_window_long(hwnd_ptr, GWLP_WNDPROC, custom_wndproc as isize);
             // 只在 OLD_WNDPROC 未设置时记录原始 WNDPROC
             // 否则多次调用会把 OLD_WNDPROC 覆盖成 custom_wndproc 自身，导致无限递归
-            if OLD_WNDPROC == 0 && old != 0 {
-                OLD_WNDPROC = old;
-                eprintln!("[DeskZero] Subclass: recorded original WNDPROC");
+            if old != 0 {
+                if OLD_WNDPROC.compare_exchange(
+                    0,
+                    old,
+                    std::sync::atomic::Ordering::SeqCst,
+                    std::sync::atomic::Ordering::SeqCst,
+                ).is_ok() {
+                    eprintln!("[DeskZero] Subclass: recorded original WNDPROC");
+                }
             }
             let count = SUBCLASS_COUNT.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             eprintln!("[DeskZero] Subclass applied (count={})", count + 1);
@@ -584,14 +591,16 @@ pub fn run() {
                         eprintln!("[DeskZero] WARNING: Failed to embed after {} attempts, showing as normal window", max_retries);
                         // 退出之前进入的全屏状态（set_fullscreen(true) 在隐藏窗口上可能未生效，
                         // 但残留状态会导致 show() 后窗口表现异常）
-                        let _ = window_clone.set_fullscreen(false);
-                        let _ = window_clone.set_decorations(false);
-                        let _ = window_clone.show();
-                        // 嵌入失败时也要清除标题栏样式（但不能设置 ws_child，否则无父窗口的子窗口无法显示）
-                        win_layer::strip_window_chrome(hwnd);
-                        // 重新子类化，拦截 WM_NCCALCSIZE 以彻底消除非客户区
-                        win_layer::subclass_window(hwnd);
-                        eprintln!("[DeskZero] Fallback: stripped window chrome and re-subclassed");
+                        let _ = window_clone.run_on_main_thread(move || {
+                            let _ = window_clone.set_fullscreen(false);
+                            let _ = window_clone.set_decorations(false);
+                            let _ = window_clone.show();
+                            // 嵌入失败时也要清除标题栏样式（但不能设置 ws_child，否则无父窗口的子窗口无法显示）
+                            win_layer::strip_window_chrome(hwnd);
+                            // 重新子类化，拦截 WM_NCCALCSIZE 以彻底消除非客户区
+                            win_layer::subclass_window(hwnd);
+                            eprintln!("[DeskZero] Fallback: stripped window chrome and re-subclassed");
+                        });
                     }
                 });
             }

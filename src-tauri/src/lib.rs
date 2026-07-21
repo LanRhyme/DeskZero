@@ -591,10 +591,11 @@ pub fn run() {
                         eprintln!("[DeskZero] WARNING: Failed to embed after {} attempts, showing as normal window", max_retries);
                         // 退出之前进入的全屏状态（set_fullscreen(true) 在隐藏窗口上可能未生效，
                         // 但残留状态会导致 show() 后窗口表现异常）
+                        let fallback_window = window_clone.clone();
                         let _ = window_clone.run_on_main_thread(move || {
-                            let _ = window_clone.set_fullscreen(false);
-                            let _ = window_clone.set_decorations(false);
-                            let _ = window_clone.show();
+                            let _ = fallback_window.set_fullscreen(false);
+                            let _ = fallback_window.set_decorations(false);
+                            let _ = fallback_window.show();
                             // 嵌入失败时也要清除标题栏样式（但不能设置 ws_child，否则无父窗口的子窗口无法显示）
                             win_layer::strip_window_chrome(hwnd);
                             // 重新子类化，拦截 WM_NCCALCSIZE 以彻底消除非客户区

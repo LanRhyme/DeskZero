@@ -692,3 +692,14 @@ pub fn capture_desktop_background(app: tauri::AppHandle) -> Result<String, Strin
 
     Ok(format!("data:image/jpeg;base64,{}", b64))
 }
+
+#[tauri::command]
+pub fn set_window_focus(window: tauri::WebviewWindow) {
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(hwnd) = window.hwnd() {
+            crate::win_layer::set_focus_hwnd(hwnd.0 as isize);
+        }
+    }
+    let _ = window.set_focus();
+}

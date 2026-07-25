@@ -23,10 +23,27 @@ function App() {
 			}
 		};
 		window.addEventListener("pointerdown", handlePointerDown, { capture: true });
+
+		const handleFocusIn = (e: FocusEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (
+				target &&
+				(target.tagName === "INPUT" ||
+					target.tagName === "TEXTAREA" ||
+					target.isContentEditable ||
+					target.getAttribute("contenteditable") === "true")
+			) {
+				import("@tauri-apps/api/core").then(({ invoke }) => {
+					invoke("set_window_focus").catch(() => {});
+				});
+			}
+		};
+		window.addEventListener("focusin", handleFocusIn);
 		
 		return () => {
 			cleanup();
 			window.removeEventListener("pointerdown", handlePointerDown, { capture: true });
+			window.removeEventListener("focusin", handleFocusIn);
 		};
 	}, [loadSettings, initThemeListener, fetchMonitors, isSettings]);
 

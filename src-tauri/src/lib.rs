@@ -12,8 +12,14 @@ use tauri::Manager;
 /// Windows desktop layer integration
 /// 将窗口嵌入到桌面图标层（壁纸和桌面图标之间）
 #[cfg(target_os = "windows")]
-mod win_layer {
+pub mod win_layer {
     use std::ffi::c_void;
+
+    pub fn set_focus_hwnd(hwnd: isize) {
+        unsafe {
+            SetFocus(hwnd as HWND);
+        }
+    }
 
     #[repr(C)]
     struct RECT {
@@ -125,6 +131,7 @@ mod win_layer {
     const WM_NCPAINT: UINT = 0x0085;
     const WM_NCACTIVATE: UINT = 0x0086;
     const WM_NCHITTEST: UINT = 0x0084;
+    const WM_MOUSEACTIVATE: UINT = 0x0021;
     const GWLP_WNDPROC: i32 = -4;
 
     unsafe extern "system" fn custom_wndproc(
@@ -145,6 +152,10 @@ mod win_layer {
             WM_NCACTIVATE => {
                 // 返回 1 表示激活状态已处理，不重绘非客户区
                 return 1;
+            }
+            WM_MOUSEACTIVATE => {
+                SetFocus(hwnd);
+                return 1; // MA_ACTIVATE: 1
             }
             _ => {}
         }
@@ -226,7 +237,7 @@ mod win_layer {
                 let class_name = get_class_name(child);
                 if class_name == "SHELLDLL_DefView" {
                     eprintln!("[DeskZero] Found SHELLDLL_DefView as direct child of Progman");
-                    target_parent = child; // EMBED DIRECTLY INTO SHELLDLL_DefView!
+                    target_parent = progman;
                     SHELLDLL_HWND.store(child as isize, std::sync::atomic::Ordering::SeqCst);
                     break;
                 }
@@ -256,7 +267,7 @@ mod win_layer {
                         let class_name = get_class_name(child);
                         if class_name == "SHELLDLL_DefView" {
                             eprintln!("[DeskZero] Found SHELLDLL_DefView in WorkerW: {:?}", child);
-                            target_parent = child; // EMBED DIRECTLY INTO SHELLDLL_DefView!
+                            target_parent = worker;
                             SHELLDLL_HWND.store(child as isize, std::sync::atomic::Ordering::SeqCst);
                             break;
                         }
@@ -286,6 +297,28 @@ mod win_layer {
 
             // 4e: 设置焦点
             SetFocus(hwnd as HWND);
+
+            // 启动后台线程强制维持 Z-order，防止当用户点击桌面时 Explorer 将 SHELLDLL_DefView 提升到顶层导致 DeskZero 失去交互能力
+            let hwnd_isize = hwnd as isize;
+            std::thread::spawn(move || {
+                let hwnd_clone = hwnd_isize as HWND;
+                let swp_nomove: UINT = 0x0002;
+                let swp_nosize: UINT = 0x0001;
+                let swp_noactivate: UINT = 0x0010;
+                let flags = swp_nomove | swp_nosize | swp_noactivate;
+                loop {
+                    std::thread::sleep(std::time::Duration::from_millis(200));
+                    SetWindowPos(
+                        hwnd_clone,
+                        HWND_TOP as HWND,
+                        0,
+                        0,
+                        0,
+                        0,
+                        flags,
+                    );
+                }
+            });
 
             eprintln!("[DeskZero] Successfully embedded into desktop layer!");
             true
@@ -665,6 +698,7 @@ pub fn run() {
             commands::system::get_wallpaper_engine_preview,
             commands::system::capture_desktop_background,
             commands::system::get_system_info,
+            commands::system::set_window_focus,
             commands::monitor::get_monitors,
             commands::monitor::refresh_monitors,
             commands::monitor::get_monitor_for_point,

@@ -482,7 +482,6 @@ export function WidgetSelectorDialog({
             initial={{ scale: 0.95, y: 10 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.95, y: 10 }}
-            onPointerDown={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-black/5 dark:border-white/5">
@@ -623,7 +622,6 @@ export function WidgetSelectorDialog({
             initial={{ scale: 0.95, y: 10 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.95, y: 10 }}
-            onPointerDown={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-black/5 dark:border-white/5">

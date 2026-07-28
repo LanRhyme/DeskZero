@@ -173,7 +173,7 @@ export function StickyNoteWidget({
       <textarea
         ref={textareaRef}
         className={cn(
-          "absolute inset-0 w-full h-full p-4 bg-transparent resize-none outline-none placeholder-gray-500 overflow-y-auto hidden-native-scrollbar transition-opacity duration-150",
+          "absolute inset-0 w-full h-full p-4 bg-transparent resize-none outline-none placeholder-gray-500 overflow-y-auto hidden-native-scrollbar transition-opacity duration-150 select-text",
           isEditing ? "opacity-100 pointer-events-auto z-10" : "opacity-0 pointer-events-none -z-10",
           fontStyleClass
         )}

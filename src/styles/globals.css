@@ -10,6 +10,17 @@ body {
 	font-family: system-ui, -apple-system, sans-serif;
 }
 
+/* 强制输入类元素可编辑，覆盖父级 user-select: none */
+input, textarea, [contenteditable] {
+	user-select: text;
+	-webkit-user-select: text;
+}
+
+/* 确保 contentEditable 元素能正常获取焦点和接收键盘事件 */
+[contenteditable]:focus {
+	outline: none;
+}
+
 :root {
 	/* 浅色主题（默认） */
 	--color-bg: rgba(243, 243, 243, 0.6);

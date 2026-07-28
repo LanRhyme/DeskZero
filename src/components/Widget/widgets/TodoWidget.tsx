@@ -305,7 +305,7 @@ export function TodoWidget({
                 type="date"
                 value={newDueDate}
                 onChange={(e) => setNewDueDate(e.target.value)}
-                className="flex-1 bg-black/5 dark:bg-white/5 rounded px-1.5 py-0.5 text-[10px] text-[var(--color-text)] outline-none border border-transparent focus:border-[var(--color-accent)]/30"
+                className="flex-1 bg-black/5 dark:bg-white/5 rounded px-1.5 py-0.5 text-[10px] text-[var(--color-text)] outline-none border border-transparent focus:border-[var(--color-accent)]/30 select-text"
                 style={{ colorScheme: "dark" }}
               />
               {newDueDate && (
@@ -338,7 +338,7 @@ export function TodoWidget({
             onFocus={() => setIsEditing?.(true)}
             onBlur={() => setIsEditing?.(false)}
             placeholder={t("widget.todo.addPlaceholder")}
-            className="flex-1 bg-transparent outline-none text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)] placeholder:opacity-40"
+            className="flex-1 bg-transparent outline-none text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)] placeholder:opacity-40 select-text"
             style={{ fontSize: `${baseFontSize}px` }}
           />
           {(newText.trim() || showAddForm) && (

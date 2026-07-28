@@ -123,6 +123,17 @@ export function FolderContainer({ container }: ContainerProps) {
 			window.removeEventListener("folder-container-refresh", handler);
 	}, [container.folderPath]);
 
+	// 响应外部触发的重命名（F2 快捷键）
+	const editingContainerId = useContainerStore((s) => s.editingContainerId);
+	const setEditingContainerId = useContainerStore((s) => s.setEditingContainerId);
+	useEffect(() => {
+		if (editingContainerId === container.id && !isEditingName) {
+			setEditNameValue(container.name);
+			setIsEditingName(true);
+			setEditingContainerId(null);
+		}
+	}, [editingContainerId, container.id]);
+
 	const { ref, pos, isDragging, listeners } = useDrag(container.position, {
 		dragHandleRef,
 		onDragEnd: (newPos) => {
@@ -445,6 +456,7 @@ export function FolderContainer({ container }: ContainerProps) {
 					isCollapsible && !isResizing && "transition-[height] duration-200 ease-in-out",
 				)}
 				onContextMenu={handleContextMenu}
+				onClick={() => useContainerStore.getState().setActiveContainerId(container.id)}
 			>
 				{/* Fake Blur Layer for Dynamic Wallpaper Mode */}
 				{settings.wallpaperCompatible && settings.globalBlur && wallpaper && (
@@ -477,7 +489,7 @@ export function FolderContainer({ container }: ContainerProps) {
 					)}
 					style={{ backgroundColor: "transparent" }}
 					onClick={() => {
-						if (!isDragging && isCollapsible) {
+						if (!isDragging && isCollapsible && !isEditingName) {
 							toggleCollapse();
 						}
 					}}
@@ -490,7 +502,7 @@ export function FolderContainer({ container }: ContainerProps) {
 					{isEditingName ? (
 						<input
 							autoFocus
-							className="bg-white/50 dark:bg-black/50 text-[var(--color-text)] px-1 outline-none rounded text-xs font-medium w-full"
+							className="bg-white/50 dark:bg-black/50 text-[var(--color-text)] px-1 outline-none rounded text-xs font-medium w-full select-text"
 							value={editNameValue}
 							onChange={(e) => setEditNameValue(e.target.value)}
 							onBlur={() => {

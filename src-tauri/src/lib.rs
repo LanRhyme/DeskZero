@@ -29,7 +29,7 @@ pub mod win_layer {
         bottom: i32,
     }
 
-    type HWND = *mut c_void;
+    pub type HWND = *mut c_void;
     type BOOL = i32;
     type UINT = u32;
     type LPCSTR = *const i8;
@@ -129,7 +129,6 @@ pub mod win_layer {
     static OLD_WNDPROC: std::sync::atomic::AtomicIsize = std::sync::atomic::AtomicIsize::new(0);
     const WM_NCCALCSIZE: UINT = 0x0083;
     const WM_NCPAINT: UINT = 0x0085;
-    const WM_NCACTIVATE: UINT = 0x0086;
     const WM_NCHITTEST: UINT = 0x0084;
     const WM_MOUSEACTIVATE: UINT = 0x0021;
     const GWLP_WNDPROC: i32 = -4;
@@ -141,21 +140,13 @@ pub mod win_layer {
         lparam: isize,
     ) -> isize {
         match msg {
-            WM_NCCALCSIZE => {
-                // 返回 0，告诉系统客户区覆盖整个窗口，彻底消除所有非客户区（边框、标题栏）
-                return 0;
-            }
-            WM_NCPAINT => {
-                // 不绘制非客户区
-                return 0;
-            }
-            WM_NCACTIVATE => {
-                // 返回 1 表示激活状态已处理，不重绘非客户区
-                return 1;
+            WM_NCCALCSIZE => { return 0; }
+            WM_NCPAINT => { return 0; }
+            0x0086 => { // WM_NCACTIVATE
+                return 1; // 防止切换窗口后出现白边
             }
             WM_MOUSEACTIVATE => {
-                SetFocus(hwnd);
-                return 1; // MA_ACTIVATE: 1
+                return 1; // MA_ACTIVATE
             }
             _ => {}
         }
@@ -173,18 +164,19 @@ pub mod win_layer {
     pub fn subclass_window(hwnd: isize) {
         unsafe {
             let hwnd_ptr = hwnd as HWND;
-            // 每次都重新设置 WNDPROC，但只第一次记录 OLD_WNDPROC
-            let old = set_window_long(hwnd_ptr, GWLP_WNDPROC, custom_wndproc as isize);
-            // 只在 OLD_WNDPROC 未设置时记录原始 WNDPROC
-            // 否则多次调用会把 OLD_WNDPROC 覆盖成 custom_wndproc 自身，导致无限递归
-            if old != 0 {
-                if OLD_WNDPROC.compare_exchange(
-                    0,
-                    old,
-                    std::sync::atomic::Ordering::SeqCst,
-                    std::sync::atomic::Ordering::SeqCst,
-                ).is_ok() {
-                    eprintln!("[DeskZero] Subclass: recorded original WNDPROC");
+            // 每次都重新设置 WNDPROC
+            let new_wndproc = set_window_long(hwnd_ptr, GWLP_WNDPROC, custom_wndproc as isize);
+            
+            // 如果 set_window_long 返回的不是 custom_wndproc 自身，
+            // 说明这是第一次设置，或者上一个 WNDPROC 被其他代码修改了
+            if new_wndproc != 0 && new_wndproc != custom_wndproc as isize {
+                // 总是更新 OLD_WNDPROC 为最新的原始 WNDPROC
+                //（例如 WebView2 初始化后注册了自己的 WNDPROC）
+                let previous = OLD_WNDPROC.swap(new_wndproc, std::sync::atomic::Ordering::SeqCst);
+                if previous == 0 {
+                    eprintln!("[DeskZero] Subclass: recorded new original WNDPROC");
+                } else {
+                    eprintln!("[DeskZero] Subclass: updated original WNDPROC (was {:?}, now {:?})", previous, new_wndproc);
                 }
             }
             let count = SUBCLASS_COUNT.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
@@ -201,7 +193,7 @@ pub mod win_layer {
         }
     }
 
-    /// 嵌入窗口到桌面图标层
+    /// 嵌入窗口到桌面图标层（嵌入到壁纸层 WorkerW，在壁纸和图标之间）
     /// 返回 true 表示成功嵌入
     pub fn embed_into_icon_layer(hwnd: isize) -> bool {
         unsafe {
@@ -219,102 +211,85 @@ pub mod win_layer {
             eprintln!("[DeskZero] Found Progman: {:?}", progman);
 
             // Step 2: 发送 0x052C 消息，让 Progman 创建 WorkerW 窗口结构
-            eprintln!("[DeskZero] Sending 0x052C message to Progman...");
-            let result = SendMessageA(progman, 0x052C, 0, 0);
-            eprintln!("[DeskZero] Sent 0x052C message, result: {}", result);
+            SendMessageA(progman, 0x052C, 0, 0);
 
-            // Step 3: 查找目标父窗口
-            let mut target_parent: HWND = std::ptr::null_mut();
+            // Step 3: 查找 SHELLDLL_DefView（桌面图标容器）
+            let mut shelldll: HWND = std::ptr::null_mut();
 
             // 3a: 先检查 Progman 的直接子窗口
-            eprintln!("[DeskZero] Checking Progman's children...");
             let mut child = std::ptr::null_mut();
             loop {
                 child = FindWindowExA(progman, child, std::ptr::null(), std::ptr::null());
-                if child.is_null() {
-                    break;
-                }
-                let class_name = get_class_name(child);
-                if class_name == "SHELLDLL_DefView" {
-                    eprintln!("[DeskZero] Found SHELLDLL_DefView as direct child of Progman");
-                    target_parent = progman;
-                    SHELLDLL_HWND.store(child as isize, std::sync::atomic::Ordering::SeqCst);
+                if child.is_null() { break; }
+                if get_class_name(child) == "SHELLDLL_DefView" {
+                    shelldll = child;
+                    eprintln!("[DeskZero] Found SHELLDLL_DefView in Progman: {:?}", shelldll);
                     break;
                 }
             }
 
-            // 3b: 如果 Progman 中没有找到，检查 WorkerW 窗口
-            if target_parent.is_null() {
-                eprintln!("[DeskZero] Checking WorkerW windows...");
+            // 3b: 如果 Progman 中没有，检查 WorkerW 窗口
+            if shelldll.is_null() {
                 let mut worker: HWND = std::ptr::null_mut();
                 loop {
-                    worker = FindWindowExA(
-                        std::ptr::null_mut(),
-                        worker,
-                        b"WorkerW\0".as_ptr() as LPCSTR,
-                        std::ptr::null(),
-                    );
-                    if worker.is_null() {
-                        break;
-                    }
-
-                    let mut child = std::ptr::null_mut();
+                    worker = FindWindowExA(std::ptr::null_mut(), worker,
+                        b"WorkerW\0".as_ptr() as LPCSTR, std::ptr::null());
+                    if worker.is_null() { break; }
+                    let mut c = std::ptr::null_mut();
                     loop {
-                        child = FindWindowExA(worker, child, std::ptr::null(), std::ptr::null());
-                        if child.is_null() {
-                            break;
-                        }
-                        let class_name = get_class_name(child);
-                        if class_name == "SHELLDLL_DefView" {
-                            eprintln!("[DeskZero] Found SHELLDLL_DefView in WorkerW: {:?}", child);
-                            target_parent = worker;
-                            SHELLDLL_HWND.store(child as isize, std::sync::atomic::Ordering::SeqCst);
+                        c = FindWindowExA(worker, c, std::ptr::null(), std::ptr::null());
+                        if c.is_null() { break; }
+                        if get_class_name(c) == "SHELLDLL_DefView" {
+                            shelldll = c;
+                            eprintln!("[DeskZero] Found SHELLDLL_DefView in WorkerW: {:?}", shelldll);
                             break;
                         }
                     }
-
-                    if !target_parent.is_null() {
-                        break;
-                    }
+                    if !shelldll.is_null() { break; }
                 }
             }
 
-            // Step 4: 如果找到了目标父窗口，执行嵌入
-            if target_parent.is_null() {
-                eprintln!("[DeskZero] ERROR: Could not find suitable parent window");
+            if shelldll.is_null() {
+                eprintln!("[DeskZero] ERROR: Could not find SHELLDLL_DefView");
                 return false;
             }
+            SHELLDLL_HWND.store(shelldll as isize, std::sync::atomic::Ordering::SeqCst);
 
-            eprintln!("[DeskZero] Setting parent to: {:?}", target_parent);
+            // Step 4: 确定目标父窗口（拥有 SHELLDLL_DefView 的窗口）
+            // 直接使用 Progman 或包含 SHELLDLL_DefView 的 WorkerW
+            let target_parent = if shelldll == child { progman } else {
+                // shelldll 在 WorkerW 中，找到包含它的 WorkerW
+                let mut w: HWND = std::ptr::null_mut();
+                loop {
+                    w = FindWindowExA(std::ptr::null_mut(), w,
+                        b"WorkerW\0".as_ptr() as LPCSTR, std::ptr::null());
+                    if w.is_null() { break; }
+                    let mut c = std::ptr::null_mut();
+                    loop {
+                        c = FindWindowExA(w, c, std::ptr::null(), std::ptr::null());
+                        if c.is_null() { break; }
+                        if c == shelldll { break; }
+                    }
+                    if c == shelldll { break; }
+                }
+                if w.is_null() { progman } else { w }
+            };
+            eprintln!("[DeskZero] SetParent to icon layer: {:?}", target_parent);
+            SetParent(hwnd as HWND, target_parent);
 
-            // 4a: 设置父窗口
-            let old_parent = SetParent(hwnd as HWND, target_parent);
-            if old_parent.is_null() {
-                eprintln!("[DeskZero] WARNING: SetParent returned null (might be first parent)");
-            } else {
-                eprintln!("[DeskZero] SetParent done, old parent: {:?}", old_parent);
-            }
-
-            // 4e: 设置焦点
-            SetFocus(hwnd as HWND);
-
-            // 启动后台线程强制维持 Z-order，防止当用户点击桌面时 Explorer 将 SHELLDLL_DefView 提升到顶层导致 DeskZero 失去交互能力
+            // 启动后台线程维持 Z-order
             let hwnd_isize = hwnd as isize;
             std::thread::spawn(move || {
-                let hwnd_clone = hwnd_isize as HWND;
                 let swp_nomove: UINT = 0x0002;
                 let swp_nosize: UINT = 0x0001;
                 let swp_noactivate: UINT = 0x0010;
                 let flags = swp_nomove | swp_nosize | swp_noactivate;
                 loop {
-                    std::thread::sleep(std::time::Duration::from_millis(200));
+                    std::thread::sleep(std::time::Duration::from_millis(1000));
                     SetWindowPos(
-                        hwnd_clone,
+                        hwnd_isize as HWND,
                         HWND_TOP as HWND,
-                        0,
-                        0,
-                        0,
-                        0,
+                        0, 0, 0, 0,
                         flags,
                     );
                 }
@@ -419,6 +394,32 @@ pub mod win_layer {
             let _ = DwmExtendFrameIntoClientArea(hwnd as HWND, &margins);
 
             eprintln!("[DeskZero] DWM borderless attributes applied");
+        }
+    }
+
+    /// 嵌入后修复：设置窗口覆盖整个虚拟屏幕，触发 WM_NCCALCSIZE 消除白边
+    pub fn fix_window_after_embed(hwnd: isize, _set_fullscreen: bool) {
+        unsafe {
+            // 获取整个虚拟屏幕尺寸
+            let sm_cxvirtualscreen = 78;
+            let sm_cyvirtualscreen = 79;
+            let sm_xvirtualscreen = 76;
+            let sm_yvirtualscreen = 77;
+            extern "system" { fn GetSystemMetrics(nIndex: i32) -> i32; }
+            let v_x = GetSystemMetrics(sm_xvirtualscreen);
+            let v_y = GetSystemMetrics(sm_yvirtualscreen);
+            let v_width = GetSystemMetrics(sm_cxvirtualscreen);
+            let v_height = GetSystemMetrics(sm_cyvirtualscreen);
+            
+            if v_width > 0 && v_height > 0 {
+                SetWindowPos(
+                    hwnd as HWND,
+                    0 as HWND,
+                    v_x, v_y, v_width, v_height,
+                    0x0020, // SWP_FRAMECHANGED - 触发 WM_NCCALCSIZE 消除白边
+                );
+                eprintln!("[DeskZero] 窗口已覆盖虚拟屏幕: {}x{}+{},{}", v_width, v_height, v_x, v_y);
+            }
         }
     }
 
@@ -559,7 +560,6 @@ pub fn run() {
             #[cfg(target_os = "windows")]
             {
                 let window_clone = window.clone();
-
                 // 先隐藏窗口
                 let _ = window.hide();
                 eprintln!("[DeskZero] Window hidden before embedding");
@@ -574,66 +574,53 @@ pub fn run() {
                 };
                 eprintln!("[DeskZero] Window HWND: {:?} (0x{:X})", hwnd, hwnd);
                 
-                // 在主线程立刻注入子类化，拦截 WM_NCCALCSIZE
+                // 在主线程立刻注入子类化
                 win_layer::subclass_window(hwnd);
 
                 // 在新线程中执行嵌入操作
                 std::thread::spawn(move || {
-                    // 开启 Tauri 全屏以彻底消除 Windows 隐形边框和拖拽栏
+                    // 设置全屏覆盖整个屏幕
                     let _ = window_clone.set_fullscreen(true);
                     let _ = window_clone.set_decorations(false);
                     let _ = window_clone.set_resizable(false);
                     
-                    // 等待窗口完全初始化
                     std::thread::sleep(std::time::Duration::from_millis(500));
                     
-                    // 尝试嵌入，最多重试 3 次
+                    // 尝试嵌入到壁纸层 WorkerW
                     let max_retries = 3;
                     let mut success = false;
                     
                     for attempt in 1..=max_retries {
                         eprintln!("[DeskZero] Attempt {} to embed into icon layer...", attempt);
-                        
                         if win_layer::embed_into_icon_layer(hwnd) {
                             success = true;
                             break;
                         }
-                        
                         if attempt < max_retries {
-                            eprintln!("[DeskZero] Embed failed, retrying in 500ms...");
                             std::thread::sleep(std::time::Duration::from_millis(500));
                         }
                     }
                     
                     if success {
-                        // 嵌入成功，显示窗口
                         std::thread::sleep(std::time::Duration::from_millis(100));
                         let _ = window_clone.show();
                         eprintln!("[DeskZero] Window shown after successful embedding");
                         
-                        // Tauri 的 show() 可能会覆盖我们在 embed 时设置的样式，
-                        // 导致重新出现 Windows 11 隐形边框。这里强制再次抹除边框并适应尺寸。
                         std::thread::sleep(std::time::Duration::from_millis(100));
-                        win_layer::fix_window_styles(hwnd);
-                        // show() / set_fullscreen 等操作可能重置了 WNDPROC，
-                        // 导致 WM_NCCALCSIZE 拦截失效，需要重新子类化
+                        win_layer::strip_window_chrome(hwnd);
                         win_layer::subclass_window(hwnd);
-                        eprintln!("[DeskZero] Window styles forcibly fixed after show()");
+                        win_layer::fix_window_after_embed(hwnd, true);
+                        eprintln!("[DeskZero] Window styles fixed after show()");
+                        eprintln!("[DeskZero] Window styles fixed after show()");
                     } else {
-                        // 嵌入失败，仍然显示窗口（作为普通窗口）
-                        eprintln!("[DeskZero] WARNING: Failed to embed after {} attempts, showing as normal window", max_retries);
-                        // 退出之前进入的全屏状态（set_fullscreen(true) 在隐藏窗口上可能未生效，
-                        // 但残留状态会导致 show() 后窗口表现异常）
-                        let fallback_window = window_clone.clone();
+                        eprintln!("[DeskZero] WARNING: Failed to embed, showing as normal window");
+                        let fallback = window_clone.clone();
                         let _ = window_clone.run_on_main_thread(move || {
-                            let _ = fallback_window.set_fullscreen(false);
-                            let _ = fallback_window.set_decorations(false);
-                            let _ = fallback_window.show();
-                            // 嵌入失败时也要清除标题栏样式（但不能设置 ws_child，否则无父窗口的子窗口无法显示）
+                            let _ = fallback.set_fullscreen(false);
+                            let _ = fallback.set_decorations(false);
+                            let _ = fallback.show();
                             win_layer::strip_window_chrome(hwnd);
-                            // 重新子类化，拦截 WM_NCCALCSIZE 以彻底消除非客户区
                             win_layer::subclass_window(hwnd);
-                            eprintln!("[DeskZero] Fallback: stripped window chrome and re-subclassed");
                         });
                     }
                 });

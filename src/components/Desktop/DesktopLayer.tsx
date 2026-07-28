@@ -329,6 +329,37 @@ export default function DesktopLayer() {
 			) {
 				return;
 			}
+			// F2：重命名选中项
+			if (e.key === "F2") {
+				e.preventDefault();
+				// 尝试重命名桌面文件/文件夹
+				const selectedIds = useDesktopStore.getState().selectedIds;
+				const { items } = useDesktopStore.getState();
+				if (selectedIds.size === 1) {
+					const selectedId = Array.from(selectedIds)[0];
+					const selectedItem = items.find((i) => i.id === selectedId);
+					if (selectedItem) {
+						const path = selectedItem.path;
+						const oldName = path.substring(
+							Math.max(path.lastIndexOf("\\"), path.lastIndexOf("/")) + 1,
+						);
+						setRenamePrompt({
+							visible: true,
+							targetPath: path,
+							oldName,
+							x: selectedItem.position?.x ?? 200,
+							y: selectedItem.position?.y ?? 200,
+						});
+						return;
+					}
+				}
+				// 尝试重命名容器
+				const activeContainerId = useContainerStore.getState().activeContainerId;
+				if (activeContainerId) {
+					useContainerStore.getState().setEditingContainerId(activeContainerId);
+				}
+				return;
+			}
 			if (e.ctrlKey && e.key === "c") {
 				e.preventDefault();
 				const selectedIds = useDesktopStore.getState().selectedIds;
@@ -875,6 +906,18 @@ export default function DesktopLayer() {
 	];
 
 	const onPointerDown = (e: React.PointerEvent) => {
+		// 如果点击在提示框内部，不关闭提示框
+		const target = e.target as HTMLElement;
+		if (createPrompt || renamePrompt || dropPrompt) {
+			const promptEl = (e.currentTarget as HTMLElement).querySelector(
+				createPrompt ? '.create-prompt-popup' :
+				renamePrompt ? '.rename-prompt-popup' :
+				'.drop-prompt-popup'
+			);
+			if (promptEl?.contains(target)) {
+				return;
+			}
+		}
 		if (createPrompt) setCreatePrompt(null);
 		if (renamePrompt) setRenamePrompt(null);
 		if (e.button !== 0) return; // Only left click
@@ -1012,49 +1055,64 @@ export default function DesktopLayer() {
 			{/* Create Prompt Popup */}
 			{createPrompt && createPrompt.visible && (
 				<div
-					className="absolute z-50 bg-white/90 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 shadow-2xl rounded-xl p-3 flex flex-col gap-2 min-w-[200px]"
+					className="absolute z-50 bg-white/90 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 shadow-2xl rounded-xl p-3 flex flex-col gap-2 min-w-[200px] create-prompt-popup"
 					style={{ left: createPrompt.x, top: createPrompt.y }}
-					onPointerDown={(e) => e.stopPropagation()}
 				>
 					<div className="text-xs font-medium text-[var(--color-text)] mb-1">
-						{t("desktop.inputName", { type: createPrompt.isFolder ? t("desktop.folder") : t("desktop.file") })}
+					{t("desktop.inputName", { type: createPrompt.isFolder ? t("desktop.folder") : t("desktop.file") })}
 					</div>
-					<input
-						type="text"
-						autoFocus
-						defaultValue={createPrompt.defaultName}
-						className="w-full bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded px-2 py-1 text-xs border border-transparent focus:border-[var(--color-accent)]/50 focus:bg-transparent outline-none transition-all"
-						onKeyDown={async (e) => {
-							if (e.nativeEvent.isComposing) return;
-							if (e.key === "Enter") {
-								const name = (e.target as HTMLInputElement).value;
-								if (name) {
-									await handleCreateFile(name, createPrompt.isFolder);
-									setCreatePrompt(null);
-								}
-							} else if (e.key === "Escape") {
-								setCreatePrompt(null);
-							}
-						}}
+					{/* 🔥 这里是输入框，用 contentEditable 的 div 替代 input */}
+					<div
+					contentEditable
+					suppressContentEditableWarning
+					className="w-full bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded px-2 py-1 text-xs border border-transparent focus:border-[var(--color-accent)]/50 focus:bg-transparent outline-none transition-all min-h-[28px] max-h-[120px] overflow-y-auto break-all select-text"
+					ref={(el) => {
+						if (el) {
+						// 保存引用
+						(window as any).__activeInput = el;
+						// 设置初始内容
+						if (createPrompt) {
+							el.textContent = createPrompt.defaultName;
+						}
+						// 自动聚焦
+						setTimeout(() => el.focus(), 50);
+						}
+					}}
+					onFocus={() => {
+						console.log("🟢 [DEBUG] contentEditable onFocus triggered");
+					}}
+					onKeyDown={async (e) => {
+						if (e.nativeEvent.isComposing) return;
+						if (e.key === "Enter") {
+						e.preventDefault();
+						const name = (e.target as HTMLDivElement).textContent || "";
+						if (name) {
+							await handleCreateFile(name, createPrompt.isFolder);
+							setCreatePrompt(null);
+						}
+						} else if (e.key === "Escape") {
+						setCreatePrompt(null);
+						}
+					}}
 					/>
 				</div>
-			)}
+				)}
 
 			{/* Rename Prompt Popup */}
 			{renamePrompt && renamePrompt.visible && (
 				<div
-					className="absolute z-50 bg-white/90 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 shadow-2xl rounded-xl p-3 flex flex-col gap-2 min-w-[200px]"
+					className="absolute z-50 bg-white/90 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 shadow-2xl rounded-xl p-3 flex flex-col gap-2 min-w-[200px] rename-prompt-popup"
 					style={{ left: renamePrompt.x, top: renamePrompt.y }}
-					onPointerDown={(e) => e.stopPropagation()}
 				>
 					<div className="text-xs font-medium text-[var(--color-text)] mb-1">
 						{t("desktop.renameLabel")}
 					</div>
 					<input
+						key={renamePrompt.targetPath}
 						type="text"
 						autoFocus
 						defaultValue={renamePrompt.oldName}
-						className="w-full bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded px-2 py-1 text-xs border border-transparent focus:border-[var(--color-accent)]/50 focus:bg-transparent outline-none transition-all"
+						className="w-full bg-black/5 dark:bg-white/5 text-[var(--color-text)] rounded px-2 py-1 text-xs border border-transparent focus:border-[var(--color-accent)]/50 focus:bg-transparent outline-none transition-all select-text"
 						onFocus={(e) => {
 							// select text without extension by default
 							const lastDot = e.target.value.lastIndexOf(".");
@@ -1163,9 +1221,8 @@ export default function DesktopLayer() {
 			{/* Drop Prompt Popup */}
 			{dropPrompt && (
 				<div
-					className="absolute z-50 bg-white/90 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 shadow-2xl rounded-xl p-2 flex flex-col min-w-[120px]"
+					className="absolute z-50 bg-white/90 dark:bg-[#1a1a1a]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 shadow-2xl rounded-xl p-2 flex flex-col min-w-[120px] drop-prompt-popup"
 					style={{ left: dropPrompt.x, top: dropPrompt.y }}
-					onPointerDown={(e) => e.stopPropagation()}
 				>
 					<button
 						className="px-3 py-1.5 text-left text-sm text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors whitespace-nowrap"

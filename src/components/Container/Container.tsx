@@ -82,6 +82,17 @@ function NormalContainer({ container }: ContainerProps) {
 		}
 	}, [tabs, activeTabId]);
 
+	// 响应外部触发的重命名（F2 快捷键）
+	const editingContainerId = useContainerStore((s) => s.editingContainerId);
+	const setEditingContainerId = useContainerStore((s) => s.setEditingContainerId);
+	useEffect(() => {
+		if (editingContainerId === container.id && !isEditingName) {
+			setEditNameValue(container.name);
+			setIsEditingName(true);
+			setEditingContainerId(null);
+		}
+	}, [editingContainerId, container.id]);
+
 	const { ref, pos, isDragging, listeners } = useDrag(container.position, {
 		dragHandleRef,
 		onDragEnd: (newPos) => {
@@ -370,6 +381,7 @@ function NormalContainer({ container }: ContainerProps) {
 				onContextMenu={handleContextMenu}
 				onPointerEnter={handlePointerEnter}
 				onPointerLeave={handlePointerLeave}
+				onClick={() => useContainerStore.getState().setActiveContainerId(container.id)}
 			>
 				{/* Fake Blur Layer for Dynamic Wallpaper Mode */}
 				{effectiveWallpaperCompatible && effectiveGlobalBlur && wallpaper && (
@@ -404,7 +416,7 @@ function NormalContainer({ container }: ContainerProps) {
 						)}
 						style={{ backgroundColor: "transparent" }}
 						onClick={() => {
-							if (!isDragging && isCollapsible) {
+							if (!isDragging && isCollapsible && !isEditingName) {
 								toggleCollapse();
 							}
 						}}
@@ -412,7 +424,7 @@ function NormalContainer({ container }: ContainerProps) {
 						{isEditingName ? (
 							<input
 								autoFocus
-								className="bg-white/50 dark:bg-black/50 text-[var(--color-text)] px-1 outline-none rounded text-xs font-medium text-center w-32 relative z-10"
+								className="bg-white/50 dark:bg-black/50 text-[var(--color-text)] px-1 outline-none rounded text-xs font-medium text-center w-32 relative z-10 select-text"
 								style={{ color: headerColor }}
 								value={editNameValue}
 								onChange={(e) => setEditNameValue(e.target.value)}
@@ -493,7 +505,7 @@ function NormalContainer({ container }: ContainerProps) {
 								{isEditingTabId === tab.id ? (
 									<input
 										autoFocus
-										className="bg-transparent text-[var(--color-text)] outline-none w-full min-w-[40px]"
+										className="bg-transparent text-[var(--color-text)] outline-none w-full min-w-[40px] select-text"
 										value={editTabName}
 										onChange={e => setEditTabName(e.target.value)}
 										onBlur={() => {
@@ -510,7 +522,7 @@ function NormalContainer({ container }: ContainerProps) {
 												setIsEditingTabId(null);
 											}
 										}}
-									/>
+										/>
 								) : (
 									<span className="truncate">{tab.name}</span>
 								)}

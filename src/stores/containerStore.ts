@@ -31,8 +31,12 @@ interface ContainerState {
 	containers: Container[];
 	isLoading: boolean;
 	error: string | null;
+	editingContainerId: string | null;
+	activeContainerId: string | null;
 
 	// Actions
+	setEditingContainerId: (id: string | null) => void;
+	setActiveContainerId: (id: string | null) => void;
 	fetchContainers: () => Promise<void>;
 	createContainer: (
 		name: string,
@@ -82,6 +86,11 @@ export const useContainerStore = create<ContainerState>((set, get) => ({
 	containers: [],
 	isLoading: false,
 	error: null,
+	editingContainerId: null,
+	activeContainerId: null,
+
+	setEditingContainerId: (id) => set({ editingContainerId: id }),
+	setActiveContainerId: (id) => set({ activeContainerId: id }),
 
 	fetchContainers: async () => {
 		useHistoryStore.getState().clearHistory();

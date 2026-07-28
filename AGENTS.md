@@ -242,3 +242,6 @@ const persistContainer = async (container: Container) => {
 }
 ```
 
+## AI Agent 指引
+
+- 语言：代码审查、Issue 评论、PR 评论及任何其他沟通，**必须全程使用中文（简体中文）回复**

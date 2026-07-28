@@ -47,75 +47,36 @@ fn get_registry_autostart() -> bool {
     }
 }
 
-/// 判断当前是否注册了 Windows 服务
-#[cfg(target_os = "windows")]
-fn has_service_registered() -> bool {
-    let output = std::process::Command::new("sc.exe")
-        .args(&["query", "DeskZeroService"])
-        .output();
-    if let Ok(out) = output {
-        out.status.success()
-    } else {
-        false
+/// 启动时清理旧版 Windows 服务（如果有），新版已不再使用服务方案
+/// 只使用注册表自启动，高优先级由进程启动时自己设置
+pub fn cleanup_old_service() {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+        // 检查服务是否存在
+        let output = std::process::Command::new("sc.exe")
+            .args(&["query", "DeskZeroService"])
+            .output();
+        if let Ok(out) = output {
+            if out.status.success() {
+                eprintln!("[DeskZero] 检测到旧版 DeskZeroService，正在清理...");
+                let script = "Start-Process sc.exe -ArgumentList 'stop DeskZeroService' -Verb RunAs -WindowStyle Hidden -Wait; Start-Process sc.exe -ArgumentList 'delete DeskZeroService' -Verb RunAs -WindowStyle Hidden -Wait";
+                let mut cmd = std::process::Command::new("powershell");
+                cmd.args(&["-NoProfile", "-WindowStyle", "Hidden", "-Command", &script]);
+                cmd.creation_flags(CREATE_NO_WINDOW);
+                let _ = cmd.output();
+                eprintln!("[DeskZero] 旧版 DeskZeroService 已清理");
+            }
+        }
     }
 }
 
-/// 安装或卸载 Windows 服务
+/// 同步自启动配置状态（仅使用注册表方式）
 #[cfg(target_os = "windows")]
-fn set_service_autostart(enable: bool) -> Result<(), String> {
-    use std::os::windows::process::CommandExt;
-    const CREATE_NO_WINDOW: u32 = 0x08000000;
-
-    let exe_path = std::env::current_exe()
-        .map_err(|e| format!("无法获取当前 exe 路径: {}", e))?;
-    let path_str = exe_path.to_string_lossy().to_string();
-
-    if enable {
-        // 创建并启动服务
-        let script = format!(
-            "Start-Process sc.exe -ArgumentList 'create DeskZeroService binPath= \"\\\"{}\\\" run-service\" start= auto displayName= \"DeskZero Autostart Service\"' -Verb RunAs -WindowStyle Hidden -Wait; Start-Process sc.exe -ArgumentList 'start DeskZeroService' -Verb RunAs -WindowStyle Hidden -Wait",
-            path_str
-        );
-        let mut cmd = std::process::Command::new("powershell");
-        cmd.args(&["-NoProfile", "-WindowStyle", "Hidden", "-Command", &script]);
-        cmd.creation_flags(CREATE_NO_WINDOW);
-        let output = cmd.output().map_err(|e| format!("执行 PowerShell 失败: {}", e))?;
-        if !output.status.success() {
-            return Err("创建或启动高优先级自启动服务失败，可能用户拒绝了管理员授权。".to_string());
-        }
-    } else {
-        if !has_service_registered() {
-            return Ok(());
-        }
-        // 停止并删除服务
-        let script = "Start-Process sc.exe -ArgumentList 'stop DeskZeroService' -Verb RunAs -WindowStyle Hidden -Wait; Start-Process sc.exe -ArgumentList 'delete DeskZeroService' -Verb RunAs -WindowStyle Hidden -Wait";
-        let mut cmd = std::process::Command::new("powershell");
-        cmd.args(&["-NoProfile", "-WindowStyle", "Hidden", "-Command", &script]);
-        cmd.creation_flags(CREATE_NO_WINDOW);
-        let _ = cmd.output();
-    }
-    Ok(())
-}
-
-/// 同步自启动配置状态
-#[cfg(target_os = "windows")]
-fn sync_autostart_config(enable: bool, high_priority: bool) -> Result<(), String> {
-    if enable {
-        if high_priority {
-            // 启用高优先级启动：开启服务，关闭注册表项
-            set_service_autostart(true)?;
-            let _ = set_registry_autostart_raw(false);
-        } else {
-            // 启用普通自启动：开启注册表，卸载服务
-            set_registry_autostart_raw(true)?;
-            let _ = set_service_autostart(false);
-        }
-    } else {
-        // 关闭自启动：清理两者
-        let _ = set_registry_autostart_raw(false);
-        let _ = set_service_autostart(false);
-    }
-    Ok(())
+fn sync_autostart_config(enable: bool, _high_priority: bool) -> Result<(), String> {
+    set_registry_autostart_raw(enable)
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -127,33 +88,8 @@ fn get_registry_autostart() -> bool {
     false
 }
 #[cfg(not(target_os = "windows"))]
-fn has_service_registered() -> bool {
-    false
-}
-#[cfg(not(target_os = "windows"))]
-fn set_service_autostart(_enable: bool) -> Result<(), String> {
-    Ok(())
-}
-#[cfg(not(target_os = "windows"))]
 fn sync_autostart_config(_enable: bool, _high_priority: bool) -> Result<(), String> {
     Ok(())
-}
-
-/// 启动时检查：如果设置中启用了高优先级自启动但服务不存在，则重新创建服务
-/// 用于更新后自动恢复服务（更新安装包会先删除服务再替换 exe）
-pub fn ensure_service_if_needed() {
-    #[cfg(target_os = "windows")]
-    {
-        let settings = settings_store::load_settings().unwrap_or_default();
-        if settings.auto_start_high_priority && !has_service_registered() {
-            eprintln!("[DeskZero] 检测到高优先级设置已启用但服务不存在，正在重新创建...");
-            if let Err(e) = set_service_autostart(true) {
-                eprintln!("[DeskZero] 重新创建服务失败: {}", e);
-            } else {
-                eprintln!("[DeskZero] 服务已重新创建");
-            }
-        }
-    }
 }
 
 static SETTINGS_LOCK: Mutex<()> = Mutex::new(());
@@ -212,11 +148,9 @@ pub struct AutostartStatus {
 /// 获取当前开机自启状态（系统实际状态）
 #[tauri::command]
 pub fn get_autostart_status() -> AutostartStatus {
-    let reg_ok = get_registry_autostart();
-    let service_ok = has_service_registered();
     AutostartStatus {
-        enabled: reg_ok || service_ok,
-        high_priority: service_ok,
+        enabled: get_registry_autostart(),
+        high_priority: false,
     }
 }
 

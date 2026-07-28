@@ -5,8 +5,6 @@ mod context_menu;
 pub mod desktop;
 mod models;
 mod storage;
-pub mod service;
-
 use tauri::Manager;
 
 /// Windows desktop layer integration
@@ -490,8 +488,8 @@ pub fn run() {
                 }
             }
 
-            // 更新后恢复高优先级服务（安装包会先删除服务再替换 exe）
-            crate::commands::system::ensure_service_if_needed();
+            // 启动时清理旧版 Windows 服务（如果存在）
+            crate::commands::system::cleanup_old_service();
 
             // 设置进程为高优先级，确保桌面渲染不被其他进程抢占
             #[cfg(target_os = "windows")]
